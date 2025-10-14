@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint && prettier --check .",
     "lint:fix": "eslint --fix && prettier --write .",
-    "test": "vitest --config ../../vitest.config.ts"
+    "test": "vitest --config ../../vitest.config.ts",
+    "coverage": "vitest --config ../../vitest.config.ts --coverage"
   },
   "dependencies": {
     "next": "15.5.5",

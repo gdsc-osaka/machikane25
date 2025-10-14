@@ -1,33 +1,34 @@
 {
-  "name": "machikane25",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev:photo": "pnpm --filter photo dev",
-    "dev:stamp": "pnpm --filter stamp dev",
-    "build:photo": "pnpm --filter photo build",
-    "build:stamp": "pnpm --filter stamp build",
-    "build": "pnpm --recursive build",
-    "start:photo": "pnpm --filter photo start",
-    "start:stamp": "pnpm --filter stamp start",
-    "lint": "pnpm --recursive lint",
-    "lint:fix": "pnpm --recursive lint:fix",
-    "test": "pnpm --recursive test",
-    "coverage": "pnpm --recursive coverage"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.12.4",
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.5",
-    "prettier": "3.6.2",
-    "typescript": "^5",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
-  }
+	"name": "machikane25",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"dev:photo": "pnpm --filter photo dev",
+		"dev:stamp": "pnpm --filter stamp dev",
+		"build:photo": "pnpm --filter photo build",
+		"build:stamp": "pnpm --filter stamp build",
+		"build": "pnpm --recursive build",
+		"start:photo": "pnpm --filter photo start",
+		"start:stamp": "pnpm --filter stamp start",
+		"lint": "pnpm --recursive lint",
+		"lint:fix": "pnpm --recursive lint:fix",
+		"test": "pnpm --recursive test",
+		"coverage": "pnpm --recursive coverage"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.12.4",
+	"devDependencies": {
+		"@biomejs/biome": "2.2.6",
+		"@eslint/eslintrc": "^3",
+		"@vitest/coverage-v8": "^3.2.4",
+		"eslint": "^9",
+		"eslint-config-next": "15.5.5",
+		"prettier": "3.6.2",
+		"typescript": "^5",
+		"vite-tsconfig-paths": "^5.1.4",
+		"vitest": "^3.2.4"
+	}
 }

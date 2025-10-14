@@ -54,16 +54,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.app }}
-          path: apps/${{ matrix.app }}/coverage/coverage-summary.json
+          path: apps/${{ matrix.app }}/coverage/coverage-*
           retention-days: 1
   # すべてのCIジョブが成功した後に、カバレッジレポートを投稿するジョブ
   report-coverage:
-    name: Report Coverage (${{ matrix.app }})
+    name: Report Coverage
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [photo, stamp]
     needs: ci
     steps:
       - name: Checkout repository
@@ -72,10 +68,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: coverage
-          pattern: coverage-report-${{ matrix.app }}
-      - name: Add coverage comment to PR
+          pattern: coverage-report-*
+      - name: Report Photo booth coverage
         uses: davelosert/vitest-coverage-report-action@v2
         if: always()
         with:
-          json-summary-path: 'coverage/coverage-report-${{ matrix.app }}/coverage-summary.json'
+          name: "Photo booth"
+          json-summary-path: 'coverage/coverage-report-photo/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-photo/coverage-final.json'
+      - name: Report Stamp coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: "Stamp"
+          json-summary-path: 'coverage/coverage-report-stamp/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-stamp/coverage-final.json'
 

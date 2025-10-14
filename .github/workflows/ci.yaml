@@ -71,11 +71,8 @@ jobs:
       - name: Download all coverage reports
         uses: actions/download-artifact@v4
         with:
-          # ダウンロード先ディレクトリ
           path: coverage-reports
-          # 'coverage-report-' で始まるすべてのアーティファクトを対象にする
-          pattern: coverage-report-*
-      # 3. 結合されたカバレッジ結果をPRにコメントとして投稿
+          pattern: coverage-*
       - name: Add coverage comment to PR
         uses: davelosert/vitest-coverage-report-action@v2
         if: always()

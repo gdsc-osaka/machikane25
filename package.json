@@ -1,0 +1,20 @@
+{
+  "name": "machikane25",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:photo": "pnpm --filter photo dev",
+    "dev:stamp": "pnpm --filter stamp dev",
+    "build:photo": "pnpm --filter photo build",
+    "build:stamp": "pnpm --filter stamp build",
+    "start:photo": "pnpm --filter photo start",
+    "start:stamp": "pnpm --filter stamp start",
+    "lint:photo": "pnpm --filter photo lint",
+    "lint:stamp": "pnpm --filter stamp lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4"
+}

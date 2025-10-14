@@ -8,10 +8,11 @@
     "dev:stamp": "pnpm --filter stamp dev",
     "build:photo": "pnpm --filter photo build",
     "build:stamp": "pnpm --filter stamp build",
+    "build": "pnpm --recursive build",
     "start:photo": "pnpm --filter photo start",
     "start:stamp": "pnpm --filter stamp start",
-    "lint:photo": "pnpm --filter photo lint",
-    "lint:stamp": "pnpm --filter stamp lint"
+    "lint": "pnpm --recursive lint",
+    "lint:fix": "pnpm --recursive lint:fix"
   },
   "keywords": [],
   "author": "",

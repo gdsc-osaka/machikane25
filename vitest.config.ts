@@ -14,7 +14,7 @@ export default defineConfig({
 		include: ["**/*.test.ts", "**/*.test.tsx"],
 		coverage: {
 			provider: "v8",
-			reporter: ["text", "json", "json-summary", "html"]
+			reporter: ["text", "json", "json-summary", "html"],
 		},
 	},
 });

@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/apps/photo"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    ignore:
+      - dependency-name: "pnpm"
+        versions: ["<8.0.0"]
+  - package-ecosystem: "npm"
+    directory: "/apps/stamp"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    ignore:
+      - dependency-name: "pnpm"
+        versions: ["<8.0.0"]

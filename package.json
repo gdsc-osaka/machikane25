@@ -13,7 +13,8 @@
     "start:stamp": "pnpm --filter stamp start",
     "lint": "pnpm --recursive lint",
     "lint:fix": "pnpm --recursive lint:fix",
-    "test": "pnpm --recursive test"
+    "test": "pnpm --recursive test",
+    "coverage": "pnpm --recursive coverage"
   },
   "keywords": [],
   "author": "",

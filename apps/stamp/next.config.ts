@@ -1,3 +1,4 @@
+/* v8 ignore start */
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -5,3 +6,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+/* v8 ignore stop */

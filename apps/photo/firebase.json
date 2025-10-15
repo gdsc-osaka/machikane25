@@ -1,0 +1,8 @@
+{
+	"firestore": {
+		"database": "photo",
+		"location": "asia-northeast2",
+		"rules": "firestore.rules",
+		"indexes": "firestore.indexes.json"
+	}
+}

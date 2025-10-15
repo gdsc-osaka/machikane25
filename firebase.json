@@ -1,0 +1,43 @@
+{
+	"storage": {
+		"rules": "storage.rules"
+	},
+	"emulators": {
+		"auth": {
+			"port": 11000
+		},
+		"functions": {
+			"port": 11001
+		},
+		"firestore": {
+			"port": 11002
+		},
+		"database": {
+			"port": 11003
+		},
+		"storage": {
+			"port": 11004
+		},
+		"ui": {
+			"enabled": true
+		},
+		"singleProjectMode": true
+	},
+	"remoteconfig": {
+		"template": "remoteconfig.template.json"
+	},
+	"functions": [
+		{
+			"source": "apps/photo-cleaner",
+			"codebase": "photo-cleaner",
+			"ignore": [
+				"node_modules",
+				".git",
+				"firebase-debug.log",
+				"firebase-debug.*.log",
+				"*.local"
+			],
+			"predeploy": ["pnpm --filter photo-cleaner build"]
+		}
+	]
+}

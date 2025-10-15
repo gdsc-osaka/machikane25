@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
-import RootLayout from "@/app/layout";
+import RootLayout from "../layout";
 
 vi.mock("../globals.css", () => ({}));
 // mock Geist font

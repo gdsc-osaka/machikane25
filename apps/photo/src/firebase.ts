@@ -1,4 +1,5 @@
 "use client";
+/* v8 ignore start */
 
 import { type Analytics, getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
@@ -22,7 +23,7 @@ const firebaseConfig = () => {
 	}
 	try {
 		return JSON.parse(raw);
-	} catch (e) {
+	} catch (_error) {
 		return dummy;
 	}
 };

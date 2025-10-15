@@ -11,7 +11,6 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="input-group"
-			role="group"
 			className={cn(
 				"group/input-group border-input dark:bg-input/30 relative flex w-full items-center rounded-md border shadow-xs transition-[color,box-shadow] outline-none",
 				"h-9 min-w-0 has-[>textarea]:h-auto",
@@ -63,15 +62,20 @@ function InputGroupAddon({
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
 	return (
 		<div
-			role="group"
 			data-slot="input-group-addon"
 			data-align={align}
 			className={cn(inputGroupAddonVariants({ align }), className)}
-			onClick={(e) => {
-				if ((e.target as HTMLElement).closest("button")) {
+			onPointerDown={(event) => {
+				if (event.button !== 0) {
 					return;
 				}
-				e.currentTarget.parentElement?.querySelector("input")?.focus();
+				const target = event.target as HTMLElement | null;
+				if (target?.closest("button")) {
+					return;
+				}
+				event.currentTarget.parentElement
+					?.querySelector<HTMLElement>("[data-slot='input-group-control']")
+					?.focus();
 			}}
 			{...props}
 		/>

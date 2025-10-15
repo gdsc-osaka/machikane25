@@ -1,3 +1,4 @@
+/* v8 ignore start */
 import * as Sentry from "@sentry/nextjs";
 
 export async function register() {

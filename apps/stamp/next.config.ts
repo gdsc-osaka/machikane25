@@ -1,5 +1,5 @@
-import {withSentryConfig} from "@sentry/nextjs";
 /* v8 ignore start */
+import {withSentryConfig} from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

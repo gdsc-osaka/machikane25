@@ -49,7 +49,7 @@ function Carousel({
 	className,
 	children,
 	...props
-}: React.ComponentProps<"div"> & CarouselProps) {
+}: React.ComponentProps<"section"> & CarouselProps) {
 	const [carouselRef, api] = useEmblaCarousel(
 		{
 			...opts,
@@ -103,6 +103,17 @@ function Carousel({
 		};
 	}, [api, onSelect]);
 
+	const carouselSection = (
+		<section
+			onKeyDownCapture={handleKeyDown}
+			className={cn("relative", className)}
+			data-slot="carousel"
+			{...props}
+		>
+			{children}
+		</section>
+	);
+
 	return (
 		<CarouselContext.Provider
 			value={{
@@ -117,16 +128,7 @@ function Carousel({
 				canScrollNext,
 			}}
 		>
-			<div
-				onKeyDownCapture={handleKeyDown}
-				className={cn("relative", className)}
-				role="region"
-				aria-roledescription="carousel"
-				data-slot="carousel"
-				{...props}
-			>
-				{children}
-			</div>
+			{carouselSection}
 		</CarouselContext.Provider>
 	);
 }
@@ -152,13 +154,14 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
+function CarouselItem({
+	className,
+	...props
+}: React.ComponentProps<"section">) {
 	const { orientation } = useCarousel();
 
-	return (
-		<div
-			role="group"
-			aria-roledescription="slide"
+	const carouselItem = (
+		<section
 			data-slot="carousel-item"
 			className={cn(
 				"min-w-0 shrink-0 grow-0 basis-full",
@@ -168,6 +171,8 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
 			{...props}
 		/>
 	);
+
+	return carouselItem;
 }
 
 function CarouselPrevious({

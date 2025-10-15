@@ -1,11 +1,13 @@
-'use client';
+"use client";
 
-import {db} from "@/firebase";
-import {doc, getDoc} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import useSWR from "swr";
+import { db } from "@/firebase";
 
 export default function Home() {
-	const { data, error, isLoading } = useSWR('doc', () => getDoc(doc(db, 'users', 'test')));
+	const { data, error, isLoading } = useSWR("doc", () =>
+		getDoc(doc(db, "users", "test")),
+	);
 
 	return (
 		<main className="flex min-h-screen flex-col items-center justify-center p-24">

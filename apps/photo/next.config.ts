@@ -1,5 +1,6 @@
-import {withSentryConfig} from "@sentry/nextjs";
 /* v8 ignore start */
+
+import {withSentryConfig} from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -38,4 +39,3 @@ export default withSentryConfig(nextConfig, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true
 });
-/* v8 ignore stop */

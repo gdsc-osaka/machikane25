@@ -21,7 +21,8 @@ Write TypeScript with 2-space indentation. Follow Next.js conventions (`page.tsx
 Use SWR for client-side data fetching in Next.js, leveraging its caching and revalidation features. For server-side data fetching, prefer Next.js's built-in data fetching methods.
 
 ## Testing Guidelines
-Use Vitest with unit specs stored alongside features in `path/to/dir/__tests__/*.test.{ts,tsx}` (for example `src/app/__tests__/page.test.tsx` or `src/components/__tests__/Header.test.tsx`); stub Gemini integrations via test doubles. Backend suites rely on the Firebase Emulator under `tests/integration`. Unity play mode specs live in `unity/interactive/Tests`. Target at least 80% statement coverage and verify with `pnpm test --filter apps/*` and `pnpm test --filter services/*`.
+Use Vitest with unit specs stored alongside features in `path/to/dir/__tests__/*.test.{ts,tsx}` (for example `src/app/__tests__/page.test.tsx` or `src/components/__tests__/Header.test.tsx`); stub Gemini integrations via test doubles. Backend suites rely on the Firebase Emulator under `tests/integration`. Unity play mode specs live in `unity/interactive/Tests`. 
+Target 100% coverage on every files except for configuration, types, and simple wrappers. Run `pnpm test`, `pnpm test:photo`, `pnpm test:photo-cleaner`, `pnpm test:stamp` or `pnpm coverage` to verify.
 
 ## Commit & Pull Request Guidelines
 Keep commits concise, imperative, and scoped, mirroring existing history (e.g. `add obsidian specs`, `remove ds_store`). Every PR should include a summary, linked issue or OKR, affected experience checklist, and UI evidence (screenshots or clips). Tag reviewers from each impacted experience area and reference updated design docs by path so collaborators can sync Obsidian mirrors quickly.

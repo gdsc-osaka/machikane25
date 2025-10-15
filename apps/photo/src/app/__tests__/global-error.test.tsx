@@ -4,11 +4,9 @@ import { afterEach, expect, test, vi } from "vitest";
 const { captureExceptionSpy, nextErrorMock } = vi.hoisted(() => {
 	return {
 		captureExceptionSpy: vi.fn(),
-		nextErrorMock: vi.fn(
-			({ statusCode }: { statusCode: number }) => (
-				<div data-testid="next-error" data-status-code={statusCode} />
-			),
-		),
+		nextErrorMock: vi.fn(({ statusCode }: { statusCode: number }) => (
+			<div data-testid="next-error" data-status-code={statusCode} />
+		)),
 	};
 });
 

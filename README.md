@@ -11,8 +11,7 @@ pnpm install
 pnpm emulator
 
 # run development server
-pnpm dev:photo
-# or pnpm dev:stamp
+pnpm dev:photo # or pnpm dev:stamp
 ```
 
 ### Install dependencies
@@ -22,6 +21,24 @@ pnpm -F photo add package-name
 # or
 pnpm -F photo -F stamp add package-name
 ```
+
+### Git Guidelines
+* Commit Message Example:
+  * `Update xxx.ts to improve performance`, `yyy コンポーネントのバグ修正`
+* Branch Naming Convention:
+  * `<username>/<feature-description>`
+  * e.g., `harineko0/add-login-feature`
+* Pull Request Guidelines:
+  * Title: Briefly summarize the changes made. e.g., `Add login feature`
+  * Description: Follow Pull Request Template
+
+### Other Guidelines
+* テストカバレッジを必ず 100% にすること.
+* PR のレビュワーには各アプリの Tech Lead が必ず入ること.
+* Tech Lead:
+  * apps/art: @harineko0
+  * apps/photo: @Nagomu0128
+  * apps/stamp: @iusok3386
 
 ## Usage
 ```shell

@@ -9,7 +9,9 @@
 		"deploy": "firebase deploy --only functions",
 		"logs": "firebase functions:log",
 		"lint": "pnpm exec biome check src test *.json",
-		"lint:fix": "pnpm exec biome check --write src test *.json"
+		"lint:fix": "pnpm exec biome check --write src test *.json",
+		"test": "vitest --config ../../vitest.config.ts",
+		"coverage": "vitest --config ../../vitest.config.ts --coverage"
 	},
 	"engines": {
 		"node": "22"
@@ -22,7 +24,8 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.7.2",
-		"firebase-functions-test": "^3.1.0"
+		"firebase-functions-test": "^3.1.0",
+		"supertest": "^7.1.4"
 	},
 	"private": true
 }

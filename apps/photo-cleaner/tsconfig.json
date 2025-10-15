@@ -10,7 +10,6 @@
 		"target": "es2017",
 		"lib": ["es2017"],
 		"types": ["node"],
-		"skipLibCheck": true
 	},
 	"compileOnSave": true,
 	"include": ["src"]

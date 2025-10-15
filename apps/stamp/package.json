@@ -3,9 +3,9 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev --turbopack",
+		"dev": "next dev --turbopack --port 4001",
 		"build": "next build --turbopack",
-		"start": "next start",
+		"start": "next start --port 4001",
 		"lint": "pnpm exec biome check src test *.json",
 		"lint:fix": "pnpm exec biome check --write src test *.json",
 		"test": "vitest --config ../../vitest.config.ts",
@@ -29,6 +29,7 @@
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
 		"embla-carousel-react": "^8.6.0",
+		"firebase": "^12.4.0",
 		"jotai": "^2.15.0",
 		"lucide-react": "^0.545.0",
 		"neverthrow": "^8.2.0",
@@ -39,6 +40,7 @@
 		"react-dom": "19.1.0",
 		"react-hook-form": "^7.65.0",
 		"sonner": "^2.0.7",
+		"swr": "^2.3.6",
 		"tailwind-merge": "^3.3.1",
 		"ts-pattern": "^5.8.0",
 		"zod": "^4.1.12"

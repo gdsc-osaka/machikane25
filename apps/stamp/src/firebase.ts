@@ -2,8 +2,8 @@
 
 import { type Analytics, getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getRemoteConfig } from "firebase/remote-config";
 import {getLogger} from "@machikane25/logger/src";
 
@@ -42,5 +42,10 @@ const analytics = () => {
 	_analytics = getAnalytics(app);
 	return _analytics;
 };
+
+if (process.env.NODE_ENV === "development") {
+	connectAuthEmulator(auth, "http://localhost:11000", { disableWarnings: true });
+	connectFirestoreEmulator(db, "localhost", 11002);
+}
 
 export { app, analytics, auth, db, config };

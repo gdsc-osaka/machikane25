@@ -3,8 +3,9 @@
 
 import { type Analytics, getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getRemoteConfig } from "firebase/remote-config";
 import {getLogger} from "@machikane25/logger/src";
 
@@ -34,6 +35,7 @@ const firebaseConfig = () => {
 const app = initializeApp(firebaseConfig());
 const auth = getAuth(app);
 const db = getFirestore(app, process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID);
+const storage = getStorage(app);
 const config = getRemoteConfig(app);
 let _analytics: Analytics | null = null;
 const analytics = () => {
@@ -43,5 +45,11 @@ const analytics = () => {
 	_analytics = getAnalytics(app);
 	return _analytics;
 };
+
+if (process.env.NODE_ENV === "development") {
+	connectAuthEmulator(auth, "http://localhost:11000", { disableWarnings: true });
+	connectFirestoreEmulator(db, "localhost", 11002);
+	connectStorageEmulator(storage, "localhost", 11004);
+}
 
 export { app, analytics, auth, db, config };

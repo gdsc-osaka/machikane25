@@ -91,4 +91,11 @@ jobs:
           name: "Stamp"
           json-summary-path: 'coverage/coverage-report-stamp/coverage-summary.json'
           json-final-path: 'coverage/coverage-report-stamp/coverage-final.json'
+      - name: Report Photo cleaner coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: "Photo cleaner"
+          json-summary-path: 'coverage/coverage-report-photo-cleaner/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-photo-cleaner/coverage-final.json'
 

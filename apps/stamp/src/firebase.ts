@@ -32,6 +32,12 @@ const auth = getAuth(app);
 const db = getFirestore(app, process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID);
 const config = getRemoteConfig(app);
 let _analytics: Analytics | null = null;
-const analytics = () => _analytics ?? (_analytics = getAnalytics(app));
+const analytics = () => {
+    if (_analytics && typeof window !== "undefined") {
+        return _analytics;
+    }
+    _analytics = getAnalytics(app);
+    return _analytics;
+}
 
 export {app, analytics, auth, db, config};

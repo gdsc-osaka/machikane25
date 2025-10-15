@@ -15,14 +15,19 @@ export default defineConfig({
 		environment: "jsdom",
 		setupFiles: "../../vitest.setup.ts",
 		include: ["**/*.test.ts", "**/*.test.tsx"],
-		exclude: [
-			"**/node_modules/**",
-			"apps/photo/src/components/ui/*.tsx",
-			"apps/stamp/src/components/ui/*.tsx",
-		],
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "json", "json-summary", "html"],
+			exclude: [
+				'**/node_modules/**',
+				'**/dist/**',
+				'**/coverage/**',
+				'**/.{idea,git,cache,output,temp}/**',
+				'**/{vite,vitest,tailwind,postcss}.config.*',
+
+				'src/components/ui/**',
+				'**/*.d.ts',
+			]
 		},
 	},
 });

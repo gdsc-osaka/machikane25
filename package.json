@@ -20,9 +20,10 @@
 		"test:stamp": "pnpm --filter stamp test",
 		"test": "pnpm --recursive test",
 		"coverage": "pnpm --recursive coverage",
-		"emulator": "pnpm run build:photo-cleaner && firebase emulators:start",
+		"prebuild": "pnpm run build:photo-cleaner",
+		"emulator": "pnpm run prebuild && firebase emulators:start",
 		"deploy:fire": "pnpm exec firebase deploy && pnpm --recursive deploy:fire",
-		"deploy:fire:check": "pnpm exec firebase deploy --dry-run"
+		"deploy:fire:check": "pnpm run prebuild && pnpm exec firebase deploy --dry-run"
 	},
 	"keywords": [],
 	"author": "",

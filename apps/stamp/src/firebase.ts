@@ -1,11 +1,11 @@
 /* v8 ignore start */
 
-import { getLogger } from "@machikane25/logger/src";
 import { type Analytics, getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getRemoteConfig } from "firebase/remote-config";
+import { getLogger } from "@/packages/logger";
 
 const firebaseConfig = () => {
 	const dummy = {

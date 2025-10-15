@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@machikane25/logger':
-        specifier: workspace:*
-        version: link:../../packages/logger
       '@radix-ui/react-alert-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

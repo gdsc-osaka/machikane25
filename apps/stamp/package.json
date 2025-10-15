@@ -16,11 +16,17 @@
 	"dependencies": {
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"jotai": "^2.15.0",
 		"lucide-react": "^0.545.0",
+		"neverthrow": "^8.2.0",
 		"next": "15.5.5",
+		"obj-err": "^1.1.1",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",
-		"tailwind-merge": "^3.3.1"
+		"react-hook-form": "^7.65.0",
+		"tailwind-merge": "^3.3.1",
+		"ts-pattern": "^5.8.0",
+		"zod": "^4.1.12"
 	},
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4",

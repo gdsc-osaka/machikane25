@@ -14,21 +14,39 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      jotai:
+        specifier: ^2.15.0
+        version: 2.15.0(@types/react@19.2.2)(react@19.1.0)
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.1.0)
+      neverthrow:
+        specifier: ^8.2.0
+        version: 8.2.0
       next:
         specifier: 15.5.5
         version: 15.5.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      obj-err:
+        specifier: ^1.1.1
+        version: 1.1.1
       react:
         specifier: 19.1.0
         version: 19.1.0
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      react-hook-form:
+        specifier: ^7.65.0
+        version: 7.65.0(react@19.1.0)
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
+      ts-pattern:
+        specifier: ^5.8.0
+        version: 5.8.0
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -255,6 +273,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@rollup/rollup-linux-x64-gnu@4.52.4':
+    resolution: {integrity: sha512-Wi6AXf0k0L7E2gteNsNHUs7UMwCIhsCTs6+tqQ5GPwVRWMaflqGec4Sd8n6+FNFDw9vGcReqk2KzBDhCa1DLYg==}
+    cpu: [x64]
+    os: [linux]
+
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
 
@@ -392,6 +415,24 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
+  jotai@2.15.0:
+    resolution: {integrity: sha512-nbp/6jN2Ftxgw0VwoVnOg0m5qYM1rVcfvij+MZx99Z5IK13eGve9FJoCwGv+17JvVthTjhSmNtT5e1coJnr6aw==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@babel/core': '>=7.0.0'
+      '@babel/template': '>=7.0.0'
+      '@types/react': '>=17.0.0'
+      react: '>=17.0.0'
+    peerDependenciesMeta:
+      '@babel/core':
+        optional: true
+      '@babel/template':
+        optional: true
+      '@types/react':
+        optional: true
+      react:
+        optional: true
+
   lightningcss-darwin-arm64@1.30.1:
     resolution: {integrity: sha512-c8JK7hyE65X1MHMN+Viq9n11RRC7hgin3HhYKhrMyaXflk5GVplZ60IxyoVtzILeKr+xAJwg6zK6sjTBJ0FKYQ==}
     engines: {node: '>= 12.0.0'}
@@ -477,6 +518,10 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  neverthrow@8.2.0:
+    resolution: {integrity: sha512-kOCT/1MCPAxY5iUV3wytNFUMUolzuwd/VF/1KCx7kf6CutrOsTie+84zTGTpgQycjvfLdBBdvBvFLqFD2c0wkQ==}
+    engines: {node: '>=18'}
+
   next@15.5.5:
     resolution: {integrity: sha512-OQVdBPtpBfq7HxFN0kOVb7rXXOSIkt5lTzDJDGRBcOyVvNRIWFauMqi1gIHd1pszq1542vMOGY0HP4CaiALfkA==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
@@ -498,6 +543,9 @@ packages:
       sass:
         optional: true
 
+  obj-err@1.1.1:
+    resolution: {integrity: sha512-YMOUkShAKfxJyQ7gnveRTcHi+7KNWKDdyoFkE6O5vHY4R/EknQATbPuggIOlUDdNf0ZRAiwnwseEG6D7npfd8w==}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -513,6 +561,12 @@ packages:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
     peerDependencies:
       react: ^19.1.0
+
+  react-hook-form@7.65.0:
+    resolution: {integrity: sha512-xtOzDz063WcXvGWaHgLNrNzlsdFgtUWcb32E6WFaGTd7kPZG3EeDusjdZfUsPwKCKVXy1ZlntifaHZ4l8pAsmw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
 
   react@19.1.0:
     resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
@@ -561,6 +615,9 @@ packages:
     resolution: {integrity: sha512-nlGpxf+hv0v7GkWBK2V9spgactGOp0qvfWRxUMjqHyzrt3SgwE48DIv/FhqPHJYLHpgW1opq3nERbz5Anq7n1g==}
     engines: {node: '>=18'}
 
+  ts-pattern@5.8.0:
+    resolution: {integrity: sha512-kIjN2qmWiHnhgr5DAkAafF9fwb0T5OhMVSWrm8XEdTFnX6+wfXwYOFjeF86UZ54vduqiR7BfqScFmXSzSaH8oA==}
+
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
@@ -573,6 +630,9 @@ packages:
   yallist@5.0.0:
     resolution: {integrity: sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==}
     engines: {node: '>=18'}
+
+  zod@4.1.12:
+    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
 
 snapshots:
 
@@ -721,6 +781,9 @@ snapshots:
   '@next/swc-win32-x64-msvc@15.5.5':
     optional: true
 
+  '@rollup/rollup-linux-x64-gnu@4.52.4':
+    optional: true
+
   '@swc/helpers@0.5.15':
     dependencies:
       tslib: 2.8.1
@@ -834,6 +897,11 @@ snapshots:
 
   jiti@2.6.1: {}
 
+  jotai@2.15.0(@types/react@19.2.2)(react@19.1.0):
+    optionalDependencies:
+      '@types/react': 19.2.2
+      react: 19.1.0
+
   lightningcss-darwin-arm64@1.30.1:
     optional: true
 
@@ -895,6 +963,10 @@ snapshots:
 
   nanoid@3.3.11: {}
 
+  neverthrow@8.2.0:
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu': 4.52.4
+
   next@15.5.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 15.5.5
@@ -918,6 +990,8 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
+  obj-err@1.1.1: {}
+
   picocolors@1.1.1: {}
 
   postcss@8.4.31:
@@ -936,6 +1010,10 @@ snapshots:
     dependencies:
       react: 19.1.0
       scheduler: 0.26.0
+
+  react-hook-form@7.65.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
 
   react@19.1.0: {}
 
@@ -995,6 +1073,8 @@ snapshots:
       minizlib: 3.1.0
       yallist: 5.0.0
 
+  ts-pattern@5.8.0: {}
+
   tslib@2.8.1: {}
 
   tw-animate-css@1.4.0: {}
@@ -1002,3 +1082,5 @@ snapshots:
   undici-types@7.14.0: {}
 
   yallist@5.0.0: {}
+
+  zod@4.1.12: {}

@@ -3,7 +3,7 @@ Authors: ゆにねこ
 Reviewers: nagomu
 Updated: 2025/10/11
 # Objective
-2025年まちかね祭展示のフォトブースに必要なシステムを実装する. 
+2025年まちかね祭展示のフォトブースに必要なシステムを実装する.
 # Background
 # Goals / Non-goals
 ## Goals
@@ -16,7 +16,7 @@ Updated: 2025/10/11
 	3. Person: ツーショットする人
 	4. Style: 写真のスタイル (e.g. セピア)
 	5. Pose: ポーズ (e.g. ピース)
-5. システムは ~~1,2 ~~, 2,3の画像と ~~3 ~~, 4の選択肢から写真を生成し, 写真とQRをディスプレイに表示する
+5. システムは 2,3の画像と4の選択肢から写真を生成し, 写真とQRをディスプレイに表示する
 6. ユーザーは QR コードを読み込んで生成した写真をダウンロードできる
 7. ユーザーは写真をフォトフレーム付きでチェキで印刷できる
 ## Non-goals
@@ -36,7 +36,7 @@ Updated: 2025/10/11
 	* フォトフレームは Photos Page で追加する
 * カメラ映像と撮影
 	* Webcam はディスプレイを投影している端末 (端末A) に接続する
-	* ControlPage で撮影ボタンが押された瞬間に lastTakePhotoAt を更新し、端末Aが撮影してアップロードする
+	* ControlPage で撮影ボタンが押された瞬間に lastTakePhotoAt を更新し、Webcamが撮影してアップロードする
 * ユーザーによる画像アップロード
 	* Upload Photo API からアップロードされた画像は対応するフォトブースに登録される
 	* フォトブースで写真が一度でも使用されたら、該当する写真データはDB・ストレージから削除される
@@ -276,7 +276,7 @@ components:
 ### Input Validation
 * アップロードされた画像はサーバー側で再エンコードして保存する
 ### Error Handling
-* 
+*
 ## Incident Response
 # Privacy Considerations
 ## Data Minimization & Purpose Limitation

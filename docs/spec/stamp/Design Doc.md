@@ -134,12 +134,12 @@ users:
 	(userId): # userId = Firebase Auth UID
 		stamps: { # スタンプを獲得した日時
 			reception?: Timestamp
-			photobooth?: Timestamp
-			art?: Timestamp
-			robot?: Timestamp
-			survey?: Timestamp
+				photobooth?: Timestamp
+				art?: Timestamp
+				robot?: Timestamp
+				survey?: Timestamp
 		}
-		lastLoginAt: Timestamp
+		lastSignedInAt: Timestamp
 		giftReceivedAt?: Timestamp
 		createdAt: Timestamp
 ```

@@ -1,0 +1,46 @@
+name: Deploy Firebase
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    name: Deploy Firebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: true
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Deploy to Firebase
+        shell: bash
+        run: pnpm run deploy:fire
+
+#  gcloud iam workload-identity-pools create "" \
+#  --project="${PROJECT_ID}" \
+#  --location="global" \
+#  --display-name=""
+#
+#  gcloud iam workload-identity-pools providers create-oidc "" \
+#  --project="${PROJECT_ID}" \
+#  --location="global" \
+#  --workload-identity-pool="" \
+#  --display-name="" \
+#  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.aud=assertion.aud" \
+#  --issuer-uri="https://token.actions.githubusercontent.com"

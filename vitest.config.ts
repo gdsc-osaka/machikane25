@@ -19,15 +19,15 @@ export default defineConfig({
 			provider: "v8",
 			reporter: ["text", "json", "json-summary", "html"],
 			exclude: [
-				'**/node_modules/**',
-				'**/dist/**',
-				'**/coverage/**',
-				'**/.{idea,git,cache,output,temp}/**',
-				'**/{vite,vitest,tailwind,postcss}.config.*',
+				"**/node_modules/**",
+				"**/dist/**",
+				"**/coverage/**",
+				"**/.{idea,git,cache,output,temp}/**",
+				"**/{vite,vitest,tailwind,postcss}.config.*",
 
-				'src/components/ui/**',
-				'**/*.d.ts',
-			]
+				"src/components/ui/**",
+				"**/*.d.ts",
+			],
 		},
 	},
 });

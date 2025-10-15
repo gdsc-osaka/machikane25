@@ -1,11 +1,11 @@
 /* v8 ignore start */
 
+import { getLogger } from "@machikane25/logger/src";
 import { type Analytics, getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getRemoteConfig } from "firebase/remote-config";
-import {getLogger} from "@machikane25/logger/src";
 
 const firebaseConfig = () => {
 	const dummy = {
@@ -25,7 +25,10 @@ const firebaseConfig = () => {
 	try {
 		return JSON.parse(raw);
 	} catch (e) {
-		getLogger().error(e, "FIREBASE_CONFIG is not valid JSON, using dummy config");
+		getLogger().error(
+			e,
+			"FIREBASE_CONFIG is not valid JSON, using dummy config",
+		);
 		return dummy;
 	}
 };
@@ -44,7 +47,9 @@ const analytics = () => {
 };
 
 if (process.env.NODE_ENV === "development") {
-	connectAuthEmulator(auth, "http://localhost:11000", { disableWarnings: true });
+	connectAuthEmulator(auth, "http://localhost:11000", {
+		disableWarnings: true,
+	});
 	connectFirestoreEmulator(db, "localhost", 11002);
 }
 

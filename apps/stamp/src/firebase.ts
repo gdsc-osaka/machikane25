@@ -5,6 +5,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getRemoteConfig } from "firebase/remote-config";
+import {getLogger} from "@machikane25/logger/src";
 
 const firebaseConfig = () => {
 	const dummy = {
@@ -18,11 +19,13 @@ const firebaseConfig = () => {
 	};
 	const raw = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
 	if (!raw) {
+		getLogger().warn("FIREBASE_CONFIG is not set, using dummy config");
 		return dummy;
 	}
 	try {
 		return JSON.parse(raw);
-	} catch (_error) {
+	} catch (e) {
+		getLogger().error(e, "FIREBASE_CONFIG is not valid JSON, using dummy config");
 		return dummy;
 	}
 };

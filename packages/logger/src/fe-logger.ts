@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import type { Logger } from "./logger";
 
-export const frontLogger: Logger = {
+export const feLogger: Logger = {
 	debug(...args: any[]) {
 		console.debug(...args);
 	},

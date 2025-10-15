@@ -137,3 +137,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Codex and Spec-kit
+.codex
+.specify

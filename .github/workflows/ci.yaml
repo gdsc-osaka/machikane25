@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [photo, stamp]
+        app: [photo, photo-cleaner, stamp]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,6 +43,8 @@ jobs:
   ci-firebase:
     name: CI Firebase
     runs-on: ubuntu-latest
+    permissions:
+      id-token: 'write'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

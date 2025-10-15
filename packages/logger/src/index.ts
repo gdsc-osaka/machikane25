@@ -1,6 +1,5 @@
-import {frontLogger} from "./front-logger";
-import {Logger} from "./logger";
+import { frontLogger } from "./front-logger";
 
 export default {
-    frontLogger,
-}
+	frontLogger,
+};

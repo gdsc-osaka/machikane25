@@ -2,6 +2,18 @@
 まちかね祭2025年 GDGoC Osaka ブース用リポジトリ. pnpm のモノレポ構成.
 
 ## Getting Started
+### Local Development Setup
+```shell
+# at project root, run
+pnpm install
+
+# run firebase emulator
+pnpm emulator
+
+# run development server
+pnpm dev:photo
+# or pnpm dev:stamp
+```
 
 ### Install dependencies
 ```shell

@@ -41,7 +41,7 @@ jobs:
           path: apps/${{ matrix.app }}/coverage/coverage-*
           retention-days: 1
   ci-firebase:
-    name: CI Firebase
+    name: CI (firebase)
     runs-on: ubuntu-latest
     permissions:
       id-token: 'write'

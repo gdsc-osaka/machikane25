@@ -1,15 +1,17 @@
-import { afterEach, expect, test, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { afterEach, expect, test, vi } from "vitest";
 
-const { captureExceptionSpy, nextErrorMock, effectCallbacks } = vi.hoisted(() => {
-	return {
-		captureExceptionSpy: vi.fn(),
-		nextErrorMock: vi.fn(({ statusCode }: { statusCode: number }) => (
-			<div data-testid="next-error" data-status-code={statusCode} />
-		)),
-		effectCallbacks: [] as Array<() => void | (() => void)>,
-	};
-});
+const { captureExceptionSpy, nextErrorMock, effectCallbacks } = vi.hoisted(
+	() => {
+		return {
+			captureExceptionSpy: vi.fn(),
+			nextErrorMock: vi.fn(({ statusCode }: { statusCode: number }) => (
+				<div data-testid="next-error" data-status-code={statusCode} />
+			)),
+			effectCallbacks: [] as Array<() => void | (() => void)>,
+		};
+	},
+);
 
 vi.mock("@sentry/nextjs", () => ({
 	captureException: captureExceptionSpy,

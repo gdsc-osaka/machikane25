@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MaintenanceConfig } from "@/lib/config/remote-config";
 import { translate } from "@/lib/i18n/messages";
-import { createAwardStampHandler } from "../award-stamp";
 import type { AwardStampDependencies } from "../award-stamp";
+import { createAwardStampHandler } from "../award-stamp";
 import type { StampId, ValidatedStamp } from "../validate-token";
 
 type Profile = {
@@ -44,9 +44,7 @@ const createProfile = (overrides: Partial<Profile> = {}): Profile => {
 
 const createProjectProgressSpy = () =>
 	vi
-		.fn<
-			NonNullable<AwardStampDependencies["projectProgress"]>
-		>()
+		.fn<NonNullable<AwardStampDependencies["projectProgress"]>>()
 		.mockImplementation(async (state: Profile) => ({
 			stamps: (Object.keys(state.stamps) as StampId[]).map((id) => ({
 				id,
@@ -60,11 +58,13 @@ const createProjectProgressSpy = () =>
 			rewardEligible: state.rewardEligible,
 		}));
 
-const createDependencies = (options: {
-	maintenance?: MaintenanceConfig;
-	profile?: Profile;
-	validateTokenResult?: ValidatedStamp | null;
-} = {}) => {
+const createDependencies = (
+	options: {
+		maintenance?: MaintenanceConfig;
+		profile?: Profile;
+		validateTokenResult?: ValidatedStamp | null;
+	} = {},
+) => {
 	const maintenance = options.maintenance ?? defaultMaintenance();
 	const profile = options.profile ?? createProfile();
 
@@ -95,14 +95,18 @@ afterEach(() => {
 
 describe("createAwardStampHandler", () => {
 	it("returns maintenance status when awarding is paused for the user", async () => {
-		const maintenance = { ...defaultMaintenance(), status: "maintenance" } as const;
-		const { dependencies, profile, validateToken, projectProgress } = createDependencies({
-			maintenance,
-			validateTokenResult: {
-				stampId: "reception",
-				labels: { ja: "受付", en: "Reception" },
-			},
-		});
+		const maintenance = {
+			...defaultMaintenance(),
+			status: "maintenance",
+		} as const;
+		const { dependencies, profile, validateToken, projectProgress } =
+			createDependencies({
+				maintenance,
+				validateTokenResult: {
+					stampId: "reception",
+					labels: { ja: "受付", en: "Reception" },
+				},
+			});
 
 		const handler = createAwardStampHandler(dependencies);
 		const result = await handler.awardStamp({
@@ -126,7 +130,13 @@ describe("createAwardStampHandler", () => {
 	});
 
 	it("returns invalid status when the NFC token is not recognised", async () => {
-		const { dependencies, maintenance, profile, projectProgress, validateToken } = createDependencies({
+		const {
+			dependencies,
+			maintenance,
+			profile,
+			projectProgress,
+			validateToken,
+		} = createDependencies({
 			validateTokenResult: null,
 		});
 

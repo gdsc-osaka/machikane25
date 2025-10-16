@@ -5,7 +5,7 @@ vi.mock("swr", () => ({
 	default: vi.fn(),
 }));
 
-import useSWR, {BareFetcher} from "swr";
+import useSWR, { type BareFetcher } from "swr";
 import type { StampProgress } from "../useStampProgress";
 import { useStampProgress } from "../useStampProgress";
 

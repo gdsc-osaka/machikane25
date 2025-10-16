@@ -17,7 +17,8 @@
 		"rules": {
 			"recommended": true,
 			"suspicious": {
-				"noUnknownAtRules": "info"
+				"noUnknownAtRules": "info",
+				"noArrayIndexKey": "warn"
 			},
 			"a11y": {
 				"useSemanticElements": "warn"

@@ -10,9 +10,7 @@ import { logStampEvent } from "../stamp-event-logger";
 const setupFirestore = () => {
 	const add = vi.fn().mockResolvedValue(undefined);
 	const stampEventsCollection = { add };
-	const nestedCollection = vi
-		.fn()
-		.mockReturnValue(stampEventsCollection);
+	const nestedCollection = vi.fn().mockReturnValue(stampEventsCollection);
 	const doc = vi.fn().mockReturnValue({
 		collection: nestedCollection,
 	});

@@ -7,7 +7,11 @@ describe("StampFeedback", () => {
 		render(<StampFeedback title="Heads up" />);
 
 		const container = screen.getByRole("status");
-		expect(container).toHaveClass("border-blue-500", "bg-blue-50", "text-blue-800");
+		expect(container).toHaveClass(
+			"border-blue-500",
+			"bg-blue-50",
+			"text-blue-800",
+		);
 		expect(screen.getByText("Heads up")).toBeInTheDocument();
 	});
 

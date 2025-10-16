@@ -1,5 +1,5 @@
-import { expect, test } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { expect, test } from "vitest";
 import RootLayout from "../layout";
 
 vi.mock("../globals.css", () => ({}));

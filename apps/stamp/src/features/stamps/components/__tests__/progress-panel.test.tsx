@@ -53,9 +53,7 @@ describe("ProgressPanel", () => {
 			remaining: 1,
 		});
 
-		render(
-			<ProgressPanel locale="en" isLoading={false} progress={progress} />,
-		);
+		render(<ProgressPanel locale="en" isLoading={false} progress={progress} />);
 
 		expect(screen.getByText("Reception")).toBeInTheDocument();
 		expect(screen.getByText("Photobooth")).toBeInTheDocument();
@@ -74,9 +72,7 @@ describe("ProgressPanel", () => {
 		const { unmount } = render(
 			<ProgressPanel locale="en" isLoading={false} progress={withMessage} />,
 		);
-		expect(
-			screen.getByText("Custom maintenance message"),
-		).toBeInTheDocument();
+		expect(screen.getByText("Custom maintenance message")).toBeInTheDocument();
 		unmount();
 
 		const fallbackProgress = buildProgress({
@@ -85,7 +81,11 @@ describe("ProgressPanel", () => {
 			},
 		});
 		render(
-			<ProgressPanel locale="ja" isLoading={false} progress={fallbackProgress} />,
+			<ProgressPanel
+				locale="ja"
+				isLoading={false}
+				progress={fallbackProgress}
+			/>,
 		);
 		expect(
 			screen.getByText(translate("maintenanceBanner", "ja")),

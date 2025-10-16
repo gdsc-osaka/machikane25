@@ -110,6 +110,25 @@ describe("SurveyFormPage", () => {
 		);
 	});
 
+	it("shows auth error when anonymous sign-in returns no user", async () => {
+		mockGetFirebaseAuth.mockReturnValueOnce({
+			currentUser: null,
+		});
+		mockSignInAnonymously.mockResolvedValue({ user: null });
+
+		render(<SurveyFormPage />);
+
+		const submitButton = screen.getByRole("button", { name: /submit survey/i });
+		fireEvent.click(submitButton);
+
+		await waitFor(() => {
+			expect(toastError).toHaveBeenCalledWith(
+				expect.stringMatching(/sign-in/i),
+			);
+		});
+		expect(globalThis.fetch).not.toHaveBeenCalled();
+	});
+
 	it("shows an error toast when submission fails", async () => {
 		globalThis.fetch = vi
 			.fn()

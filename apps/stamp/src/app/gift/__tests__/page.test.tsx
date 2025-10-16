@@ -54,11 +54,11 @@ describe("GiftPage", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders the QR canvas when the user is eligible", async () => {
-		mockUseStampProgress.mockReturnValue({
-			data: {
-				remaining: 0,
-				rewardEligible: true,
+  it("renders the QR canvas when the user is eligible", async () => {
+    mockUseStampProgress.mockReturnValue({
+      data: {
+        remaining: 0,
+        rewardEligible: true,
 			},
 			isLoading: false,
 		});
@@ -79,8 +79,36 @@ describe("GiftPage", () => {
 
 		render(<GiftPage />);
 
-		await waitFor(() => {
-			expect(screen.getByLabelText("Reward QR code")).toBeInTheDocument();
-		});
-	});
+    await waitFor(() => {
+      expect(screen.getByLabelText("Reward QR code")).toBeInTheDocument();
+    });
+  });
+
+  it("prompts to finish remaining steps when attendee is not eligible", () => {
+    mockUseStampProgress.mockReturnValue({
+      data: {
+        remaining: 2,
+        rewardEligible: false,
+      },
+      isLoading: false,
+    });
+    mockGetFirebaseAuth.mockReturnValue({
+      onAuthStateChanged: (callback: (user: { uid: string } | null) => void) => {
+        callback({ uid: "user-progress" });
+        return () => {};
+      },
+    });
+    vi.spyOn(window.HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      fillStyle: "#000",
+      fillRect: vi.fn(),
+      clearRect: vi.fn(),
+      canvas: { width: 0, height: 0 },
+    } as unknown as CanvasRenderingContext2D);
+
+    render(<GiftPage />);
+
+    expect(
+      screen.getByText(/Finish the remaining 2 stamps/i),
+    ).toBeInTheDocument();
+  });
 });

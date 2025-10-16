@@ -14,7 +14,7 @@
   - **Callable Functions**: Provide stronger server guarantees but contradict the “never create backend API” directive.
   - **Plain client writes without rule checks**: Simplifies implementation but makes it trivial to spoof stamps.
 
--## 3. Reward Redemption by Staff with Elevated Claims
+## 3. Reward Redemption by Staff with Elevated Claims
 - **Decision**: Use Firebase Auth custom claims (`isStaff`) issued ahead of the event and security rules that allow only staff identities to update `rewardStatus` fields; QR scanning logic runs client-side using `jsqr`.
 - **Rationale**: Meets the no-backend constraint, keeps privilege enforcement declarative in security rules, and still allows real-time redemption updates.
 - **Alternatives considered**:

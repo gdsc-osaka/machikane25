@@ -18,9 +18,9 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Update environment placeholders for stamp rally (survey fallback, Sentry, Firebase) in `apps/stamp/.env.local.example`
-- [ ] T002 Add Remote Config keys (`stamp_app_status`, localized messages, survey form URL map) to `remoteconfig.template.json`
-- [ ] T003 Document branch entry and NFC signage requirements in `docs/spec/change-log.md`
+- [X] T001 Update environment placeholders for stamp rally (survey fallback, Sentry, Firebase) in `apps/stamp/.env.local.example`
+- [X] T002 Add Remote Config keys (`stamp_app_status`, localized messages, survey form URL map) to `remoteconfig.template.json`
+- [X] T003 Document branch entry and NFC signage requirements in `docs/spec/change-log.md`
 
 ---
 

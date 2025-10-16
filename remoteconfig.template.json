@@ -1,1 +1,29 @@
-{}
+{
+  "parameters": {
+    "stamp_app_status": {
+      "defaultValue": {
+        "value": "online"
+      },
+      "description": "Controls guest routing: online, degraded, or maintenance."
+    },
+    "stamp_app_message_ja": {
+      "defaultValue": {
+        "value": ""
+      },
+      "description": "Japanese maintenance/outage message shown when status is not online."
+    },
+    "stamp_app_message_en": {
+      "defaultValue": {
+        "value": ""
+      },
+      "description": "English maintenance/outage message shown when status is not online."
+    },
+    "survey_form_url_map": {
+      "defaultValue": {
+        "value": "{\"formUrl\":\"\",\"entryMap\":{\"uid\":\"\",\"photoBoothRating\":\"\",\"aquariumRating\":\"\",\"stampRallyRating\":\"\",\"freeComment\":\"\"}}"
+      },
+      "description": "JSON map containing the Google Form endpoint and entry IDs used by the survey server action."
+    }
+  },
+  "parameterGroups": {}
+}

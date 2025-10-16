@@ -147,3 +147,5 @@ vite.config.ts.timestamp-*
 .env
 .env.*
 apps/*/.env.local
+!**/.env.local.sample
+!**/.env.local.example

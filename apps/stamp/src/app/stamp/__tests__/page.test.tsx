@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { AwardStampResult } from "@/features/stamps/server/award-stamp";
-import * as StampPageModule from "./page";
+import * as StampPageModule from "../page";
 
 const pushMock = vi.fn();
 let searchParamsInstance = new URLSearchParams("token=test-token");

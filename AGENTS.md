@@ -17,6 +17,7 @@
 - TypeScript (5.x) with 2-space indentation is required. Follow Next.js conventions for files (`page.tsx`, `layout.tsx`, route directories).
 - Compose UI with shadcn/Radix components and Tailwind 4 tokens; avoid ad-hoc inline styling.
 - Fetch client data through SWR hooks; wrap mutations in server actions or API routes for revalidation support.
+- Never use let or var; prefer const and immutable patterns. Favor functional programming (map, filter, reduce) over loops.
 - Format using `pnpm lint:fix` and confirm no Biome or ESLint diagnostics remain.
 
 ## Testing Guidelines

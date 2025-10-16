@@ -69,18 +69,18 @@
 
 ### Tests for User Story 2 ⚠️ (write first, ensure they fail)
 
-- [ ] T019 [P] [US2] Write survey proxy contract tests in `apps/stamp/test/survey-submit.test.ts`
-- [ ] T020 [P] [US2] Add reward eligibility unit tests in `apps/stamp/test/reward-eligibility.test.ts`
+- [x] T019 [P] [US2] Write survey proxy contract tests in `apps/stamp/test/survey-submit.test.ts`
+- [x] T020 [P] [US2] Add reward eligibility unit tests in `apps/stamp/test/reward-eligibility.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Create survey submission proxy route in `apps/stamp/src/app/api/survey/route.ts`
-- [ ] T022 [US2] Extend attendee profile model with survey fields in `apps/stamp/src/features/profile/models/attendee-profile.ts`
-- [ ] T023 [US2] Implement eligibility service in `apps/stamp/src/features/rewards/server/check-eligibility.ts`
-- [ ] T024 [P] [US2] Build gift page with QR canvas in `apps/stamp/src/app/gift/page.tsx`
-- [ ] T025 [US2] Add QR canvas generator component in `apps/stamp/src/features/rewards/components/qr-canvas.tsx`
-- [ ] T026 [US2] Localize survey form layout in `apps/stamp/src/app/form/page.tsx`
-- [ ] T027 [US2] Record survey submission references in `apps/stamp/src/features/survey/server/record-submission.ts`
+- [x] T021 [US2] Create survey submission proxy route in `apps/stamp/src/app/api/survey/route.ts`
+- [x] T022 [US2] Extend attendee profile model with survey fields in `apps/stamp/src/features/profile/models/attendee-profile.ts`
+- [x] T023 [US2] Implement eligibility service in `apps/stamp/src/features/rewards/server/check-eligibility.ts`
+- [x] T024 [P] [US2] Build gift page with QR canvas in `apps/stamp/src/app/gift/page.tsx`
+- [x] T025 [US2] Add QR canvas generator component in `apps/stamp/src/features/rewards/components/qr-canvas.tsx`
+- [x] T026 [US2] Localize survey form layout in `apps/stamp/src/app/form/page.tsx`
+- [x] T027 [US2] Record survey submission references in `apps/stamp/src/features/survey/server/record-submission.ts`
 
 **Checkpoint**: User Story 2 independently shippable with passing tests and QA evidence.
 

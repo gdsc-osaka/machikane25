@@ -140,3 +140,9 @@ vite.config.ts.timestamp-*
 
 # Codex and Spec-kit
 .codex
+.specify/tmp/
+
+# Environment files
+.env
+.env.*
+apps/*/.env.local

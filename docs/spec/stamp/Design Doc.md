@@ -1,7 +1,7 @@
 Status: draft
 Authors: ゆにねこ
 Reviewers: nagomu
-Updated: 2025/10/11
+Updated: 2025/10/16
 # Objective
 2025年まちかね祭展示のスタンプラリーシステムを開発する。
 # Background
@@ -19,12 +19,15 @@ Updated: 2025/10/11
 * ユーザーはAIフォトブースに画像をアップロードできる
 * 管理者はパスワード認証でAdmin認証できる
 * 管理者は Gift Page の QR コードを読み取って、ユーザーを景品受け取り済みにできる
+* 来場者向けページは日本語・英語で同等の情報を表示する（言語切り替えスイッチ付き）
+* 各ページはスタンプ取得〜景品受け取り導線で体感 2 秒以内の応答を保つ
 ## Non-goals
 # Architecture
 * Web Application は Firebase App Hosting に **fes2025.gdsc-osaka.jp** でホスティングする
 * NFCタグには事前に URL を登録しておき、URL にアクセスしたユーザーがスタンプを獲得できる
 	* URL例: **https://fes2025.gdsc-osaka.jp/stamp?type=reception
-* アンケートフォームは Web App 内で実装し、Submit 時に Google Form に回答結果を送信する
+* アンケートフォームは Web App 内で実装し、Submit 時に Next.js Route Handler を経由して Google Form に回答結果を送信する
+	* Route Handler で匿名ユーザーIDを付与し、成功/失敗を Firestore に記録する
 	* Google Form の URL は Firebase Remote Config で管理する
 	* https://qiita.com/TKfumi/items/d8924f6ffa6e40675ce4
 * アンケートでは以下の情報を収集する
@@ -34,8 +37,15 @@ Updated: 2025/10/11
 	* スタンプラリーの満足度 (5段階評価)
 	* 自由記述欄
 * アンケート回答後に Gift Page にアクセスすると、景品引換ページと QR コードを表示する
-	* QRコードには userId 情報を含める
+	* QRコードには userId 情報と署名ハッシュを含め、Canvas でクライアント生成する
 	* 運営が QR コードを読み取ると、当該ユーザーが景品受け取り済みになる
+* Remote Config の障害レベルに応じて参加者ページは `/maintenance` に誘導し、スキャンページのみホワイトリストでアクセスを許可する
+
+## Operational Constraints
+* スタンプ付与 API（`/api/stamps/award`）の p95 レイテンシーは 300ms 以下
+* ホームページの First Meaningful Paint は キオスク端末（Chromium ベース）で 2 秒以内
+* QR コードの有効期限は生成から 2 時間（Remote Config で調整可能）
+* Maintenance モードでは `/scan` のみアクセス可能（遠隔で解除・ホワイトリスト制御）
 
 ## Diagram
 ### Component Diagram (C3)
@@ -135,14 +145,39 @@ users:
 			robot?: Timestamp
 			survey?: Timestamp
 		}
+		surveyCompleted: boolean
+		rewardEligible: boolean
+		rewardQr:
+			dataUrl: string
+			hash: string
+			generatedAt: Timestamp
 		lastSignedInAt: Timestamp
 		giftReceivedAt?: Timestamp
 		createdAt: Timestamp
+	redemptions:
+		(autoId):
+			redeemedAt: Timestamp
+			staffId: string
+			result: "success" | "duplicate" | "invalid"
+			qrPayloadHash: string
+surveySubmissions:
+	(autoId):
+		uid: string
+		submittedAt: Timestamp
+		status: "success" | "error"
+		errorMessage?: string
+remoteConfig:
+	stamp_app_status: "online" | "degraded" | "maintenance"
+	stamp_app_message_ja: string
+	stamp_app_message_en: string
+	maintenance_whitelist: string[]
+	reward_expiry_minutes: number
 ```
 ## Tech Stack
-* Frontend: Next.js, shadcn/ui, Tailwind CSS, jotai, neverthrow
-* Backend: なし
-* BaaS: Firebase Auth, Firestore, Firebase App Hosting, Firebase Functions, Firebase Analytics
+* Frontend: Next.js 15 App Router, React 19, SWR, shadcn/ui, Tailwind CSS 4, jotai, neverthrow
+* Backend: Next.js Route Handlers（Server Actions）
+* BaaS: Firebase Auth（匿名 + 管理者）, Firestore, Firebase Remote Config, Firebase Storage, Firebase App Hosting, Firebase Analytics
+* Observability: Sentry（Performance + Error Trace）
 ## UI
 ### 用語
 - ナビゲーション: `<link/>` による遷移

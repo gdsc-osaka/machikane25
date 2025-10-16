@@ -31,6 +31,7 @@
 		"cmdk": "^1.1.1",
 		"embla-carousel-react": "^8.6.0",
 		"firebase": "^12.4.0",
+		"firebase-admin": "^12.5.0",
 		"jotai": "^2.15.0",
 		"lucide-react": "^0.545.0",
 		"neverthrow": "^8.2.0",

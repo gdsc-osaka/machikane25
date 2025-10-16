@@ -19,20 +19,20 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Update festival configuration references in `docs/spec/stamp/Design Doc.md` aligning scope with latest spec
-- [ ] T002 Add NFC token and Google Form placeholders to `apps/stamp/.env.example`
-- [ ] T003 Scaffold Remote Config template with maintenance keys in `apps/stamp/config/remote-config.template.json`
-- [ ] T004 Create seeding script for emulator attendees in `apps/stamp/scripts/seed-attendees.ts`
+- [x] T001 Update festival configuration references in `docs/spec/stamp/Design Doc.md` aligning scope with latest spec
+- [x] T002 Add NFC token and Google Form placeholders to `apps/stamp/.env.example`
+- [x] T003 Scaffold Remote Config template with maintenance keys in `apps/stamp/config/remote-config.template.json`
+- [x] T004 Create seeding script for emulator attendees in `apps/stamp/scripts/seed-attendees.ts`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T005 Implement Firebase client factories in `apps/stamp/src/lib/firebase/client.ts`
-- [ ] T006 Add Remote Config service with maintenance cache in `apps/stamp/src/lib/config/remote-config.ts`
-- [ ] T007 Configure Sentry instrumentation per constitution in `apps/stamp/src/lib/monitoring/sentry.ts`
-- [ ] T008 Build SWR cache key utilities in `apps/stamp/src/lib/swr/keys.ts`
-- [ ] T009 Define bilingual copy dictionary in `apps/stamp/src/lib/i18n/messages.ts`
+- [x] T005 Implement Firebase client factories in `apps/stamp/src/lib/firebase/client.ts`
+- [x] T006 Add Remote Config service with maintenance cache in `apps/stamp/src/lib/config/remote-config.ts`
+- [x] T007 Configure Sentry instrumentation per constitution in `apps/stamp/src/lib/monitoring/sentry.ts`
+- [x] T008 Build SWR cache key utilities in `apps/stamp/src/lib/swr/keys.ts`
+- [x] T009 Define bilingual copy dictionary in `apps/stamp/src/lib/i18n/messages.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

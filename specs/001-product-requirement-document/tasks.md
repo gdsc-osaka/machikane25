@@ -6,9 +6,7 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 **Input**: Design documents from `/specs/001-product-requirement-document/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, quickstart.md
-
 **Tests**: Add failing Vitest suites before implementation to satisfy the Exhaustive Testing Mandate and maintain 100% statement/branch coverage for touched modules.
-
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`

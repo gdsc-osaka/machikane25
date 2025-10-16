@@ -1,31 +1,35 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Each experience keeps its specification in `docs/spec/<experience>/`. Next.js frontends live in `apps/<experience>/` (for example `apps/photobooth/`), shared UI sits in `packages/ui/`, and common utilities belong in `packages/utils/`. Firebase or Node services stay under `services/<experience>/`, with their tests colocated (e.g. `services/interactive/tests/integration`). Unity content for the aquarium is tracked in `unity/interactive/`, and shared assets such as NFC maps land in `assets/` alongside a small README describing provenance.
+- `specs/` stores feature collateral; `specs/002-build-a-stamp/` contains the active plan, research, data model, contracts, and quickstart—update these before coding.
+- `apps/stamp/` is the Next.js workspace. Pages live in `src/app`, shared UI in `src/components`, domain logic in `src/lib` or `src/features`, and Firebase wiring in `src/firebase.ts`.
+- Shared utilities belong under `packages/` (e.g., `packages/logger/`). Unity content remains in `unity/interactive/`, and any physical assets sit in `assets/` with provenance notes.
+- Co-locate tests beside implementation or in `apps/stamp/test` so coverage reporting stays aligned with the constitution.
 
 ## Build, Test, and Development Commands
 - `pnpm install` — sync workspace dependencies.
-- `pnpm dev:photo` — launch the Photobooth Next.js server for local work.
-- `pnpm dev:stamp` — launch the Stamp Rally Next.js server for local work.
-- `pnpm build` — produce production builds across all workspaces before a release.
-- `pnpm lint` — check code style and formatting across the monorepo.
-- `pnpm lint:fix` — auto-correct linting issues where possible.
-- `pnpm test` — run all unit and integration tests across the monorepo.
-- `pnpm coverage` — generate a coverage report for all tests.
-- `Unity -runTests -projectPath unity/interactive` — execute Unity play mode tests headlessly.
+- `pnpm dev:stamp` — run the stamp rally app locally on http://localhost:4001 via Turbopack.
+- `pnpm lint` / `pnpm lint:fix` — run Biome + ESLint; use the fix variant before committing.
+- `pnpm test:stamp` and `pnpm coverage --filter stamp` — execute Vitest suites and enforce 100% coverage.
+- `pnpm build:stamp` (or `pnpm build` for the full workspace) — produce production bundles before deployment.
 
 ## Coding Style & Naming Conventions
-Write TypeScript with 2-space indentation. Follow Next.js conventions (`page.tsx`, `layout.tsx`) and prefix custom hooks with `use*`. Share reusable presentation components through `packages/ui` and utilities through `packages/utils`. Firebase rules stay in `services/*/firestore.rules` with camelCase field names. Run `pnpm lint --fix` to apply Prettier and ESLint expectations before committing.
-
-### Data fetching
-Use SWR for client-side data fetching in Next.js, leveraging its caching and revalidation features. For server-side data fetching, prefer Next.js's built-in data fetching methods.
+- TypeScript (5.x) with 2-space indentation is required. Follow Next.js conventions for files (`page.tsx`, `layout.tsx`, route directories).
+- Compose UI with shadcn/Radix components and Tailwind 4 tokens; avoid ad-hoc inline styling.
+- Fetch client data through SWR hooks; wrap mutations in server actions or API routes for revalidation support.
+- Format using `pnpm lint:fix` and confirm no Biome or ESLint diagnostics remain.
 
 ## Testing Guidelines
-Use Vitest with unit specs stored alongside features in `path/to/dir/__tests__/*.test.{ts,tsx}` (for example `src/app/__tests__/page.test.tsx` or `src/components/__tests__/Header.test.tsx`); stub Gemini integrations via test doubles. Backend suites rely on the Firebase Emulator under `tests/integration`. Unity play mode specs live in `unity/interactive/Tests`. 
-Target 100% coverage on every files except for configuration, types, and simple wrappers. Run `pnpm test`, `pnpm test:photo`, `pnpm test:photo-cleaner`, `pnpm test:stamp` or `pnpm coverage` to verify.
+- Use Vitest with `@testing-library/react` + `@testing-library/jest-dom`. Name specs `*.test.ts` or `*.test.tsx`.
+- Hit 100% statement and branch coverage for non-trivial files; validate with `pnpm coverage --filter stamp`.
+- Exercise Firestore/Auth flows against the Firebase Emulator and stub external integrations (photobooth API, Google Forms) in tests.
 
 ## Commit & Pull Request Guidelines
-Keep commits concise, imperative, and scoped, mirroring existing history (e.g. `add obsidian specs`, `remove ds_store`). Every PR should include a summary, linked issue or OKR, affected experience checklist, and UI evidence (screenshots or clips). Tag reviewers from each impacted experience area and reference updated design docs by path so collaborators can sync Obsidian mirrors quickly.
+- Commit messages are short, imperative verbs (e.g., `add stamp redemption flow`, `fix sentry tagging`).
+- Pull requests must supply a summary, linked issue/OKR, affected experience checklist, UI evidence, and references to updated docs in `docs/spec/`.
+- Confirm lint and test runs in the PR body and tag reviewers from every impacted workspace (`apps/stamp`, `packages`, etc.).
 
 ## Security & Configuration Tips
-Respect the access patterns in `docs/spec/Design Doc.md`: anonymous auth for stamp rally, operator accounts for Photobooth, and strict Firebase Storage rules. Never commit secrets; instead expose configuration via `.env.example` and 1Password. Note any incident-response or config adjustments in `docs/spec/change-log.md` to keep the on-site triage playbook current.
+- Enforce anonymous auth for attendees and email/password auth for staff; reflect rule changes in `apps/stamp/firestore.rules`.
+- Never commit secrets. Extend `.env.example` when adding environment variables and distribute real values via 1Password.
+- Record Remote Config or incident-response updates in `docs/spec/change-log.md` so on-site operators stay informed.

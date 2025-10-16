@@ -1,0 +1,399 @@
+openapi: 3.1.0
+info:
+  title: Stamp Rally API Contracts
+  version: 1.0.0
+  description: |
+    REST contracts for the 2025 Machikane Festival stamp rally experience.
+servers:
+  - url: https://fes2025.gdsc-osaka.jp
+    description: Production (Firebase App Hosting)
+  - url: http://localhost:4001
+    description: Local development (`pnpm dev:stamp`)
+tags:
+  - name: Participants
+  - name: Stamps
+  - name: Survey
+  - name: Redemption
+  - name: Photobooth
+paths:
+  /api/participants/me:
+    get:
+      tags: [Participants]
+      summary: Get current participant profile
+      security:
+        - firebaseAuth: []
+      responses:
+        '200':
+          description: Participant profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participant'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/stamps/claim:
+    post:
+      tags: [Stamps]
+      summary: Claim a stamp via signed token
+      security:
+        - firebaseAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Signed token associated with a checkpoint NFC tag.
+      responses:
+        '201':
+          description: Stamp awarded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, stamp]
+                properties:
+                  status:
+                    type: string
+                    enum: [collected]
+                  stamp:
+                    $ref: '#/components/schemas/StampProgress'
+        '200':
+          description: Stamp already collected
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, collectedAt]
+                properties:
+                  status:
+                    type: string
+                    enum: [duplicate]
+                  collectedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/survey:
+    post:
+      tags: [Survey]
+      summary: Submit satisfaction survey and trigger Google Form handoff
+      security:
+        - firebaseAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveySubmissionRequest'
+      responses:
+        '200':
+          description: Survey submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, submittedAt]
+                properties:
+                  status:
+                    type: string
+                    enum: [submitted]
+                  submittedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          description: Google Form submission failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/redemption/qrcode:
+    get:
+      tags: [Redemption]
+      summary: Retrieve QR payload for eligible participant
+      security:
+        - firebaseAuth: []
+      responses:
+        '200':
+          description: QR payload or gated message
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [locked, eligible, redeemed]
+                  qrPayload:
+                    type: string
+                    description: Base32 payload encoded in QR (present when status === eligible).
+                  redeemedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/redemption/confirm:
+    post:
+      tags: [Redemption]
+      summary: Staff confirmation of prize redemption
+      security:
+        - firebaseAuth: []
+        - adminRole: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qrPayload]
+              properties:
+                qrPayload:
+                  type: string
+                  description: Payload obtained from participant QR code.
+      responses:
+        '200':
+          description: Redemption recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, redeemedAt]
+                properties:
+                  status:
+                    type: string
+                    enum: [redeemed]
+                  redeemedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Duplicate redemption attempt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/photobooth/upload:
+    post:
+      tags: [Photobooth]
+      summary: Upload participant photo to photobooth service
+      security:
+        - firebaseAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, boothId]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JPEG or PNG image, max 20 MB.
+                boothId:
+                  type: string
+                  description: Identifier supplied via NFC URL query.
+      responses:
+        '201':
+          description: Upload accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, uploadId]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  uploadId:
+                    type: string
+                  photoboothReferenceId:
+                    type: string
+                    nullable: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          description: Photobooth upstream error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    firebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase Authentication ID token (anonymous or registered).
+    adminRole:
+      type: apiKey
+      in: header
+      name: X-Admin-Role
+      description: Only requests carrying verified admin role claims should succeed; enforced server-side.
+  schemas:
+    Participant:
+      type: object
+      required: [uid, createdAt, lastSignedInAt, stamps, survey, redemption]
+      properties:
+        uid:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastSignedInAt:
+          type: string
+          format: date-time
+        stamps:
+          $ref: '#/components/schemas/StampStatus'
+        survey:
+          $ref: '#/components/schemas/SurveyState'
+        redemption:
+          $ref: '#/components/schemas/RedemptionState'
+        qrCode:
+          type: string
+          nullable: true
+    StampStatus:
+      type: object
+      additionalProperties: false
+      properties:
+        reception:
+          $ref: '#/components/schemas/StampProgress'
+        photobooth:
+          $ref: '#/components/schemas/StampProgress'
+        art:
+          $ref: '#/components/schemas/StampProgress'
+        robot:
+          $ref: '#/components/schemas/StampProgress'
+        survey:
+          $ref: '#/components/schemas/StampProgress'
+    StampProgress:
+      type: object
+      required: [collectedAt, tokenId]
+      properties:
+        collectedAt:
+          type: string
+          format: date-time
+        tokenId:
+          type: string
+    SurveyState:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [not_started, in_progress, submitted]
+        submittedAt:
+          type: string
+          format: date-time
+          nullable: true
+        ratings:
+          type: object
+          nullable: true
+          properties:
+            photoBooth:
+              type: integer
+              minimum: 1
+              maximum: 5
+            interactiveArt:
+              type: integer
+              minimum: 1
+              maximum: 5
+            stampRally:
+              type: integer
+              minimum: 1
+              maximum: 5
+        comment:
+          type: string
+          nullable: true
+        submissionId:
+          type: string
+          nullable: true
+    SurveySubmissionRequest:
+      type: object
+      required: [photoBoothRating, interactiveArtRating, stampRallyRating]
+      properties:
+        photoBoothRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        interactiveArtRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        stampRallyRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 500
+    RedemptionState:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [locked, eligible, redeemed]
+        eligibleAt:
+          type: string
+          format: date-time
+          nullable: true
+        redeemedAt:
+          type: string
+          format: date-time
+          nullable: true
+        staffUserId:
+          type: string
+          nullable: true
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Caller lacks required permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

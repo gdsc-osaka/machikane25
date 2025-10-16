@@ -18,6 +18,9 @@
 			"recommended": true,
 			"suspicious": {
 				"noUnknownAtRules": "info"
+			},
+			"a11y": {
+				"useSemanticElements": "warn"
 			}
 		}
 	},

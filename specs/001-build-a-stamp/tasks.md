@@ -46,7 +46,7 @@
 ### Tests for User Story 1 ⚠️ (write first, ensure they fail)
 
 - [x] T010 [P] [US1] Create stamp award Vitest suite in `apps/stamp/test/stamp-award.test.ts`
-- [x] T011 [P] [US1] Add progress screen rendering test in `apps/stamp/test/progress-view.test.tsx`
+- [x] T011 [P] [US1] Add progress and stamp page feedback tests in `apps/stamp/test/progress-view.test.tsx` and `apps/stamp/src/app/stamp/__tests__/page.test.ts`
 
 ### Implementation for User Story 1
 

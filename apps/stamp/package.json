@@ -48,6 +48,7 @@
 		"zod": "^4.1.12"
 	},
 	"devDependencies": {
+		"@firebase/rules-unit-testing": "^2.0.2",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.0",
 		"@tailwindcss/postcss": "^4",

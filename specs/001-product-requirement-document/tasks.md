@@ -24,7 +24,7 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T004 Harden Firestore security rules for attendee-only stamp writes and staff redemption (`apps/stamp/firestore.rules`)
+- [X] T004 Harden Firestore security rules for attendee-only stamp writes and staff redemption (`apps/stamp/firestore.rules`)
 - [ ] T005 Ensure typed Firebase client helpers for Auth/Firestore/Remote Config in `apps/stamp/src/firebase.ts`
 - [ ] T006 Seed bilingual copy map shared across guest pages in `apps/stamp/src/libs/i18n/stamp-copy.ts`
 - [ ] T007 Configure SWR cache keys and fallbacks for stamp progress in `apps/stamp/src/hooks/use-stamp-progress.ts`

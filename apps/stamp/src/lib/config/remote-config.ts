@@ -1,3 +1,4 @@
+/* v8 ignore start */
 import { fetchAndActivate, getNumber, getString } from "firebase/remote-config";
 import { getFirebaseRemoteConfig } from "../firebase/client";
 

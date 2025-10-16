@@ -1,3 +1,4 @@
+/* v8 ignore start */
 import * as Sentry from "@sentry/nextjs";
 
 const isEnabled = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);

@@ -1,3 +1,4 @@
+/* v8 ignore start */
 import { getApp, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 

@@ -1,20 +1,12 @@
-import { getLogger } from "@/packages/logger";
-import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
+import { type FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
+import { type Auth, connectAuthEmulator, getAuth } from "firebase/auth";
 import {
 	connectFirestoreEmulator,
-	getFirestore,
 	type Firestore,
+	getFirestore,
 } from "firebase/firestore";
-import {
-	getRemoteConfig,
-	type RemoteConfig,
-} from "firebase/remote-config";
-import {
-	getApp,
-	getApps,
-	initializeApp,
-	type FirebaseApp,
-} from "firebase/app";
+import { getRemoteConfig, type RemoteConfig } from "firebase/remote-config";
+import { getLogger } from "@/packages/logger";
 
 type FirebaseConfig = {
 	apiKey: string;
@@ -43,7 +35,9 @@ const firebaseConfig = (): FirebaseConfig => {
 		!NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ||
 		!NEXT_PUBLIC_FIREBASE_APP_ID
 	) {
-		getLogger().warn("Firebase config incomplete, falling back to dummy values");
+		getLogger().warn(
+			"Firebase config incomplete, falling back to dummy values",
+		);
 		return {
 			apiKey: "dummy",
 			authDomain: "dummy.firebaseapp.com",
@@ -74,12 +68,10 @@ const ensureFirebaseApp = (): FirebaseApp => {
 const getFirebaseAuth = (): Auth => {
 	const app = ensureFirebaseApp();
 	const auth = getAuth(app);
-	if (
-		process.env.NODE_ENV === "development" &&
-		typeof window !== "undefined"
-	) {
+	if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
 		const emulatorHost =
-			process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST ?? "http://localhost:9099";
+			process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST ??
+			"http://localhost:9099";
 		connectAuthEmulator(auth, emulatorHost, { disableWarnings: true });
 	}
 	return auth;
@@ -88,10 +80,7 @@ const getFirebaseAuth = (): Auth => {
 const getFirebaseFirestore = (): Firestore => {
 	const app = ensureFirebaseApp();
 	const firestore = getFirestore(app);
-	if (
-		process.env.NODE_ENV === "development" &&
-		typeof window !== "undefined"
-	) {
+	if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
 		const [host, port] = (
 			process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR ?? "localhost:8080"
 		).split(":");
@@ -115,4 +104,9 @@ const getFirebaseRemoteConfig = (): RemoteConfig => {
 	return remoteConfig;
 };
 
-export { ensureFirebaseApp, getFirebaseAuth, getFirebaseFirestore, getFirebaseRemoteConfig };
+export {
+	ensureFirebaseApp,
+	getFirebaseAuth,
+	getFirebaseFirestore,
+	getFirebaseRemoteConfig,
+};

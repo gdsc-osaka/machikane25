@@ -45,18 +45,18 @@
 
 ### Tests for User Story 1 ⚠️ (write first, ensure they fail)
 
-- [ ] T010 [P] [US1] Create stamp award Vitest suite in `apps/stamp/test/stamp-award.test.ts`
-- [ ] T011 [P] [US1] Add progress screen rendering test in `apps/stamp/test/progress-view.test.tsx`
+- [x] T010 [P] [US1] Create stamp award Vitest suite in `apps/stamp/test/stamp-award.test.ts`
+- [x] T011 [P] [US1] Add progress screen rendering test in `apps/stamp/test/progress-view.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement NFC token validation helper in `apps/stamp/src/features/stamps/server/validate-token.ts`
-- [ ] T013 [US1] Add Firestore award action with audit logging to `apps/stamp/src/features/stamps/server/award-stamp.ts`
-- [ ] T014 [P] [US1] Create SWR progress hook in `apps/stamp/src/features/stamps/hooks/useStampProgress.ts`
-- [ ] T015 [US1] Update home page progress UI in `apps/stamp/src/app/page.tsx`
-- [ ] T016 [US1] Implement stamp page animation and messaging in `apps/stamp/src/app/stamp/page.tsx`
-- [ ] T017 [US1] Build feedback banner component for duplicates/errors in `apps/stamp/src/features/stamps/components/stamp-feedback.tsx`
-- [ ] T018 [US1] Persist stamp event records in `apps/stamp/src/features/stamps/services/stamp-event-logger.ts`
+- [x] T012 [US1] Implement NFC token validation helper in `apps/stamp/src/features/stamps/server/validate-token.ts`
+- [x] T013 [US1] Add Firestore award action with audit logging to `apps/stamp/src/features/stamps/server/award-stamp.ts`
+- [x] T014 [P] [US1] Create SWR progress hook in `apps/stamp/src/features/stamps/hooks/useStampProgress.ts`
+- [x] T015 [US1] Update home page progress UI in `apps/stamp/src/app/page.tsx`
+- [x] T016 [US1] Implement stamp page animation and messaging in `apps/stamp/src/app/stamp/page.tsx`
+- [x] T017 [US1] Build feedback banner component for duplicates/errors in `apps/stamp/src/features/stamps/components/stamp-feedback.tsx`
+- [x] T018 [US1] Persist stamp event records in `apps/stamp/src/features/stamps/services/stamp-event-logger.ts`
 
 **Checkpoint**: User Story 1 independently shippable with passing tests.
 

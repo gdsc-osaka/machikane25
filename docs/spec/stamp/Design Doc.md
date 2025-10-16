@@ -46,13 +46,11 @@ title Component Diagram for まちかね祭スタンプラリー
 Container(auth, "Authentication", "Firebase Auth", "Annonymous authentication")
 ContainerDb(db, "Database", "Firestore", "Save user data and stamp data")
 Container(config, "Config", "Firebase Remote Config", "Save configuration such as Google Form URL")
-System_Ext(photobooth, "AIフォトブース", "まちかね祭展示システムの一部")
 
 Container_Boundary(app, "Web Application") {
 	Container_Boundary(app_ui, "UI") {
 		Component(home_page, "Home Page", "Next.js", "Show user stamp status")
 		Component(stamp_page, "Stamp Page", "Next.js", "Give stamp and redirect to home page")
-		Component(image_upload_page, "Image Upload Page", "Next.js", "Upload photo to AI Photo Booth")
 		Component(form_page, "Form Page", "Next.js", "Show form to submit survey")
 		Component(gift_page, "Gift Page", "Next.js", "Show gift exchange page with QR code")
 		Component(scan_page, "Scan Page", "Next.js", "Admin UI to scan QR code and mark gift as received")
@@ -73,7 +71,6 @@ Container_Boundary(app, "Web Application") {
 	UpdateRelStyle(stamp_page, auth_service, $offsetY="40")
 	Rel(stamp_page, stamp_service, "Give corresponding stamp to user")
 	UpdateRelStyle(stamp_page, stamp_service, $offsetY="-20")
-	Rel(image_upload_page, auth_service, "Get user auth state")
 	Rel(form_page, auth_service, "Get user auth state")
 	UpdateRelStyle(form_page, auth_service, $offsetY="20")
 	Rel(form_page, survey_service, "Submit survey")
@@ -88,7 +85,6 @@ Container_Boundary(app, "Web Application") {
 	Rel(stamp_service, db, "Read and write user stamp data")
 	Rel(survey_service, config, "Get Google Form URL")
 }
-Rel(image_upload_page, photobooth, "Upload photo to AI Photo Booth via REST API")
 ```
 ### Code Diagram (C4)
 ```typescript
@@ -134,34 +130,35 @@ users:
 	(userId): # userId = Firebase Auth UID
 		stamps: { # スタンプを獲得した日時
 			reception?: Timestamp
-				photobooth?: Timestamp
-				art?: Timestamp
-				robot?: Timestamp
-				survey?: Timestamp
+			photobooth?: Timestamp
+			art?: Timestamp
+			robot?: Timestamp
+			survey?: Timestamp
 		}
 		lastSignedInAt: Timestamp
 		giftReceivedAt?: Timestamp
 		createdAt: Timestamp
 ```
 ## Tech Stack
-* Frontend: Next.js, shadcn/ui, Tailwind CSS, jotai, openapi-typescript, axios, neverthrow
+* Frontend: Next.js, shadcn/ui, Tailwind CSS, jotai, neverthrow
 * Backend: なし
 * BaaS: Firebase Auth, Firestore, Firebase App Hosting, Firebase Functions, Firebase Analytics
 ## UI
-用語集
+### 用語
 - ナビゲーション: `<link/>` による遷移
 - リダイレクト: JavaScript による遷移
+### Pages
 
 | Page              | URL                        | Description                                                                                                                                                                                                                                                              |
 | ----------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Home Page         | /                          | **アクセス方法**<br>Stamp Page からナビゲーション、または専用の NFC タグからアクセス<br><br>**ページ動作**<br>ログイン中のユーザーのスタンプの獲得状況を表示<br>- スタンプ全獲得 & アンケート未回答 ->「アンケートに回答」のボタンも表示<br>- スタンプ全獲得 & アンケート回答済 ->「景品を受け取る」のボタンも表示                                                                                |
 | Stamp Page        | /stamp?token=(stamp_token) | **アクセス方法**<br>StampTypeごとにトークンを発行し、非公開の環境変数に保存する<br>スタンプごとに URL を作成し、NFCタグに記録する<br>NFCタグを読み取ったユーザーはこのページにアクセスする<br><br>**ページ動作**<br>ユーザーにスタンプを付与するアニメーションを表示し、スタンプ付与<br>アニメーション終了後に「スタンプ一覧を見る」のボタンを表示                                                                    |
-| Image Upload Page | /upload?booth=(booth_id)   | **アクセス方法**<br>Stamp Pageと同様にブースごとの NFC タグにURLを記録する<br>NFCタグを読み取ってアクセス<br><br>**ページ動作**<br>ファイル選択ボタンを押下するとデバイス上のファイルを選べる<br>ファイルを選ぶと「アップロード」ボタンを押下できるようになる<br>「アップロード」ボタンを押下するとフォトブースAPIにリクエストを送信<br>- 送信成功 -> 「続けて送信」「スタンプ一覧に戻る」のボタンを表示<br>- 送信失敗 -> Sooner でエラーメッセージを表示 |
 | Form Page         | /form                      | **アクセス方法**<br>ホームページからナビゲーション<br><br>**ページ動作**<br>戻るボタン、フォーム、回答を送信ボタンを表示<br>React Hook Form + shadcn Form でフォームを実装<br>回答を送信ボタンを押すと Gift Page に遷移する                                                                                                                       |
 | Gift Page         | /gift                      | **アクセス方法**<br>ホームページからナビゲーション、または Form Page からリダイレクト<br><br>**ページ動作**<br>- 報酬未取得 -> お礼メッセージと QR コードを表示<br>- 報酬取得済 -> お礼メッセージと報酬受け取り済みのメッセージを表示                                                                                                                           |
 | Scan Page         | /scan                      | **アクセス方法**<br>URL直接入力<br><br>**ページ動作**<br>- 管理者アカウントで未ログイン -> メールアドレスとパスワードフォームを表示<br>- 管理者アカウントでログイン済 -> QRコードスキャナーを表示<br><br>QRコードを読み取るとダイアログでメッセージを表示<br>- (userId) に景品を渡してください<br>- (userId) は既に景品を受け取っています<br>- 不正な QR コードです                                        |
 | Maintenance Page  | /maintenance               | **アクセス方法**<br>Admin用のページ (Scan Page) 以外からリダイレクト<br><br>**ページ動作**<br>メンテナンス終了予定時刻、お詫びメッセージ、運営のSNSアカウントへのリンクを表示                                                                                                                                                            |
 | NotFound Page     | /404                       | **アクセス方法**<br>Adminのみログインできるページに未認証のユーザーがアクセスした場合にリダイレクト<br><br>**ページ動作**<br>404 Not Found のメッセージと「Home Page に戻る」のボタンを表示                                                                                                                                                 |
+
 # Security Considerations
 ## Threat Model
 ## Authentication & Authorization

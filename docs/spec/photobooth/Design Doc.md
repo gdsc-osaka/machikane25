@@ -38,7 +38,7 @@ Updated: 2025/10/11
 	* Webcam はディスプレイを投影している端末 (端末A) に接続する
 	* ControlPage で撮影ボタンが押された瞬間に lastTakePhotoAt を更新し、Webcamが撮影してアップロードする
 * ユーザーによる画像アップロード
-	* Upload Photo API からアップロードされた画像は対応するフォトブースに登録される
+	* Upload Page からアップロードされた画像は対応するフォトブースに登録される
 	* フォトブースで写真が一度でも使用されたら、該当する写真データはDB・ストレージから削除される
 	* 写真が使用されなかった場合、15分後に削除される
 * 生成された画像の定期削除は実装しない
@@ -63,6 +63,7 @@ Container_Boundary(app, "AIフォトブースシステム") {
 	Container_Boundary(ui, "UI") {
 		Component(control_page, "Control Page", "Next.js", "Customer UI to take photos, select images, choose options, and start generation")
 		Component(display_page, "Display Page", "Next.js", "Display camera feed and generated photo with QR code")
+		Component(image_upload_page, "Image Upload Page", "Next.js", "Upload photo to AI Photo Booth")
 		Component(download_page,  "Download Page", "Next.js", "Download generated photo via QR code")
 		Component(admin_page, "Admin Page", "Next.js", "Admin UI to set photo booth device info and link to other pages")
 		Component(login_page, "Login Page", "Next.js", "Admin UI to login with token and redirect to admin_page")
@@ -76,7 +77,6 @@ Container_Boundary(app, "AIフォトブースシステム") {
 	Component(generation_service, "Generation Service", "Next.js", "Manage generation and retrieval of generation photos")
 	Component(logger, "Logger", "Next.js", "Log requests and errors")
 	Component(middleware, "Middleware", "Next.js", "Handle admin token verification")
-	Component(upload_photo_api, "Upload Photo API", "Next.js", "Handle photo upload")
 	Component(photo_cleaner, "Photo Cleaner", "Firebase Functions (Node.js)", "Delete old uploaded photos periodically")
 	Rel(photo_cleaner, db, "Delete old photo metadata")
 	Rel(photo_cleaner, storage, "Delete old photo files")
@@ -92,8 +92,8 @@ Container_Boundary(app, "AIフォトブースシステム") {
 	UpdateRelStyle(display_page, photo_service, $offsetY="-40")
 	Rel(download_page, generation_service, "Get generated photo")
 	UpdateRelStyle(download_page, generation_service, $offsetY="-20")
+	Rel(image_upload_page, photo_service, "Upload photo")
 	Rel(admin_page, booth_service, "Get booth by id")
-	Rel(upload_photo_api, photo_service, "Upload photo from スタンプラリーシステム")
 	Rel(login_page, auth_service, "Login and get admin auth token")
 	Rel(photos_page, photo_service, "View current generated photos")
 	
@@ -191,50 +191,6 @@ generated_photos:
 	(photoId):
 		photo.png # Generated photo
 ```
-## API Specification
-```yaml
-openapi: 3.0.0
-info:
-	title: まちかね祭AIフォトブース Backend API
-	version: 1.0.0
-
-paths:
-  # /upload-photo
-  # multipart/form-data で photo ファイルを受け取り, 200 or 403 or 500 を返す
-  # Authorization: Bearer <Firebase ID Token>
-  /upload-photo:
-		post:
-			summary: 来場者が画像をファイル+ブースIDでアップロードする
-			security:
-				- firebaseAuth: []
-			requestBody:
-				required: true
-				content:
-					multipart/form-data:
-						schema:
-							type: object
-							properties:
-								photo:
-									type: string
-									format: binary
-									description: The photo file to upload
-								boothId:
-									type: string
-									description: The photo booth ID
-			responses:
-				'200':
-					description: Photo uploaded successfully
-				'403':
-					description: Forbidden (e.g., invalid token)
-				'500':
-					description: Internal server error
-components:
-	securitySchemes:
-		firebaseAuth:
-			type: http
-			scheme: bearer
-			bearerFormat: JWT
-```
 ## Tech Stack
 * Frontend: Next.js, shadcn/ui, Tailwind CSS, jotai
 * Backend: Next.js API Routes + Server Actions, neverthrow
@@ -244,16 +200,17 @@ components:
 - ナビゲーション: `<link/>` による遷移
 - リダイレクト: JavaScript による遷移
 
-| Page          | URL                                           | Description                                                                                                                                                                                                                                                                     |
-| ------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Control Page  | /control?boothId=(boothId)                    | **アクセス方法**<br>Admin Page からナビゲーション<br><br>**ページ動作**<br>ブースの状態に応じて表示内容を変える<br>- idle: フォトブースを始めるのボタンを表示<br>- menu: 画像選択、写真撮影開始、選択肢を表示<br>- capturing: 写真撮影のカウントダウンを表示。ページ遷移から N 秒後に写真を撮影<br>- generating: AIが写真を生成中・・・のメッセージとQRコードを表示<br>- completed: Download Page への QR コードを表示 |
-| Display Page  | /display?boothId=(boothId)                    | **アクセス方法**<br>Admin Page からナビゲーション<br><br>**ページ動作**<br>ブースの状態に応じて表示内容を変える<br>- idle: タッチパネルをタップしてね のメッセージを表示<br>- menu: Control Page の操作ガイドを表示<br>- capturing: Webカメラの映像を表示<br>- generating: AIが写真を生成中・・・のメッセージを表示<br>- completed: 生成した写真を表示                                    |
-| Download Page | /download?boothId=(boothId)&photoId=(photoId) | **アクセス方法**<br>Control Page の QRコードからアクセス<br><br>**ページ動作**<br>生成した写真, ダウンロードボタンを表示<br>ダウンロードボタンを押すと、生成した写真をダウンロードする                                                                                                                                                              |
-| Admin Page    | /admin                                        | **アクセス方法**<br>Login Page からリダイレクト<br><br>**ページ動作**<br>- boothId の input<br>- Control Page へのリンク<br>- Display Page へのリンク<br>- Photos Page へのリンク<br>を表示                                                                                                                           |
-| Login Page    | /login                                        | **アクセス方法**<br>URL直接入力<br><br>**ページ動作**<br>1. input にトークンを入力して submit する<br>2. Cookieにトークンが保存される<br>3. Server Actions から AuthService でログインする<br>4. ログイン成功 -> Admin Page へリダイレクト<br>    ログイン失敗 -> エラーメッセージ表示                                                                      |
-| Photos Page   | /photos                                       | **アクセス方法**<br>Admin Page からナビゲーション<br><br>**ページ動作**<br>各ブースの最も最近生成された画像を表示する<br>(ページの目的 = チェキプリンターへの手動の印刷命令)                                                                                                                                                                    |
-| NotFound Page | /404                                          | **アクセス方法**<br>Adminのみログインできるページに未認証のユーザーがアクセスした場合にリダイレクト<br><br>**ページ動作**<br>404 Not Found のメッセージ表示                                                                                                                                                                             |
-|               |                                               |                                                                                                                                                                                                                                                                                 |
+| Page              | URL                                           | Description                                                                                                                                                                                                                                                                     |
+| ----------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Control Page      | /control?boothId=(boothId)                    | **アクセス方法**<br>Admin Page からナビゲーション<br><br>**ページ動作**<br>ブースの状態に応じて表示内容を変える<br>- idle: フォトブースを始めるのボタンを表示<br>- menu: 画像選択、写真撮影開始、選択肢を表示<br>- capturing: 写真撮影のカウントダウンを表示。ページ遷移から N 秒後に写真を撮影<br>- generating: AIが写真を生成中・・・のメッセージとQRコードを表示<br>- completed: Download Page への QR コードを表示 |
+| Display Page      | /display?boothId=(boothId)                    | **アクセス方法**<br>Admin Page からナビゲーション<br><br>**ページ動作**<br>ブースの状態に応じて表示内容を変える<br>- idle: タッチパネルをタップしてね のメッセージを表示<br>- menu: Control Page の操作ガイドを表示<br>- capturing: Webカメラの映像を表示<br>- generating: AIが写真を生成中・・・のメッセージを表示<br>- completed: 生成した写真を表示                                    |
+| Download Page     | /download?boothId=(boothId)&photoId=(photoId) | **アクセス方法**<br>Control Page の QRコードからアクセス<br><br>**ページ動作**<br>生成した写真, ダウンロードボタンを表示<br>ダウンロードボタンを押すと、生成した写真をダウンロードする                                                                                                                                                              |
+| Image Upload Page | /upload?booth=(booth_id)                      | **アクセス方法**<br>Display Page に当ページへのQRコードを表示し、ユーザーがアクセス<br><br>**ページ動作**<br>ファイル選択ボタンを押下するとデバイス上のファイルを選べる<br>ファイルを選ぶと「アップロード」ボタンを押下できるようになる<br>「アップロード」ボタンを押下するとフォトブースAPIにリクエストを送信<br>- 送信成功 -> 「続けて送信」「スタンプ一覧に戻る」のボタンを表示<br>- 送信失敗 -> Sooner でエラーメッセージを表示                        |
+| Admin Page        | /admin                                        | **アクセス方法**<br>Login Page からリダイレクト<br><br>**ページ動作**<br>- boothId の input<br>- Control Page へのリンク<br>- Display Page へのリンク<br>- Photos Page へのリンク<br>を表示                                                                                                                           |
+| Login Page        | /login                                        | **アクセス方法**<br>URL直接入力<br><br>**ページ動作**<br>1. input にトークンを入力して submit する<br>2. Cookieにトークンが保存される<br>3. Server Actions から AuthService でログインする<br>4. ログイン成功 -> Admin Page へリダイレクト<br>    ログイン失敗 -> エラーメッセージ表示                                                                      |
+| Photos Page       | /photos                                       | **アクセス方法**<br>Admin Page からナビゲーション<br><br>**ページ動作**<br>各ブースの最も最近生成された画像を表示する<br>(ページの目的 = チェキプリンターへの手動の印刷命令)                                                                                                                                                                    |
+| NotFound Page     | /404                                          | **アクセス方法**<br>Adminのみログインできるページに未認証のユーザーがアクセスした場合にリダイレクト<br><br>**ページ動作**<br>404 Not Found のメッセージ表示                                                                                                                                                                             |
+|                   |                                               |                                                                                                                                                                                                                                                                                 |
 # Security Considerations
 ## Threat Model
 ## Authentication & Authorization
@@ -266,15 +223,14 @@ components:
 * middleware で Cookie の SHA256 ハッシュ値と環境変数の SHA256 ハッシュ値を比較し, 一致すれば認証成功とする.
   一致しなければ Error Page にリダイレクトする.
 * Login Page, Error Page 以外は管理者認証が必要.
-* Upload Photo API はスタンプラリーシステムからのリクエストのみ受け付ける.
-  Firebase Admin SDK で Firebase Auth のユーザーからのリクエストかを確認する.
 ## Data Protection
 * Firestore, Firebase Storage は Security Rules で Custom Claim 認証を使用する
 * サーバーサイドで createCustomToken で管理者用トークンを生成し, クライアントで signInWithCustomToken で認証する
 * 管理者認証したユーザーのみが管理者用のデータにアクセスできるようにする
 ## Secure Coding
 ### Input Validation
-* アップロードされた画像はサーバー側で再エンコードして保存する
+* アップロードされた画像はそのまま保存する.
+  理由: すぐに削除するため・Gemini API が validation, encoding をするため
 ### Error Handling
 *
 ## Incident Response

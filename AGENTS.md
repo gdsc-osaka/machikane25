@@ -1,10 +1,45 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `specs/` stores feature collateral; `specs/002-build-a-stamp/` contains the active plan, research, data model, contracts, and quickstart—update these before coding.
-- `apps/stamp/` is the Next.js workspace. Pages live in `src/app`, shared UI in `src/components`, domain logic in `src/lib` or `src/features`, and Firebase wiring in `src/firebase.ts`.
-- Shared utilities belong under `packages/` (e.g., `packages/logger/`). Unity content remains in `unity/interactive/`, and any physical assets sit in `assets/` with provenance notes.
+- `apps/stamp/` is the Next.js workspace. Pages live in `src/app`, shared UI in `src/components`, ddd in `src/domain`, `src/infra`, `src/application`, and Firebase wiring in `src/firebase.ts`.
 - Co-locate tests beside implementation or in `apps/stamp/test` so coverage reporting stays aligned with the constitution.
+
+### apps/ directory map
+```text
+apps/
+├── art/              # generative art app (Unity)
+├── photo/            # photobooth app (Next.js)
+├── photo-cleaner/    # photo cleanup firebase function
+└── stamp/            # stamp rally app (Next.js)
+```
+
+### apps/stamp/ directory map
+```text
+apps/stamp/
+├── public/                 # static assets served by Next.js
+├── src/
+│   ├── app/                # route handlers, layouts, and pages
+│   │   ├── __tests__/      # route-level tests
+│   │   ├── global-error.tsx # sentry error boundary
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   └── ui/             # shared shadcn-based primitives
+│   ├── application/       # DDD application layer (service layer called by React components)
+│   ├── infra/             # DDD infrastructure layer (firebase SDK implementations)
+│   ├── domain/            # DDD domain layer (business logic, types, interfaces)
+│   ├── firebase.ts         # firebase client SDK setup
+│   ├── instrumentation.ts  # sentry instrumentation entrypoint
+│   ├── instrumentation-client.ts
+│   └── packages/
+│       └── logger/         # app-scoped logging utilities
+├── test/                   # integration/unit specs colocated externally
+├── coverage/               # vitest coverage artifacts
+├── apphosting.yaml
+├── firebase.json
+├── firestore.rules
+└── next.config.ts
+```
 
 ## Build, Test, and Development Commands
 - `pnpm install` — sync workspace dependencies.
@@ -18,7 +53,22 @@
 - Compose UI with shadcn/Radix components and Tailwind 4 tokens; avoid ad-hoc inline styling.
 - Fetch client data through SWR hooks; wrap mutations in server actions or API routes for revalidation support.
 - Never use let or var; prefer const and immutable patterns. Favor functional programming (map, filter, reduce) over loops.
+- Follow Domain-Driven Design (DDD) with `domain/`, `infra/`, and `application/` layers. Use neverthrow for Result types, ts-pattern for pattern matching, and obj-err for error handling.
+- In DDD, never use classes; prefer plain objects and functions. Use interfaces for abstractions, union types and discriminated unions for variants, and higher-order functions for composition.
 - Format using `pnpm lint:fix` and confirm no Biome or ESLint diagnostics remain.
+
+### Example of obj-err, neverthrow, and ts-pattern in DDD
+```typescript
+import { errorBuilder, InferError } from 'obj-err';
+import { ResultAsync } from 'neverthrow';
+import { match } from 'ts-pattern';
+import { z } from 'zod';
+import { User } from '../domain/user';
+import { UserRepository } from '../domain/user-repository';
+const NotFoundError = errorBuilder('NotFoundError', z.object({ userId: z.string() }));
+type NotFoundError = InferError<typeof NotFoundError>;
+const createUser = (userRepository: UserRepository) => (name: string, email: string): ResultAsync<User, UserError> => User.create(name, email).asyncAndThen(userRepository.create);
+```
 
 ## Testing Guidelines
 - Use Vitest with `@testing-library/react` + `@testing-library/jest-dom`. Name specs `*.test.ts` or `*.test.tsx`.

@@ -1,5 +1,3 @@
-"use server";
-
 import type { Timestamp } from "firebase-admin/firestore";
 import type { StampId } from "@/features/stamps/server/validate-token";
 import { listStampDefinitions } from "@/features/stamps/server/validate-token";

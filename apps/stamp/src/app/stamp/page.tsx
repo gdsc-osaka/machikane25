@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { StampFeedback } from "@/features/stamps/components/stamp-feedback";
 import type { AwardStampResult } from "@/features/stamps/server/award-stamp";
 import { type SupportedLocale, translate } from "@/lib/i18n/messages";
@@ -142,7 +142,7 @@ export const awardFlow = async (
   }
 };
 
-export default function StampPage() {
+const StampPageContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [locale, setLocale] = useState<SupportedLocale>("ja");
@@ -225,5 +225,23 @@ export default function StampPage() {
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       ) : null}
     </main>
+  );
+};
+
+const LoadingFallback = () => (
+  <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 py-10">
+    <div
+      aria-label="Loading stamp status"
+      className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"
+      role="status"
+    />
+  </main>
+);
+
+export default function StampPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <StampPageContent />
+    </Suspense>
   );
 }

@@ -20,7 +20,7 @@ Updated: 2025/10/11
 * 管理者はパスワード認証でAdmin認証できる
 * 管理者は Gift Page の QR コードを読み取って、ユーザーを景品受け取り済みにできる
 * 来場者向けページは日本語・英語で同等の情報を表示する
-* - 各ページはスタンプ取得〜景品受け取り導線で体感 1 秒以内の応答を保つ
+* 各ページはスタンプ取得〜景品受け取り導線で体感 1 秒以内の応答を保つ
 ## Non-goals
 # Architecture
 * Web Application は Firebase App Hosting に **fes2025.gdsc-osaka.jp** でホスティングする

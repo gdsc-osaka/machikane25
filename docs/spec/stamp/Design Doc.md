@@ -1,7 +1,7 @@
 Status: draft
 Authors: ゆにねこ
 Reviewers: nagomu
-Updated: 2025/10/16
+Updated: 2025/10/11
 # Objective
 2025年まちかね祭展示のスタンプラリーシステムを開発する。
 # Background
@@ -19,15 +19,17 @@ Updated: 2025/10/16
 * ユーザーはAIフォトブースに画像をアップロードできる
 * 管理者はパスワード認証でAdmin認証できる
 * 管理者は Gift Page の QR コードを読み取って、ユーザーを景品受け取り済みにできる
-* 来場者向けページは日本語・英語で同等の情報を表示する（言語切り替えスイッチ付き）
-* 各ページはスタンプ取得〜景品受け取り導線で体感 2 秒以内の応答を保つ
+* 来場者向けページは日本語・英語で同等の情報を表示する
+* - 各ページはスタンプ取得〜景品受け取り導線で体感 1 秒以内の応答を保つ
 ## Non-goals
 # Architecture
 * Web Application は Firebase App Hosting に **fes2025.gdsc-osaka.jp** でホスティングする
+* 来場者用のページにアクセスすると自動的に FIrebase Auth の匿名認証を行う.
+	* 認証成功時に Firestore にユーザーデータを保存する
+	* 認証ユーザーとFirestoreのデータは Next.js 上では Context と hooks で管理する
 * NFCタグには事前に URL を登録しておき、URL にアクセスしたユーザーがスタンプを獲得できる
 	* URL例: **https://fes2025.gdsc-osaka.jp/stamp?type=reception
-* アンケートフォームは Web App 内で実装し、Submit 時に Next.js Route Handler を経由して Google Form に回答結果を送信する
-	* Route Handler で匿名ユーザーIDを付与し、成功/失敗を Firestore に記録する
+* アンケートフォームは Web App 内で実装し、Submit 時に Google Form に回答結果を送信する
 	* Google Form の URL は Firebase Remote Config で管理する
 	* https://qiita.com/TKfumi/items/d8924f6ffa6e40675ce4
 * アンケートでは以下の情報を収集する
@@ -37,16 +39,25 @@ Updated: 2025/10/16
 	* スタンプラリーの満足度 (5段階評価)
 	* 自由記述欄
 * アンケート回答後に Gift Page にアクセスすると、景品引換ページと QR コードを表示する
-	* QRコードには userId 情報と署名ハッシュを含め、Canvas でクライアント生成する
+	* QRコードには userId 情報を含める
 	* 運営が QR コードを読み取ると、当該ユーザーが景品受け取り済みになる
-* Remote Config の障害レベルに応じて参加者ページは `/maintenance` に誘導し、スキャンページのみホワイトリストでアクセスを許可する
-
-## Operational Constraints
-* スタンプ付与 API（`/api/stamps/award`）の p95 レイテンシーは 300ms 以下
-* ホームページの First Meaningful Paint は キオスク端末（Chromium ベース）で 2 秒以内
-* QR コードの有効期限は生成から 2 時間（Remote Config で調整可能）
-* Maintenance モードでは `/scan` のみアクセス可能（遠隔で解除・ホワイトリスト制御）
-
+* Remote Config の障害レベルに応じて参加者ページは /maintenance に誘導する. Scan Page は例外とする.
+## Physical Structure
+* 展示会場
+	* 受付
+		* /stamp?token=(receptionのトークン) へのNFCタグを設置
+	* フォトブース
+		* /stamp?token=(photoboothのトークン) へのNFCタグを設置
+	* インタラクティブアート
+		* /stamp?token=(artのトークン) へのNFCタグを設置
+	* ロボット展示
+		* /stamp?token=(robotのトークン) へのNFCタグを設置
+	* 出口
+		* /stamp?token=(surveyのトークン) へのNFCタグを設置
+		* 運営者がスマートフォン上で Scan Page からアンケート回答済みのユーザーの Gift Page のQR コードを読み取る
+* 来場者の私物端末 (スマホ)
+## Prohibitions
+* API Routes の使用
 ## Diagram
 ### Component Diagram (C3)
 ```mermaid
@@ -145,54 +156,38 @@ users:
 			robot?: Timestamp
 			survey?: Timestamp
 		}
-		surveyCompleted: boolean
-		rewardEligible: boolean
-		rewardQr:
-			dataUrl: string
-			hash: string
-			generatedAt: Timestamp
 		lastSignedInAt: Timestamp
 		giftReceivedAt?: Timestamp
 		createdAt: Timestamp
-	redemptions:
-		(autoId):
-			redeemedAt: Timestamp
-			staffId: string
-			result: "success" | "duplicate" | "invalid"
-			qrPayloadHash: string
-surveySubmissions:
-	(autoId):
-		uid: string
-		submittedAt: Timestamp
-		status: "success" | "error"
-		errorMessage?: string
-remoteConfig:
-	stamp_app_status: "online" | "degraded" | "maintenance"
-	stamp_app_message_ja: string
-	stamp_app_message_en: string
-	maintenance_whitelist: string[]
-	reward_expiry_minutes: number
+```
+### Firebase Remote Config
+```yaml
+stamp_app_status: "online" | "degraded" | "maintenance"
+stamp_app_message_ja: string
+stamp_app_message_en: string
 ```
 ## Tech Stack
-* Frontend: Next.js 15 App Router, React 19, SWR, shadcn/ui, Tailwind CSS 4, jotai, neverthrow
-* Backend: Next.js Route Handlers（Server Actions）
-* BaaS: Firebase Auth（匿名 + 管理者）, Firestore, Firebase Remote Config, Firebase Storage, Firebase App Hosting, Firebase Analytics
+* Frontend: Next.js, shadcn/ui, Tailwind CSS, jotai, neverthrow
+* Backend: なし
+* BaaS: Firebase Auth, Firestore, Firebase App Hosting, Firebase Functions, Firebase Analytics
 * Observability: Sentry（Performance + Error Trace）
+* QRコード生成: qrcode.react
+* QRコードスキャン: jsqr
 ## UI
 ### 用語
 - ナビゲーション: `<link/>` による遷移
 - リダイレクト: JavaScript による遷移
 ### Pages
 
-| Page              | URL                        | Description                                                                                                                                                                                                                                                              |
-| ----------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Home Page         | /                          | **アクセス方法**<br>Stamp Page からナビゲーション、または専用の NFC タグからアクセス<br><br>**ページ動作**<br>ログイン中のユーザーのスタンプの獲得状況を表示<br>- スタンプ全獲得 & アンケート未回答 ->「アンケートに回答」のボタンも表示<br>- スタンプ全獲得 & アンケート回答済 ->「景品を受け取る」のボタンも表示                                                                                |
-| Stamp Page        | /stamp?token=(stamp_token) | **アクセス方法**<br>StampTypeごとにトークンを発行し、非公開の環境変数に保存する<br>スタンプごとに URL を作成し、NFCタグに記録する<br>NFCタグを読み取ったユーザーはこのページにアクセスする<br><br>**ページ動作**<br>ユーザーにスタンプを付与するアニメーションを表示し、スタンプ付与<br>アニメーション終了後に「スタンプ一覧を見る」のボタンを表示                                                                    |
-| Form Page         | /form                      | **アクセス方法**<br>ホームページからナビゲーション<br><br>**ページ動作**<br>戻るボタン、フォーム、回答を送信ボタンを表示<br>React Hook Form + shadcn Form でフォームを実装<br>回答を送信ボタンを押すと Gift Page に遷移する                                                                                                                       |
-| Gift Page         | /gift                      | **アクセス方法**<br>ホームページからナビゲーション、または Form Page からリダイレクト<br><br>**ページ動作**<br>- 報酬未取得 -> お礼メッセージと QR コードを表示<br>- 報酬取得済 -> お礼メッセージと報酬受け取り済みのメッセージを表示                                                                                                                           |
-| Scan Page         | /scan                      | **アクセス方法**<br>URL直接入力<br><br>**ページ動作**<br>- 管理者アカウントで未ログイン -> メールアドレスとパスワードフォームを表示<br>- 管理者アカウントでログイン済 -> QRコードスキャナーを表示<br><br>QRコードを読み取るとダイアログでメッセージを表示<br>- (userId) に景品を渡してください<br>- (userId) は既に景品を受け取っています<br>- 不正な QR コードです                                        |
-| Maintenance Page  | /maintenance               | **アクセス方法**<br>Admin用のページ (Scan Page) 以外からリダイレクト<br><br>**ページ動作**<br>メンテナンス終了予定時刻、お詫びメッセージ、運営のSNSアカウントへのリンクを表示                                                                                                                                                            |
-| NotFound Page     | /404                       | **アクセス方法**<br>Adminのみログインできるページに未認証のユーザーがアクセスした場合にリダイレクト<br><br>**ページ動作**<br>404 Not Found のメッセージと「Home Page に戻る」のボタンを表示                                                                                                                                                 |
+| Page             | URL                        | Description                                                                                                                                                                                                                                                                                                                                            |
+| ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Home Page        | /                          | **アクセス方法**<br>Stamp Page からナビゲーション、または専用の NFC タグからアクセス<br><br>**UI要件**<br>来場者用ページ.<br>- スタンプラリーの枠を大きく表示 (5枠)<br>- 獲得済みのスタンプ枠には赤色のスタンプを表示<br>- スタンプ枠の下部に「アンケートに回答」ボタンと「景品を受け取る」ボタンを表示<br>- それぞれのボタンは初期状態で disabled<br>- スタンプ全獲得 & アンケート未回答 ->「アンケートに回答」のボタンを enabled<br>- スタンプ全獲得 & アンケート回答済 ->「景品を受け取る」のボタンを enabled<br><br>**ロジック**<br>再読み込み時にデータを再取得 |
+| Stamp Page       | /stamp?token=(stamp_token) | **アクセス方法**<br>StampTypeごとにトークンを発行し、非公開の環境変数に保存する<br>スタンプごとに URL を作成し、NFCタグに記録する<br>NFCタグを読み取ったユーザーはこのページにアクセスする<br><br>**UI要件**<br>来場者用ページ.<br>- どのスタンプかを上部に表示<br>- 画面中央にスタンプ枠を表示<br>- ユーザーにスタンプを付与するアニメーションを再生<br>- データベースを更新してスタンプ付与<br>- アニメーション終了後に「スタンプ一覧を見る」のボタンを表示                                                                              |
+| Form Page        | /form                      | **アクセス方法**<br>ホームページからナビゲーション<br><br>**UI要件**<br>来場者用ページ.<br>- 戻るボタン、フォーム、回答を送信ボタンを表示<br>- React Hook Form + shadcn Form でフォームを実装<br>- 回答を送信ボタンを押すと Gift Page に遷移する                                                                                                                                                                                    |
+| Gift Page        | /gift                      | **アクセス方法**<br>ホームページからナビゲーション、または Form Page からリダイレクト<br><br>**UI要件**<br>来場者用ページ.<br>- 報酬未取得 -> お礼メッセージと QR コードを表示<br>- 報酬取得済 -> お礼メッセージと報酬受け取り済みのメッセージを表示                                                                                                                                                                                              |
+| Scan Page        | /scan                      | **アクセス方法**<br>URL直接入力<br><br>**UI要件**<br>管理者用ページ.<br>- 管理者アカウントで未ログイン -> メールアドレスとパスワードフォームを表示<br>- 管理者アカウントでログイン済 -> QRコードスキャナーを表示<br><br>QRコードを読み取るとダイアログでメッセージを表示<br>- (userId) に景品を渡してください<br>- (userId) は既に景品を受け取っています<br>- 不正な QR コードです                                                                                                           |
+| Maintenance Page | /maintenance               | **アクセス方法**<br>Admin用のページ (Scan Page) 以外からリダイレクト<br><br>**UI要件**<br>メンテナンス終了予定時刻、お詫びメッセージ、運営のSNSアカウントへのリンクを表示                                                                                                                                                                                                                                           |
+| NotFound Page    | /404                       | **アクセス方法**<br>Adminのみログインできるページに未認証のユーザーがアクセスした場合にリダイレクト<br><br>**UI要件**<br>404 Not Found のメッセージと「Home Page に戻る」のボタンを表示                                                                                                                                                                                                                                |
 
 # Security Considerations
 ## Threat Model

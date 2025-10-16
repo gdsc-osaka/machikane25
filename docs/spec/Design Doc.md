@@ -153,11 +153,11 @@ export type NotFounderror = InferError<typeof NotFounderror>;
 // You can use zod schema for extra properties
 import { z } from 'zod';
 export const AnotherError = errorBuilder(
-  'AnotherError',
-  z.object({
-    reason: z.string(),
-    code: z.number(),
-  })
+		'AnotherError',
+		z.object({
+			reason: z.string(),
+			code: z.number(),
+		})
 );
 export type AnotherError = InferError<typeof AnotherError>;
 ```

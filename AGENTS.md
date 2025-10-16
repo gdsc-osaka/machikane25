@@ -53,23 +53,53 @@ apps/stamp/
 - Compose UI with shadcn/Radix components and Tailwind 4 tokens; avoid ad-hoc inline styling.
 - Fetch client data through SWR hooks; wrap mutations in server actions or API routes for revalidation support.
 - Never use let or var; prefer const and immutable patterns. Favor functional programming (map, filter, reduce) over loops.
+- Never use "as" type assertions; prefer proper typing and type guards.
 - Follow Domain-Driven Design (DDD) with `domain/`, `infra/`, and `application/` layers. Use neverthrow for Result types, ts-pattern for pattern matching, and obj-err for error handling.
 - In DDD, never use classes; prefer plain objects and functions. Use interfaces for abstractions, union types and discriminated unions for variants, and higher-order functions for composition.
 - Format using `pnpm lint:fix` and confirm no Biome or ESLint diagnostics remain.
+- Use FirestoreDataConverter for Firestore data mapping.
 
 ### Example of obj-err, neverthrow, and ts-pattern in DDD
 ```typescript
-import { errorBuilder, InferError } from 'obj-err';
-import { ResultAsync } from 'neverthrow';
-import { match } from 'ts-pattern';
-import { z } from 'zod';
-import { User } from '../domain/user';
-import { UserRepository } from '../domain/user-repository';
-const NotFoundError = errorBuilder('NotFoundError', z.object({ userId: z.string() }));
-type NotFoundError = InferError<typeof NotFoundError>;
-const createUser = (userRepository: UserRepository) => (name: string, email: string): ResultAsync<User, UserError> => User.create(name, email).asyncAndThen(userRepository.create);
-```
+// application/fooService.ts
+const createFoo = (fooRepository: UserRepository) => (bar: string, baz: number) => fooRepository.create(Foo.create(bar, baz));
 
+// infra/fooRepository.ts
+const fooRepository: FooRepository = {
+	create: (foo: Foo) => { ... }
+};
+
+// domain/foo.ts
+interface Foo {
+	bar: string;
+	baz: number;
+}
+
+const Foo = {
+	create: (bar: string, baz: number): Foo => ({ bar, baz })
+};
+
+interface FooRepository {
+	create(foo: Foo): ResultAsync<void, FooError>;
+}
+// Define error with obj-err
+import { errorBuilder, InferError } from 'obj-err';
+export const FooError = errorBuidler('FooError');
+export type FooError = InferError<typeof FooError>;
+// define error for each error type
+export const NotFounderror = errorBuidler('NotFoundError');
+export type NotFounderror = InferError<typeof NotFounderror>;
+// You can use zod schema for extra properties
+import { z } from 'zod';
+export const AnotherError = errorBuilder(
+		'AnotherError',
+		z.object({
+			reason: z.string(),
+			code: z.number(),
+		})
+);
+export type AnotherError = InferError<typeof AnotherError>;
+```
 ## Testing Guidelines
 - Use Vitest with `@testing-library/react` + `@testing-library/jest-dom`. Name specs `*.test.ts` or `*.test.tsx`.
 - Hit 100% statement and branch coverage for non-trivial files; validate with `pnpm coverage --filter stamp`.

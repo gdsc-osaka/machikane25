@@ -22,6 +22,8 @@
 ## Testing Guidelines
 - Use Vitest with `@testing-library/react` + `@testing-library/jest-dom`. Name specs `*.test.ts` or `*.test.tsx`.
 - Hit 100% statement and branch coverage for non-trivial files; validate with `pnpm coverage --filter stamp`.
+- Follow @twada's testing patterns: prefer `render` from `@testing-library/react`, use `describe` blocks for grouping, and leverage `beforeEach` for shared setup.
+- Follow TDD development: write failing tests first, then implement to make them pass.
 - Exercise Firestore/Auth flows against the Firebase Emulator and stub external integrations (photobooth API, Google Forms) in tests.
 
 ## Commit & Pull Request Guidelines

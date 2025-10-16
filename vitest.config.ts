@@ -26,6 +26,8 @@ export default defineConfig({
 				"**/{vite,vitest,tailwind,postcss}.config.*",
 
 				"src/components/ui/**",
+				"src/packages/**",
+				"scripts/**",
 				"**/*.d.ts",
 			],
 		},

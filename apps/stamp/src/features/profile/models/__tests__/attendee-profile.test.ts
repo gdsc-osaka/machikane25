@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	createBlankAttendeeProfile,
-	markSurveyCompleted,
-	computeStampCompletion,
-	computeRewardEligibility,
-	getAttendeeProfile,
-	saveAttendeeProfile,
 	type AttendeeProfile,
+	computeRewardEligibility,
+	computeStampCompletion,
+	createBlankAttendeeProfile,
+	getAttendeeProfile,
+	markSurveyCompleted,
+	saveAttendeeProfile,
 } from "../attendee-profile";
 
 const mockListStampDefinitions = vi.hoisted(() =>
@@ -96,15 +96,15 @@ describe("attendee-profile model helpers", () => {
 	});
 
 	it("loads profile data from Firestore snapshots when available", async () => {
-	const mockSnapshot = {
-		exists: true,
-		data: () => ({
-			displayLanguage: "en",
-			stamps: { reception: true, robot: true, extra: true },
-			completedAt: { toMillis: () => 2000 },
-			surveyCompleted: true,
-			surveySubmittedAt: 3000,
-			surveySubmissionId: "submission-xyz",
+		const mockSnapshot = {
+			exists: true,
+			data: () => ({
+				displayLanguage: "en",
+				stamps: { reception: true, robot: true, extra: true },
+				completedAt: { toMillis: () => 2000 },
+				surveyCompleted: true,
+				surveySubmittedAt: 3000,
+				surveySubmissionId: "submission-xyz",
 				rewardQr: {
 					dataUrl: "data:image/png;base64,sample",
 					generatedAt: { toMillis: () => 4000 },
@@ -143,7 +143,9 @@ describe("attendee-profile model helpers", () => {
 		const profile = await getAttendeeProfile("missing-user");
 
 		expect(profile.uid).toBe("missing-user");
-		expect(Object.values(profile.stamps).every((flag) => flag === false)).toBe(true);
+		expect(Object.values(profile.stamps).every((flag) => flag === false)).toBe(
+			true,
+		);
 		expect(profile.surveyCompleted).toBe(false);
 	});
 

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as profileModel from "@/features/profile/models/attendee-profile";
 import {
-	evaluateRewardEligibility,
 	checkRewardEligibility,
+	evaluateRewardEligibility,
 	type RewardEligibilityResult,
 } from "../check-eligibility";
-import * as profileModel from "@/features/profile/models/attendee-profile";
 
 const baseProfile = () => ({
 	uid: "attendee-123",
@@ -102,15 +102,15 @@ describe("checkRewardEligibility", () => {
 	});
 
 	it("uses default Firestore-backed dependencies when not provided", async () => {
-	const loadSpy = vi
-		.spyOn(profileModel, "getAttendeeProfile")
-		.mockResolvedValue({
-			...baseProfile(),
-			rewardEligible: false,
-		});
-	const saveSpy = vi
-		.spyOn(profileModel, "saveAttendeeProfile")
-		.mockResolvedValue(undefined);
+		const loadSpy = vi
+			.spyOn(profileModel, "getAttendeeProfile")
+			.mockResolvedValue({
+				...baseProfile(),
+				rewardEligible: false,
+			});
+		const saveSpy = vi
+			.spyOn(profileModel, "saveAttendeeProfile")
+			.mockResolvedValue(undefined);
 
 		const result = await checkRewardEligibility("default-user");
 

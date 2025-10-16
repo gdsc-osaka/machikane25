@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
 
 const mockGetAttendeeProfile = vi.hoisted(() =>
@@ -26,11 +26,12 @@ const mockGetAttendeeProfile = vi.hoisted(() =>
 const mockMarkSurveyCompleted = vi.hoisted(() =>
 	vi.fn((profile) => ({ ...profile, surveyCompleted: true })),
 );
-const mockSaveAttendeeProfile = vi.hoisted(() =>
-	vi.fn(async () => undefined),
-);
+const mockSaveAttendeeProfile = vi.hoisted(() => vi.fn(async () => undefined));
 const mockRecordSurveySubmission = vi.hoisted(() =>
-	vi.fn(async () => ({ submissionId: "submission-xyz", submittedAt: Date.now() })),
+	vi.fn(async () => ({
+		submissionId: "submission-xyz",
+		submittedAt: Date.now(),
+	})),
 );
 
 vi.mock("@/features/profile/models/attendee-profile", () => ({

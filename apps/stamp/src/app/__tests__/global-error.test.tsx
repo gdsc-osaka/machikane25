@@ -1,12 +1,13 @@
-import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
-const { captureExceptionSpy, nextErrorMock } = vi.hoisted(() => {
+const { captureExceptionSpy, nextErrorMock, effectCallbacks } = vi.hoisted(() => {
 	return {
 		captureExceptionSpy: vi.fn(),
 		nextErrorMock: vi.fn(({ statusCode }: { statusCode: number }) => (
 			<div data-testid="next-error" data-status-code={statusCode} />
 		)),
+		effectCallbacks: [] as Array<() => void | (() => void)>,
 	};
 });
 
@@ -25,28 +26,31 @@ vi.mock("react", async (importActual) => {
 		...actual,
 		default: actual,
 		useEffect: (callback: () => void | (() => void), deps?: unknown[]) => {
-			const cleanup = callback();
-			return typeof cleanup === "function" ? cleanup : undefined;
+			effectCallbacks.push(callback);
 		},
 	};
 });
 
 afterEach(() => {
 	vi.clearAllMocks();
+	effectCallbacks.length = 0;
 });
 
 test("GlobalError captures the error and renders NextError", async () => {
 	const error = new Error("global-error");
 	const { default: GlobalError } = await import("../global-error");
 
-	render(<GlobalError error={error} />);
+	const markup = renderToStaticMarkup(<GlobalError error={error} />);
 
-	await waitFor(() => {
-		expect(captureExceptionSpy).toHaveBeenCalledWith(error);
-	});
+	for (const runEffect of effectCallbacks) {
+		const cleanup = runEffect();
+		if (typeof cleanup === "function") {
+			cleanup();
+		}
+	}
 
-	const renderedNextError = screen.getByTestId("next-error");
-	expect(renderedNextError).toBeDefined();
+	expect(markup).toContain('data-testid="next-error"');
+	expect(captureExceptionSpy).toHaveBeenCalledWith(error);
 
 	expect(nextErrorMock).toHaveBeenCalled();
 	const [nextErrorProps] = nextErrorMock.mock.calls[0];

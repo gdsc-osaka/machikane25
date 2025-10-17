@@ -2,6 +2,10 @@
 	"storage": {
 		"rules": "storage.rules"
 	},
+	"firestore": {
+		"rules": "apps/stamp/firestore.rules",
+		"indexes": "apps/stamp/firestore.indexes.json"
+	},
 	"emulators": {
 		"auth": {
 			"port": 11000

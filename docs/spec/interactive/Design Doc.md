@@ -1,6 +1,6 @@
 Status: draft
 Authors: ゆにねこ
-Reviewers: 
+Reviewers:
 Updated: 2025/10/11
 # Objective
 2025年まちかね祭展示の伊ンタラクティブアート水族館を開発する

@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Stamp Rally Server Actions
+  version: 0.1.0
+  description: >
+    Internal Next.js server actions that handle secret-bound integrations for
+    the Machikane Festival stamp rally. These are invoked via React Server
+    Actions, not exposed as public REST APIs.
+servers:
+  - url: https://fes2025.gdsc-osaka.jp
+paths:
+  /app/(guest)/form/submitSurvey:
+    post:
+      summary: Submit attendee survey to Google Forms
+      description: >
+        Triggered by the Form page server action. Writes survey answers to
+        Google Forms using server-held entry IDs, then records completion
+        metadata in Firestore.
+      operationId: submitSurvey
+      security:
+        - firebaseSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - attendeeId
+                - answers
+              properties:
+                attendeeId:
+                  type: string
+                  description: Firebase UID of the anonymous attendee
+                answers:
+                  type: object
+                  properties:
+                    ratingPhotobooth:
+                      type: integer
+                      minimum: 1
+                      maximum: 5
+                    ratingAquarium:
+                      type: integer
+                      minimum: 1
+                      maximum: 5
+                    ratingStampRally:
+                      type: integer
+                      minimum: 1
+                      maximum: 5
+                    freeComment:
+                      type: string
+                      nullable: true
+      responses:
+        '200':
+          description: Survey submitted and attendee state updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyResult'
+        '400':
+          description: Validation failed or duplicate submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    firebaseSession:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Firebase Auth session token obtained via anonymous sign-in on the
+        client; used by server action to authenticate the attendee.
+  schemas:
+    SurveyResult:
+      type: object
+      properties:
+        attendeeId:
+          type: string
+        surveyStatus:
+          type: string
+          enum:
+            - submitted
+        rewardStatus:
+          type: string
+          enum:
+            - issued
+            - redeemed
+        rewardQr:
+          type: string
+          description: Base64 payload shown on the Gift page
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string

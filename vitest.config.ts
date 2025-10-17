@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
+import dotenv from 'dotenv';
 
 export default defineConfig({
 	define: {
@@ -11,6 +12,7 @@ export default defineConfig({
 		dedupe: ["react", "react-dom"],
 	},
 	test: {
+		env: dotenv.config({ path: ".env" }).parsed,
 		globals: true,
 		environment: "jsdom",
 		setupFiles: "../../vitest.setup.ts",
@@ -26,6 +28,8 @@ export default defineConfig({
 				"**/{vite,vitest,tailwind,postcss}.config.*",
 
 				"src/components/ui/**",
+				"src/packages/**",
+				"scripts/**",
 				"**/*.d.ts",
 			],
 		},

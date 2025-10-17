@@ -1,31 +1,38 @@
-import { Timestamp } from "firebase/firestore";
-
-type StampCheckpointKey =
+type StampCheckpoint =
 	| "reception"
 	| "photobooth"
 	| "art"
 	| "robot"
 	| "survey";
 
-type StampLedger = {
-	reception: Timestamp | null;
-	photobooth: Timestamp | null;
-	art: Timestamp | null;
-	robot: Timestamp | null;
-	survey: Timestamp | null;
-};
-
-type StampEntry = {
-	checkpoint: StampCheckpointKey;
-	collectedAt: Timestamp;
-};
+type StampLedger = Record<StampCheckpoint, number | null>;
 
 type StampProgress = {
-	collected: ReadonlyArray<StampCheckpointKey>;
+	collected: ReadonlyArray<StampCheckpoint>;
+	remaining: ReadonlyArray<StampCheckpoint>;
 	ledger: StampLedger;
 };
 
-const ALL_STAMP_CHECKPOINTS: ReadonlyArray<StampCheckpointKey> = [
+type ClaimStampPayload = {
+	checkpoint: StampCheckpoint;
+	collectedAt: number;
+};
+
+type ClaimStampSuccess = {
+	outcome: "claimed";
+	ledger: StampLedger;
+	progress: StampProgress;
+};
+
+type ClaimStampDuplicate = {
+	outcome: "duplicate";
+	ledger: StampLedger;
+	progress: StampProgress;
+};
+
+type ClaimStampResult = ClaimStampSuccess | ClaimStampDuplicate;
+
+const STAMP_ORDER: ReadonlyArray<StampCheckpoint> = [
 	"reception",
 	"photobooth",
 	"art",
@@ -33,56 +40,87 @@ const ALL_STAMP_CHECKPOINTS: ReadonlyArray<StampCheckpointKey> = [
 	"survey",
 ];
 
-const emptyLedger: StampLedger = {
+const createEmptyLedger = (): StampLedger => ({
 	reception: null,
 	photobooth: null,
 	art: null,
 	robot: null,
 	survey: null,
+});
+
+const isStampCheckpoint = (value: unknown): value is StampCheckpoint =>
+	typeof value === "string" && STAMP_ORDER.includes(value as StampCheckpoint);
+
+const isMillis = (value: unknown): value is number =>
+	typeof value === "number" && Number.isFinite(value);
+
+const toProgress = (ledger: StampLedger): StampProgress => {
+	const collected = STAMP_ORDER.filter((checkpoint) => ledger[checkpoint] !== null);
+	const remaining = STAMP_ORDER.filter(
+		(checkpoint) => ledger[checkpoint] === null,
+	);
+	return {
+		collected,
+		remaining,
+		ledger,
+	};
 };
 
-const isTimestamp = (value: unknown): value is Timestamp =>
-	value instanceof Timestamp;
+const claimStamp = (
+	ledger: StampLedger,
+	payload: ClaimStampPayload,
+): ClaimStampResult => {
+	const current = ledger[payload.checkpoint];
+	if (current !== null) {
+		return {
+			outcome: "duplicate",
+			ledger,
+			progress: toProgress(ledger),
+		};
+	}
 
-const isStampCheckpointKey = (value: unknown): value is StampCheckpointKey =>
-	typeof value === "string" &&
-	ALL_STAMP_CHECKPOINTS.some((checkpoint) => checkpoint === value);
+	const nextLedger: StampLedger = {
+		...ledger,
+		[payload.checkpoint]: payload.collectedAt,
+	};
 
-const createLedgerFromEntries = (
-	entries: ReadonlyArray<StampEntry>,
-): StampLedger =>
-	ALL_STAMP_CHECKPOINTS.reduce<StampLedger>(
-		(ledger, checkpoint) => {
-			const collected = entries.find(
-				(entry) => entry.checkpoint === checkpoint,
-			);
-			return {
-				...ledger,
-				[checkpoint]: collected ? collected.collectedAt : null,
-			};
-		},
-		emptyLedger,
-	);
+	return {
+		outcome: "claimed",
+		ledger: nextLedger,
+		progress: toProgress(nextLedger),
+	};
+};
 
-const buildStampProgress = ({
-	entries,
-	order,
-}: {
-	entries: ReadonlyArray<StampEntry>;
-	order: ReadonlyArray<StampCheckpointKey>;
-}): StampProgress => {
-	const ledger = createLedgerFromEntries(entries);
-	const collected = order.filter(
-		(checkpoint) => ledger[checkpoint] !== null,
-	);
-	return { collected, ledger };
+const mergeLedger = (
+	source: StampLedger | null | undefined,
+): StampLedger => {
+	if (!source) {
+		return createEmptyLedger();
+	}
+	return {
+		reception: isMillis(source.reception) ? source.reception : null,
+		photobooth: isMillis(source.photobooth) ? source.photobooth : null,
+		art: isMillis(source.art) ? source.art : null,
+		robot: isMillis(source.robot) ? source.robot : null,
+		survey: isMillis(source.survey) ? source.survey : null,
+	};
 };
 
 export {
-	ALL_STAMP_CHECKPOINTS,
-	buildStampProgress,
-	isStampCheckpointKey,
-	isTimestamp,
+	STAMP_ORDER,
+	claimStamp,
+	createEmptyLedger,
+	isStampCheckpoint,
+	mergeLedger,
+	toProgress,
 };
 
-export type { StampCheckpointKey, StampEntry, StampLedger, StampProgress };
+export type {
+	ClaimStampDuplicate,
+	ClaimStampPayload,
+	ClaimStampResult,
+	ClaimStampSuccess,
+	StampCheckpoint,
+	StampLedger,
+	StampProgress,
+};

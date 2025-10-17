@@ -1,145 +1,61 @@
 import {
 	doc,
-	runTransaction,
+	getDoc,
+	setDoc,
 	type Firestore,
-	type Timestamp,
 } from "firebase/firestore";
-import {
-	ALL_STAMP_CHECKPOINTS,
-	isStampCheckpointKey,
-	isTimestamp,
-	type StampCheckpointKey,
-	type StampEntry,
-} from "@/domain/stamp";
-
-type ClaimStampInput = {
-	userId: string;
-	checkpoint: StampCheckpointKey;
-	collectedAt: Timestamp;
-};
+import { mergeLedger, type StampCheckpoint, type StampLedger } from "@/domain/stamp";
 
 type StampDocument = {
-	entries: ReadonlyArray<StampEntry>;
-	createdAt: Timestamp;
-	lastSignedInAt: Timestamp;
-	giftReceivedAt: Timestamp | null;
+	ledger: StampLedger;
+	createdAt: number;
+	lastCollectedAt: number | null;
 };
-
-type ClaimOutcome =
-	| { kind: "duplicate"; document: StampDocument }
-	| { kind: "claimed"; document: StampDocument };
 
 type StampRepository = {
-	claim: (input: ClaimStampInput) => Promise<ClaimOutcome>;
+	getByUserId: (userId: string) => Promise<StampDocument | null>;
+	save: (input: {
+		userId: string;
+		ledger: StampLedger;
+		collectedAt: number | null;
+	}) => Promise<void>;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
-
-const parseEntries = (value: unknown): ReadonlyArray<StampEntry> => {
-	if (!isRecord(value)) {
-		return [];
-	}
-
-	return Object.entries(value).flatMap(([checkpoint, collectedAt]) => {
-		const resolvedCheckpoint = isStampCheckpointKey(checkpoint)
-			? checkpoint
-			: null;
-		if (!resolvedCheckpoint || !isTimestamp(collectedAt)) {
-			return [];
-		}
-		return [
-			{
-				checkpoint: resolvedCheckpoint,
-				collectedAt,
-			},
-		];
-	});
-};
-
-const parseStampDocument = (value: unknown): StampDocument | null => {
-	if (!isRecord(value)) {
-		return null;
-	}
-	const createdAtRaw = value.createdAt;
-	const lastSignedInAtRaw = value.lastSignedInAt;
-	if (!isTimestamp(createdAtRaw) || !isTimestamp(lastSignedInAtRaw)) {
-		return null;
-	}
-	const giftReceivedAtRaw = value.giftReceivedAt;
-	const giftReceivedAt = isTimestamp(giftReceivedAtRaw)
-		? giftReceivedAtRaw
-		: null;
-	const entries = parseEntries(value.stamps);
-	return {
-		entries,
-		createdAt: createdAtRaw,
-		lastSignedInAt: lastSignedInAtRaw,
-		giftReceivedAt,
-	};
-};
-
-const createEmptyDocument = (collectedAt: Timestamp): StampDocument => ({
-	entries: [],
-	createdAt: collectedAt,
-	lastSignedInAt: collectedAt,
-	giftReceivedAt: null,
-});
-
-const documentToFirestorePayload = (document: StampDocument) => ({
-	stamps: Object.fromEntries(
-		document.entries.map((entry) => [entry.checkpoint, entry.collectedAt]),
-	),
-	createdAt: document.createdAt,
-	lastSignedInAt: document.lastSignedInAt,
-	giftReceivedAt: document.giftReceivedAt,
-});
-
-const buildNextDocument = ({
-	document,
-	entry,
+const toFirestorePayload = ({
+	ledger,
+	createdAt,
+	lastCollectedAt,
 }: {
-	document: StampDocument;
-	entry: StampEntry;
-}): StampDocument => ({
-	entries: [...document.entries, entry],
-	createdAt: document.createdAt,
-	lastSignedInAt: entry.collectedAt,
-	giftReceivedAt: document.giftReceivedAt,
+	ledger: StampLedger;
+	createdAt: number;
+	lastCollectedAt: number | null;
+}) => ({
+	stamps: ledger,
+	createdAt,
+	lastCollectedAt,
 });
 
-const withUniqueEntries = (
-	entries: ReadonlyArray<StampEntry>,
-): ReadonlyArray<StampEntry> => {
-	const seen = new Set<StampCheckpointKey>();
-	return entries.filter((entry) => {
-		if (seen.has(entry.checkpoint)) {
-			return false;
-		}
-		seen.add(entry.checkpoint);
-		return true;
-	});
-};
-
-const sortEntriesByOrder = (
-	entries: ReadonlyArray<StampEntry>,
-): ReadonlyArray<StampEntry> =>
-	ALL_STAMP_CHECKPOINTS.reduce<ReadonlyArray<StampEntry>>(
-		(sorted, checkpoint) => [
-			...sorted,
-			...entries.filter((entry) => entry.checkpoint === checkpoint),
-		],
-		[],
-	);
-
-const normalizeDocument = (document: StampDocument): StampDocument => {
-	const uniqueEntries = withUniqueEntries(document.entries);
-	const sortedEntries = sortEntriesByOrder(uniqueEntries);
+const parseDocument = (raw: unknown): StampDocument | null => {
+	if (typeof raw !== "object" || raw === null) {
+		return null;
+	}
+	const record = raw as Record<string, unknown>;
+	const createdAt = typeof record.createdAt === "number" ? record.createdAt : null;
+	if (createdAt === null) {
+		return null;
+	}
+	const lastCollectedRaw = record.lastCollectedAt;
+	const lastCollectedAt =
+		typeof lastCollectedRaw === "number" ? lastCollectedRaw : null;
+	const ledgerRaw = record.stamps;
+	const ledger =
+		typeof ledgerRaw === "object" && ledgerRaw !== null
+			? (ledgerRaw as Partial<Record<StampCheckpoint, number | null>>)
+			: null;
 	return {
-		entries: sortedEntries,
-		createdAt: document.createdAt,
-		lastSignedInAt: document.lastSignedInAt,
-		giftReceivedAt: document.giftReceivedAt,
+		ledger: mergeLedger(ledger as StampLedger),
+		createdAt,
+		lastCollectedAt,
 	};
 };
 
@@ -150,40 +66,40 @@ const createStampRepository = ({
 	firestore: Firestore;
 	collectionPath: string;
 }): StampRepository => {
-	const claim = async ({
-		userId,
-		checkpoint,
-		collectedAt,
-	}: ClaimStampInput): Promise<ClaimOutcome> => {
+	const getByUserId = async (userId: string): Promise<StampDocument | null> => {
 		const reference = doc(firestore, collectionPath, userId);
-		return runTransaction(firestore, async (transaction) => {
-			const snapshot = await transaction.get(reference);
-			const parsedDocument = snapshot.exists()
-				? parseStampDocument(snapshot.data())
-				: null;
-			const baseDocument =
-				parsedDocument ?? createEmptyDocument(collectedAt);
-			const alreadyCollected = baseDocument.entries.some(
-				(entry) => entry.checkpoint === checkpoint,
-			);
-			if (alreadyCollected) {
-				return { kind: "duplicate", document: baseDocument };
-			}
-			const nextDocument = normalizeDocument(
-				buildNextDocument({
-					document: baseDocument,
-					entry: { checkpoint, collectedAt },
-				}),
-			);
-			transaction.set(reference, documentToFirestorePayload(nextDocument), {
-				merge: true,
-			});
-			return { kind: "claimed", document: nextDocument };
-		});
+		const snapshot = await getDoc(reference);
+		if (!snapshot.exists()) {
+			return null;
+		}
+		return parseDocument(snapshot.data());
 	};
 
-	return { claim };
+	const save = async ({
+		userId,
+		ledger,
+		collectedAt,
+	}: {
+		userId: string;
+		ledger: StampLedger;
+		collectedAt: number | null;
+	}) => {
+		const reference = doc(firestore, collectionPath, userId);
+		const snapshot = await getDoc(reference);
+		const existing = snapshot.exists()
+			? parseDocument(snapshot.data())
+			: null;
+		const createdAt = existing?.createdAt ?? Date.now();
+		const payload = toFirestorePayload({
+			ledger,
+			createdAt,
+			lastCollectedAt: collectedAt ?? existing?.lastCollectedAt ?? null,
+		});
+		await setDoc(reference, payload);
+	};
+
+	return { getByUserId, save };
 };
 
 export { createStampRepository };
-export type { ClaimOutcome, ClaimStampInput, StampRepository };
+export type { StampDocument, StampRepository };

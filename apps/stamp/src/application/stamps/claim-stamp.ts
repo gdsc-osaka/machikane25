@@ -1,24 +1,15 @@
 import { err, ok, type Result } from "neverthrow";
-import { Timestamp } from "firebase/firestore";
 import {
-	buildStampProgress,
-	type StampCheckpointKey,
+	claimStamp,
+	createEmptyLedger,
+	mergeLedger,
+	type ClaimStampResult as DomainClaimResult,
+	type StampCheckpoint,
 	type StampProgress,
 } from "@/domain/stamp";
-import type {
-	ClaimOutcome,
-	ClaimStampInput,
-	StampRepository,
-} from "@/infra/firestore/stamp-repository";
+import type { StampRepository } from "@/infra/firestore/stamp-repository";
 
-type ResolveCheckpoint = (token: string) => StampCheckpointKey | null;
-
-type CreateClaimStampServiceOptions = {
-	repository: StampRepository;
-	resolveCheckpoint: ResolveCheckpoint;
-	order: ReadonlyArray<StampCheckpointKey>;
-	clock: () => Timestamp;
-};
+type ResolveCheckpoint = (token: string) => StampCheckpoint | null;
 
 type ClaimStampRequest = {
 	token: string;
@@ -29,86 +20,77 @@ type ClaimStampSuccess = {
 	progress: StampProgress;
 };
 
-type ClaimStampError =
-	| { reason: "invalid-token" }
-	| { reason: "duplicate"; progress: StampProgress };
+type ClaimStampDuplicateError = {
+	reason: "duplicate";
+	progress: StampProgress;
+};
 
-type ClaimStampResult = Result<ClaimStampSuccess, ClaimStampError>;
+type ClaimStampInvalidTokenError = {
+	reason: "invalid-token";
+};
 
-const toClaimInput = ({
-	userId,
-	checkpoint,
-	collectedAt,
-}: {
-	userId: string;
-	checkpoint: StampCheckpointKey;
-	collectedAt: Timestamp;
-}): ClaimStampInput => ({
-	userId,
-	checkpoint,
-	collectedAt,
+type ClaimStampError = ClaimStampDuplicateError | ClaimStampInvalidTokenError;
+
+type ClaimStampResponse = Result<ClaimStampSuccess, ClaimStampError>;
+
+type ClaimStampService = {
+	claim: (request: ClaimStampRequest) => Promise<ClaimStampResponse>;
+};
+
+type CreateClaimStampServiceOptions = {
+	repository: StampRepository;
+	resolveCheckpoint: ResolveCheckpoint;
+	clock: () => number;
+};
+
+const toSuccessResponse = (
+	result: Extract<DomainClaimResult, { outcome: "claimed" }>,
+): ClaimStampSuccess => ({
+	progress: result.progress,
 });
 
-const toProgress = ({
-	document,
-	order,
-}: {
-	document: ClaimOutcome["document"];
-	order: ReadonlyArray<StampCheckpointKey>;
-}): StampProgress =>
-	buildStampProgress({
-		entries: document.entries,
-		order,
-	});
-
-const createDuplicateError = ({
-	document,
-	order,
-}: {
-	document: ClaimOutcome["document"];
-	order: ReadonlyArray<StampCheckpointKey>;
-}): ClaimStampError => ({
+const toDuplicateError = (
+	result: Extract<DomainClaimResult, { outcome: "duplicate" }>,
+): ClaimStampDuplicateError => ({
 	reason: "duplicate",
-	progress: toProgress({ document, order }),
+	progress: result.progress,
 });
 
 const createClaimStampService = ({
 	repository,
 	resolveCheckpoint,
-	order,
 	clock,
-}: CreateClaimStampServiceOptions) => {
+}: CreateClaimStampServiceOptions): ClaimStampService => {
 	const claim = async ({
 		token,
 		userId,
-	}: ClaimStampRequest): Promise<ClaimStampResult> => {
+	}: ClaimStampRequest): Promise<ClaimStampResponse> => {
 		const checkpoint = resolveCheckpoint(token);
 		if (!checkpoint) {
 			return err({ reason: "invalid-token" });
 		}
+
+		const existing = await repository.getByUserId(userId);
+		const ledger = mergeLedger(existing?.ledger ?? createEmptyLedger());
 		const collectedAt = clock();
-		const outcome = await repository.claim(
-			toClaimInput({
-				userId,
-				checkpoint,
-				collectedAt,
-			}),
-		);
-		if (outcome.kind === "duplicate") {
-			return err(
-				createDuplicateError({
-					document: outcome.document,
-					order,
-				}),
-			);
-		}
-		return ok({
-			progress: toProgress({
-				document: outcome.document,
-				order,
-			}),
+		const result = claimStamp(ledger, {
+			checkpoint,
+			collectedAt,
 		});
+
+		if (result.outcome === "duplicate") {
+			return err(toDuplicateError(result));
+		}
+
+		await repository.save({
+			userId,
+			ledger: result.ledger,
+			collectedAt,
+		});
+
+		return ok(toSuccessResponse(result));
 	};
+
 	return { claim };
 };
 
@@ -116,7 +98,8 @@ export { createClaimStampService };
 export type {
 	ClaimStampError,
 	ClaimStampRequest,
-	ClaimStampResult,
+	ClaimStampResponse,
+	ClaimStampService,
 	ClaimStampSuccess,
 	CreateClaimStampServiceOptions,
 	ResolveCheckpoint,

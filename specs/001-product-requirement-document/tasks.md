@@ -41,8 +41,8 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 1 ⚠️ (write first, ensure they fail)
 
-- [X] T008 [P] [US1] Add failing Vitest coverage for anonymous stamp collection flow in `apps/stamp/src/app/__tests__/stamp-collection.test.tsx`
-- [X] T009 [P] [US1] Add failing Vitest coverage for duplicate token rejection in `apps/stamp/src/app/__tests__/stamp-duplicates.test.tsx`
+- [X] T008 [P] [US1] Add failing Vitest coverage for anonymous stamp collection flow in `apps/stamp/test/integration/claim-stamp.integration.test.ts`
+- [X] T009 [P] [US1] Add failing Vitest coverage for duplicate token rejection in `apps/stamp/src/domain/stamp.test.ts`
 
 ### Implementation for User Story 1
 

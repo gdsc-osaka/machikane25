@@ -65,10 +65,10 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 2 ⚠️ (write first, ensure they fail)
 
-- [ ] T016 [P] [US2] Add failing Vitest coverage for survey unlock gating in `apps/stamp/src/app/(guest)/form/__tests__/page.test.tsx`
-- [ ] T017 [P] [US2] Add failing Vitest coverage for QR issuance idempotency in `apps/stamp/src/app/(guest)/gift/__tests__/page.test.tsx`
-- [ ] T018 [P] [US2] Add failing Vitest coverage for Google Forms submission mocking in `apps/stamp/src/app/(guest)/actions/__tests__/submit-survey.test.ts`
-- [ ] T019 [P] [US2] Add failing Vitest coverage for reward persistence in `apps/stamp/src/application/survey/__tests__/submit-survey.test.ts`
+- [X] T016 [P] [US2] Add failing Vitest coverage for survey unlock gating in `apps/stamp/src/app/(guest)/form/__tests__/page.test.tsx`
+- [X] T017 [P] [US2] Add failing Vitest coverage for QR issuance idempotency in `apps/stamp/src/app/(guest)/gift/__tests__/page.test.tsx`
+- [X] T018 [P] [US2] Add failing Vitest coverage for Google Forms submission mocking in `apps/stamp/src/app/(guest)/actions/__tests__/submit-survey.test.ts`
+- [X] T019 [P] [US2] Add failing Vitest coverage for reward persistence in `apps/stamp/src/application/survey/__tests__/submit-survey.test.ts`
 
 ### Implementation for User Story 2
 

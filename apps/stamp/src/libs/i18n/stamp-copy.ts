@@ -208,6 +208,28 @@ const STAMP_COPY: StampCopyDefinition = {
 			},
 		},
 	},
+	checkpoints: {
+		reception: {
+			ja: "受付",
+			en: "Reception",
+		},
+		photobooth: {
+			ja: "フォトブース",
+			en: "Photo Booth",
+		},
+		art: {
+			ja: "インタラクティブアート",
+			en: "Interactive Art",
+		},
+		robot: {
+			ja: "ロボット展示",
+			en: "Robot Exhibit",
+		},
+		survey: {
+			ja: "アンケート",
+			en: "Survey",
+		},
+	},
 	survey: {
 		done: {
 			ja: "アンケートへのご協力ありがとうございます！",
@@ -271,4 +293,4 @@ const getStampCopy = (
 
 export { getStampCopy, isSupportedLocale, STAMP_COPY, SUPPORTED_LOCALES };
 
-export type { StampCopyDefinition, SupportedLocale };
+export type { CheckpointIdentifier, StampCopyDefinition, SupportedLocale };

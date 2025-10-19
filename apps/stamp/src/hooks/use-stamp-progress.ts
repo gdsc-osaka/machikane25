@@ -1,13 +1,18 @@
-import type { Timestamp } from "firebase/firestore";
 import useSWR from "swr";
+import {
+	createEmptyLedger,
+	type StampCheckpoint,
+	type StampLedger,
+} from "@/domain/stamp";
+import { createStampRepository } from "@/infra/stamp/stamp-repository";
 
 const STAMP_PROGRESS_CACHE_KEY = "stamp-progress";
 
-type StampIdentifier = "reception" | "photobooth" | "art" | "robot" | "survey";
+type StampIdentifier = StampCheckpoint;
 
 type StampProgressCacheKey = [typeof STAMP_PROGRESS_CACHE_KEY, string];
 
-type StampProgressSnapshot = Record<StampIdentifier, Timestamp | null>;
+type StampProgressSnapshot = StampLedger;
 
 type StampProgressFetcher = (
 	attendeeId: string,
@@ -18,22 +23,23 @@ const createStampProgressKey = (attendeeId: string): StampProgressCacheKey => [
 	attendeeId,
 ];
 
-const createEmptyStampProgress = (): StampProgressSnapshot => ({
-	art: null,
-	photobooth: null,
-	reception: null,
-	robot: null,
-	survey: null,
-});
+const createEmptyStampProgress = (): StampProgressSnapshot =>
+	createEmptyLedger();
 
-const fetchStampProgress: StampProgressFetcher = async () =>
-	createEmptyStampProgress();
+const fetchStampProgress: StampProgressFetcher = async (attendeeId) => {
+	const firebaseModule = await import("@/firebase");
+	const repository = createStampRepository({
+		firestore: firebaseModule.getFirestoreClient(),
+	});
+	const record = await repository.getByUserId(attendeeId);
+	return record?.ledger ?? createEmptyStampProgress();
+};
 
 const useStampProgress = (attendeeId: string | null) => {
 	const key = attendeeId === null ? null : createStampProgressKey(attendeeId);
 	const fallbackData = createEmptyStampProgress();
-	const fetcher = () =>
-		attendeeId === null ? undefined : fetchStampProgress(attendeeId);
+	const fetcher =
+		attendeeId === null ? undefined : () => fetchStampProgress(attendeeId);
 	return useSWR(key, fetcher, {
 		fallbackData,
 		revalidateOnFocus: false,

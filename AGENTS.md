@@ -1,4 +1,5 @@
 # Repository Guidelines
+Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Domain-Driven Development and Test-Driven Development practices.
 
 ## Project Structure & Module Organization
 - `apps/stamp/` is the Next.js workspace. Pages live in `src/app`, shared UI in `src/components`, Domain-Driven Development files in `src/domain`, `src/infra`, `src/application`, Firebase wiring in `src/firebase.ts`, custom hooks in `src/hooks`, and i18n copy in `src/libs/i18n`.

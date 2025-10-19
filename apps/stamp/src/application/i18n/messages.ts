@@ -35,7 +35,6 @@ type CheckpointMessages = Record<CheckpointIdentifier, string>;
 type StampAppMessages = {
 	home: HomeMessages;
 	stamp: StampMessages;
-	checkpoints: CheckpointMessages;
 };
 
 const createHomeMessages = (locale: SupportedLocale): HomeMessages => ({

@@ -39,7 +39,7 @@ const useStampProgress = (attendeeId: string | null) => {
 	const key = attendeeId === null ? null : createStampProgressKey(attendeeId);
 	const fallbackData = createEmptyStampProgress();
 	const fetcher =
-		 () => attendeeId === null ? undefined : fetchStampProgress(attendeeId);
+		attendeeId === null ? undefined : () => fetchStampProgress(attendeeId);
 	return useSWR(key, fetcher, {
 		fallbackData,
 		revalidateOnFocus: false,

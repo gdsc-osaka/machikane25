@@ -121,7 +121,6 @@ const connectEmulators = (auth: Auth, firestore: Firestore) => {
 	if (!shouldUseEmulators()) {
 		return;
 	}
-
 	const host =
 		process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST ?? "localhost";
 	const firestorePort = parsePort(
@@ -166,10 +165,34 @@ const configureRemoteConfig = (appInstance: FirebaseApp): RemoteConfig | null =>
 	return remoteConfig;
 };
 
-const getFirebaseApp = () => firebaseApp;
-const getFirebaseAuth = () => firebaseAuth;
-const getFirestoreClient = () => firestoreClient;
-const getRemoteConfigClient = () => configureRemoteConfig(firebaseApp);
+const remoteConfigClient = configureRemoteConfig(firebaseApp);
+
+type FirebaseClients = {
+	app: FirebaseApp;
+	auth: Auth;
+	firestore: Firestore;
+	remoteConfig: RemoteConfig | null;
+};
+
+type FirebaseClientName = keyof FirebaseClients;
+
+const firebaseClients: FirebaseClients = {
+	app: firebaseApp,
+	auth: firebaseAuth,
+	firestore: firestoreClient,
+	remoteConfig: remoteConfigClient,
+};
+
+const getFirebaseClients = (): FirebaseClients => firebaseClients;
+
+const getFirebaseClient = <Name extends FirebaseClientName>(
+	name: Name,
+): FirebaseClients[Name] => firebaseClients[name];
+
+const getFirebaseApp = () => firebaseClients.app;
+const getFirebaseAuth = () => firebaseClients.auth;
+const getFirestoreClient = () => firebaseClients.firestore;
+const getRemoteConfigClient = () => firebaseClients.remoteConfig;
 
 const getAnalyticsClient = async (): Promise<Analytics | null> => {
 	if (!isBrowserEnvironment()) {
@@ -189,9 +212,13 @@ const resetFirebaseApp = async () => {
 
 export {
 	getAnalyticsClient,
+	getFirebaseClient,
+	getFirebaseClients,
 	getFirebaseApp,
 	getFirebaseAuth,
 	getFirestoreClient,
 	getRemoteConfigClient,
 	resetFirebaseApp,
 };
+
+export type { FirebaseClientName, FirebaseClients };

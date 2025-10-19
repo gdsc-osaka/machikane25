@@ -1,5 +1,6 @@
 # DDD.md - Domain-Driven Design Guidelines
 This document defines the core architectural philosophy, layered structure, and coding standards for this project. The Coding AI Agent is expected to strictly adhere to these guidelines at all times. The philosophy is to build a robust and maintainable application by placing the business domain at the center of the architecture.
+For more details on specific coding practices, refer apps/example/src source files.
 
 ## 1. Core Philosophy: Domain-Centric
 - **The Domain is the Heart:** All technical decisions serve to best model and express the business domain. The primary focus is on the logic and rules of the domain, not the technology (Firebase, Next.js).

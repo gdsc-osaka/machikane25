@@ -23,7 +23,12 @@ import {
 	type StampCheckpoint,
 	type StampProgress,
 } from "@/domain/stamp";
-import { getStampCopy, type SupportedLocale } from "@/libs/i18n/stamp-copy";
+import {
+	CHECKPOINT_LABELS,
+	formatProgressSummary,
+	type LocaleField,
+	STAMP_MESSAGES,
+} from "@/libs/i18n/messages";
 import { cn } from "@/libs/utils";
 
 type ClaimUiState =
@@ -36,91 +41,17 @@ type ClaimUiState =
 type ClaimOutcome = "success" | "duplicate" | "invalid" | "error";
 
 type OutcomeCopy = {
-	body: Record<SupportedLocale, string>;
-	heading: Record<SupportedLocale, string>;
+	body: LocaleField;
+	heading: LocaleField;
 };
 
 const CLAIM_STAMP_KEY = "claim-stamp";
 
 const OUTCOME_COPY: Record<ClaimOutcome, OutcomeCopy> = {
-	success: {
-		heading: {
-			ja: getStampCopy("ja", ["stamp", "claimSuccess", "heading"]),
-			en: getStampCopy("en", ["stamp", "claimSuccess", "heading"]),
-		},
-		body: {
-			ja: getStampCopy("ja", ["stamp", "claimSuccess", "body"]),
-			en: getStampCopy("en", ["stamp", "claimSuccess", "body"]),
-		},
-	},
-	duplicate: {
-		heading: {
-			ja: getStampCopy("ja", ["stamp", "duplicate", "heading"]),
-			en: getStampCopy("en", ["stamp", "duplicate", "heading"]),
-		},
-		body: {
-			ja: getStampCopy("ja", ["stamp", "duplicate", "body"]),
-			en: getStampCopy("en", ["stamp", "duplicate", "body"]),
-		},
-	},
-	invalid: {
-		heading: {
-			ja: getStampCopy("ja", ["stamp", "invalidToken", "heading"]),
-			en: getStampCopy("en", ["stamp", "invalidToken", "heading"]),
-		},
-		body: {
-			ja: getStampCopy("ja", ["stamp", "invalidToken", "body"]),
-			en: getStampCopy("en", ["stamp", "invalidToken", "body"]),
-		},
-	},
-	error: {
-		heading: {
-			ja: getStampCopy("ja", ["errors", "generic"]),
-			en: getStampCopy("en", ["errors", "generic"]),
-		},
-		body: {
-			ja: getStampCopy("ja", ["errors", "offline"]),
-			en: getStampCopy("en", ["errors", "offline"]),
-		},
-	},
-};
-
-const LOADING_COPY: Record<SupportedLocale, string> = {
-	ja: "スタンプの記録を更新しています…",
-	en: "Updating your stamp board…",
-};
-
-const HOME_LINK_COPY: Record<SupportedLocale, string> = {
-	ja: "スタンプ一覧を見る",
-	en: "View Stamp Board",
-};
-
-const PROGRESS_LABEL_COPY: Record<SupportedLocale, string> = {
-	ja: "獲得状況",
-	en: "Your Progress",
-};
-
-const CHECKPOINT_LABELS: Record<
-	StampCheckpoint,
-	Record<SupportedLocale, string>
-> = {
-	reception: { ja: "受付", en: "Reception" },
-	photobooth: { ja: "フォトブース", en: "Photo Booth" },
-	art: { ja: "アート展示", en: "Art Exhibit" },
-	robot: { ja: "ロボット研究", en: "Robotics Lab" },
-	survey: { ja: "アンケート", en: "Survey" },
-};
-
-const formatProgressSummary = (
-	progress: StampProgress,
-	locale: SupportedLocale,
-): string => {
-	const collectedCount = progress.collected.length;
-	const total = STAMP_SEQUENCE.length;
-	if (locale === "ja") {
-		return `取得済み ${collectedCount} / ${total}`;
-	}
-	return `Collected ${collectedCount} of ${total}`;
+	success: STAMP_MESSAGES.outcomes.success,
+	duplicate: STAMP_MESSAGES.outcomes.duplicate,
+	invalid: STAMP_MESSAGES.outcomes.invalid,
+	error: STAMP_MESSAGES.outcomes.error,
 };
 
 const getOutcomeCopy = (outcome: ClaimOutcome) => OUTCOME_COPY[outcome];
@@ -151,15 +82,19 @@ const StampProgressList = ({ progress }: { progress: StampProgress }) => {
 			),
 		[progress.collected],
 	);
+	const summary = formatProgressSummary({
+		collected: progress.collected.length,
+		total: STAMP_SEQUENCE.length,
+	});
 
 	return (
 		<div className="flex w-full flex-col gap-3">
 			<div className="flex flex-col gap-1">
 				<p className="text-sm font-semibold text-muted-foreground">
-					{PROGRESS_LABEL_COPY.ja}
+					{STAMP_MESSAGES.progressLabel.ja}
 				</p>
 				<p className="text-xs text-muted-foreground">
-					{PROGRESS_LABEL_COPY.en}
+					{STAMP_MESSAGES.progressLabel.en}
 				</p>
 			</div>
 			<ul className="grid gap-3 sm:grid-cols-2">
@@ -178,10 +113,8 @@ const StampProgressList = ({ progress }: { progress: StampProgress }) => {
 				})}
 			</ul>
 			<div className="flex flex-col gap-1 text-sm font-medium">
-				<span>{formatProgressSummary(progress, "ja")}</span>
-				<span className="text-muted-foreground">
-					{formatProgressSummary(progress, "en")}
-				</span>
+				<span>{summary.ja}</span>
+				<span className="text-muted-foreground">{summary.en}</span>
 			</div>
 		</div>
 	);
@@ -277,9 +210,11 @@ export default function StampTokenPage({ params }: StampTokenPageProps) {
 					{claimState.status === "loading" ? (
 						<>
 							<Spinner className="size-8 text-primary" />
-							<h2 className="text-xl font-semibold">{LOADING_COPY.ja}</h2>
+							<h2 className="text-xl font-semibold">
+								{STAMP_MESSAGES.loading.ja}
+							</h2>
 							<CardDescription className="text-sm">
-								{LOADING_COPY.en}
+								{STAMP_MESSAGES.loading.en}
 							</CardDescription>
 						</>
 					) : outcomeCopy !== null ? (
@@ -305,12 +240,12 @@ export default function StampTokenPage({ params }: StampTokenPageProps) {
 						<StampProgressList progress={claimState.payload.progress} />
 						<Button asChild size="lg" variant="outline">
 							<Link href="/" className="flex flex-col items-center gap-1">
-								<span>{HOME_LINK_COPY.ja}</span>
+								<span>{STAMP_MESSAGES.homeLink.ja}</span>
 								<span
 									aria-hidden="true"
 									className="text-xs text-muted-foreground"
 								>
-									{HOME_LINK_COPY.en}
+									{STAMP_MESSAGES.homeLink.en}
 								</span>
 							</Link>
 						</Button>
@@ -319,12 +254,12 @@ export default function StampTokenPage({ params }: StampTokenPageProps) {
 					<CardContent className="flex justify-center">
 						<Button asChild size="lg" variant="outline">
 							<Link href="/" className="flex flex-col items-center gap-1">
-								<span>{HOME_LINK_COPY.ja}</span>
+								<span>{STAMP_MESSAGES.homeLink.ja}</span>
 								<span
 									aria-hidden="true"
 									className="text-xs text-muted-foreground"
 								>
-									{HOME_LINK_COPY.en}
+									{STAMP_MESSAGES.homeLink.en}
 								</span>
 							</Link>
 						</Button>

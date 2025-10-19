@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import type { ClaimStampSuccess } from "@/application/stamps/claim-stamp";
+import { useMemo } from "react";
+import useSWR from "swr";
+import type {
+	ClaimStampError,
+	ClaimStampSuccess,
+} from "@/application/stamps/claim-stamp";
 import { claimStampWithToken } from "@/application/stamps/claim-stamp.client";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +39,8 @@ type OutcomeCopy = {
 	body: Record<SupportedLocale, string>;
 	heading: Record<SupportedLocale, string>;
 };
+
+const CLAIM_STAMP_KEY = "claim-stamp";
 
 const OUTCOME_COPY: Record<ClaimOutcome, OutcomeCopy> = {
 	success: {
@@ -181,6 +187,19 @@ const StampProgressList = ({ progress }: { progress: StampProgress }) => {
 	);
 };
 
+type ClaimStampKey = [typeof CLAIM_STAMP_KEY, string];
+
+const useClaimStamp = (token: string) =>
+	useSWR<ClaimStampSuccess, ClaimStampError, ClaimStampKey | null>(
+		token.length === 0 ? null : [CLAIM_STAMP_KEY, token],
+		async ([, lookupToken]) =>
+			claimStampWithToken(lookupToken).match(
+				(payload) => payload,
+				(error) => Promise.reject(error),
+			),
+		{ revalidateOnFocus: false },
+	);
+
 const resolveOutcome = (state: ClaimUiState): ClaimOutcome | null => {
 	if (state.status === "success") {
 		return "success";
@@ -205,47 +224,26 @@ type StampTokenPageProps = {
 
 export default function StampTokenPage({ params }: StampTokenPageProps) {
 	const { token } = params;
-	const [claimState, setClaimState] = useState<ClaimUiState>({
-		status: "loading",
-	});
+	const { data: claimResult, error: claimError } = useClaimStamp(token);
 
-	useEffect(() => {
-		const active = { current: true };
-		setClaimState({ status: "loading" });
-
-		void claimStampWithToken(token)
-			.match(
-				(payload) => {
-					if (!active.current) {
-						return;
-					}
-					setClaimState({ status: "success", payload });
-				},
-				(error) => {
-					if (!active.current) {
-						return;
-					}
-					if (DuplicateStampError.isFn(error)) {
-						setClaimState({ status: "duplicate" });
-						return;
-					}
-					if (InvalidStampTokenError.isFn(error)) {
-						setClaimState({ status: "invalid" });
-						return;
-					}
-					setClaimState({ status: "error" });
-				},
-			)
-			.catch(() => {
-				if (active.current) {
-					setClaimState({ status: "error" });
-				}
-			});
-
-		return () => {
-			active.current = false;
-		};
-	}, [token]);
+	const claimState: ClaimUiState = (() => {
+		if (claimResult !== undefined) {
+			return {
+				status: "success",
+				payload: claimResult,
+			};
+		}
+		if (claimError !== undefined) {
+			if (DuplicateStampError.isFn(claimError)) {
+				return { status: "duplicate" };
+			}
+			if (InvalidStampTokenError.isFn(claimError)) {
+				return { status: "invalid" };
+			}
+			return { status: "error" };
+		}
+		return { status: "loading" };
+	})();
 
 	const outcome = resolveOutcome(claimState);
 	const outcomeCopy = outcome === null ? null : getOutcomeCopy(outcome);

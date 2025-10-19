@@ -1,5 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { errAsync, okAsync } from "neverthrow";
+import { SWRConfig } from "swr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ClaimStampAsyncResult } from "@/application/stamps/claim-stamp";
 import {
@@ -23,13 +24,23 @@ const importPage = async () => {
 	return module.default;
 };
 
+const renderWithSWR = async (
+	token: string,
+): Promise<ReturnType<typeof render>> => {
+	const Page = await importPage();
+	return render(
+		<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+			<Page params={{ token }} />
+		</SWRConfig>,
+	);
+};
+
 describe("StampTokenPage", () => {
 	beforeEach(() => {
 		claimStampWithTokenMock.mockReset();
 	});
 
 	it("renders success messaging when a stamp is claimed", async () => {
-		const Page = await importPage();
 		const progress = {
 			collected: ["reception", "photobooth"],
 			remaining: ["art", "robot", "survey"],
@@ -43,17 +54,14 @@ describe("StampTokenPage", () => {
 			}),
 		);
 
-		render(<Page params={{ token: "token-reception" }} />);
-
-		await waitFor(() => {
-			expect(claimStampWithTokenMock).toHaveBeenCalledWith("token-reception");
-		});
+		await renderWithSWR("token-reception");
 
 		expect(
 			await screen.findByRole("heading", {
 				name: "スタンプを獲得しました！",
 			}),
 		).toBeInTheDocument();
+		expect(claimStampWithTokenMock).toHaveBeenCalledWith("token-reception");
 		expect(screen.getByText("Stamp Collected!")).toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: "スタンプ一覧を見る" }),
@@ -64,20 +72,20 @@ describe("StampTokenPage", () => {
 	});
 
 	it("renders duplicate messaging when the stamp was already collected", async () => {
-		const Page = await importPage();
 		const duplicateError = DuplicateStampError(
 			"This stamp is already collected.",
 			{ extra: { checkpoint: "photobooth" } },
 		);
 		claimStampWithTokenMock.mockReturnValueOnce(errAsync(duplicateError));
 
-		render(<Page params={{ token: "token-photobooth" }} />);
+		await renderWithSWR("token-photobooth");
 
 		expect(
 			await screen.findByRole("heading", {
 				name: "このスタンプは既に獲得済みです",
 			}),
 		).toBeInTheDocument();
+		expect(claimStampWithTokenMock).toHaveBeenCalledWith("token-photobooth");
 		expect(screen.getByText("Stamp Already Collected")).toBeInTheDocument();
 
 		const statusCard = screen.getByTestId("claim-status");
@@ -85,20 +93,20 @@ describe("StampTokenPage", () => {
 	});
 
 	it("renders invalid token messaging when the NFC token is unknown", async () => {
-		const Page = await importPage();
 		const invalidError = InvalidStampTokenError(
 			"Unknown stamp token provided.",
 			{ extra: { token: "token-unknown" } },
 		);
 		claimStampWithTokenMock.mockReturnValueOnce(errAsync(invalidError));
 
-		render(<Page params={{ token: "token-unknown" }} />);
+		await renderWithSWR("token-unknown");
 
 		expect(
 			await screen.findByRole("heading", {
 				name: "このスタンプは無効です",
 			}),
 		).toBeInTheDocument();
+		expect(claimStampWithTokenMock).toHaveBeenCalledWith("token-unknown");
 		expect(screen.getByText("Invalid Stamp Token")).toBeInTheDocument();
 
 		const statusCard = screen.getByTestId("claim-status");
@@ -106,20 +114,20 @@ describe("StampTokenPage", () => {
 	});
 
 	it("renders generic error messaging when claim service fails unexpectedly", async () => {
-		const Page = await importPage();
 		const genericError = StampRepositoryError(
 			"Failed to persist stamp ledger.",
 			{ extra: { operation: "save" } },
 		);
 		claimStampWithTokenMock.mockReturnValueOnce(errAsync(genericError));
 
-		render(<Page params={{ token: "token-robot" }} />);
+		await renderWithSWR("token-robot");
 
 		expect(
 			await screen.findByRole("heading", {
 				name: "通信中に問題が発生しました。時間をおいて再度お試しください。",
 			}),
 		).toBeInTheDocument();
+		expect(claimStampWithTokenMock).toHaveBeenCalledWith("token-robot");
 		expect(
 			screen.getByText("Something went wrong. Please try again in a moment."),
 		).toBeInTheDocument();

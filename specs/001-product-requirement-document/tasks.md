@@ -50,7 +50,7 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 - [X] T011 [US1] Implement Firestore stamp repository with token validation hooks in `apps/stamp/src/infra/stamp/stamp-repository.ts` and `apps/stamp/src/infra/stamp/stamp-converter.ts`
 - [X] T012 [US1] Create application service for claiming stamps and refreshing progress in `apps/stamp/src/application/stamps/claim-stamp.ts`
 - [X] T013 [US1] Update Stamp Page UI to animate claims and invoke service in `apps/stamp/src/app/(guest)/stamp/[token]/page.tsx`
-- [ ] T014 [US1] Update Home Page to render five-slot board with bilingual CTA states in `apps/stamp/src/app/(guest)/page.tsx`
+- [X] T014 [US1] Update Home Page to render five-slot board with bilingual CTA states in `apps/stamp/src/app/(guest)/page.tsx`
 - [ ] T015 [P] [US1] Populate localized copy constants for Home/Stamp states in `apps/stamp/src/application/i18n/messages.ts`
 
 **Checkpoint**: User Story 1 complete—guest stamp collection is fully functional and testable.

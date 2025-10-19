@@ -11,7 +11,7 @@ type SwrInvocation = {
 				revalidateOnFocus?: boolean;
 		  }
 		| undefined;
-	fetcher: (() => Promise<StampProgressSnapshot>) | undefined;
+	fetcher: () => Promise<StampProgressSnapshot | undefined>;
 	key: StampProgressCacheKey | null;
 };
 
@@ -78,7 +78,7 @@ describe("useStampProgress", () => {
 		expect(swrInvocations).toHaveLength(1);
 		const invocation = swrInvocations[0];
 		expect(invocation.key).toBeNull();
-		expect(invocation.fetcher).toBeUndefined();
+		expect(await invocation.fetcher()).toBeUndefined();
 		expect(invocation.config?.fallbackData).toEqual(
 			hookModule.createEmptyStampProgress(),
 		);

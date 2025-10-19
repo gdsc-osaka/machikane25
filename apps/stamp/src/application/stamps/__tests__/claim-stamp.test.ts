@@ -1,12 +1,13 @@
 import { okAsync } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import { createClaimStampService } from "@/application/stamps/claim-stamp";
+import type { StampRepository } from "@/domain/stamp";
 import {
 	type createEmptyLedger,
+	DuplicateStampError,
 	STAMP_SEQUENCE,
 	type StampCheckpoint,
 } from "@/domain/stamp";
-import type { StampRepository } from "@/infra/stamp/stamp-repository";
 
 type InMemoryDocument = {
 	createdAt: number;
@@ -27,37 +28,29 @@ const createInMemoryRepository = (): StampRepository & {
 				entry
 					? {
 							...entry,
+							userId,
 							ledger: { ...entry.ledger },
 						}
 					: null,
 			);
 		},
-		save({ userId, ledger, collectedAt }) {
+		save({ userId, ledger, collectedAt, createdAt, lastCollectedAt }) {
 			const existing = store.get(userId);
-			const createdAt = existing?.createdAt ?? collectedAt ?? Date.now();
-			const lastCollectedAt = collectedAt ?? existing?.lastCollectedAt ?? null;
+			const resolvedCreatedAt =
+				createdAt ?? existing?.createdAt ?? collectedAt ?? Date.now();
+			const resolvedLastCollectedAt =
+				lastCollectedAt ?? collectedAt ?? existing?.lastCollectedAt ?? null;
 
 			store.set(userId, {
-				createdAt,
-				lastCollectedAt,
-				ledger,
+				createdAt: resolvedCreatedAt,
+				lastCollectedAt: resolvedLastCollectedAt,
+				ledger: { ...ledger },
 			});
 
 			return okAsync(undefined);
 		},
 	};
 };
-
-const TOKEN_PAIRS: ReadonlyArray<readonly [string, StampCheckpoint]> = [
-	["token-reception", "reception"],
-	["token-photobooth", "photobooth"],
-	["token-art", "art"],
-	["token-robot", "robot"],
-	["token-survey", "survey"],
-];
-
-const resolveCheckpointFromToken = (token: string): StampCheckpoint | null =>
-	TOKEN_PAIRS.find(([candidate]) => candidate === token)?.[1] ?? null;
 
 const createClock = (epoch = 1_700_000_000_000) => {
 	const state = { current: epoch };
@@ -73,7 +66,6 @@ describe("claim stamp integration", () => {
 		const repository = createInMemoryRepository();
 		const service = createClaimStampService({
 			repository,
-			resolveCheckpoint: resolveCheckpointFromToken,
 			clock: createClock(),
 		});
 
@@ -130,7 +122,6 @@ describe("claim stamp integration", () => {
 		const repository = createInMemoryRepository();
 		const service = createClaimStampService({
 			repository,
-			resolveCheckpoint: resolveCheckpointFromToken,
 			clock: createClock(),
 		});
 
@@ -157,10 +148,11 @@ describe("claim stamp integration", () => {
 		expect(duplicate).toHaveProperty("isErr");
 		const duplicateResult = duplicate as {
 			isErr: () => boolean;
-			_unsafeUnwrapErr: () => { code: string };
+			_unsafeUnwrapErr: () => unknown;
 		};
 		expect(duplicateResult.isErr()).toBe(true);
-		expect(duplicateResult._unsafeUnwrapErr().code).toBe("duplicate-stamp");
+		const duplicateError = duplicateResult._unsafeUnwrapErr();
+		expect(DuplicateStampError.isFn(duplicateError)).toBe(true);
 
 		const persisted = repository.store.get("guest-2");
 		const collected = firstResult._unsafeUnwrap().progress.collected;

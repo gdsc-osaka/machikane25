@@ -1,19 +1,16 @@
-import { errAsync, type Result, type ResultAsync } from "neverthrow";
-import { errorBuilder } from "obj-err";
-import { z } from "zod";
+import type { Result, ResultAsync } from "neverthrow";
 import {
+	collectStamp,
 	createEmptyLedger,
-	createStampProgress,
-	isStampCollected,
-	markStampCollected,
-	resolveStampToken,
+	type DuplicateStampError,
+	type InvalidStampTokenError,
+	type PersistStampLedgerInput,
+	resolveStampTokenResult,
 	type StampCheckpoint,
 	type StampProgress,
+	type StampRepository,
+	type StampRepositoryError,
 } from "@/domain/stamp";
-import type {
-	StampRepository,
-	StampRepositoryError,
-} from "@/infra/stamp/stamp-repository";
 
 type ClaimStampInput = {
 	token: string;
@@ -23,30 +20,6 @@ type ClaimStampInput = {
 type ClaimStampSuccess = {
 	checkpoint: StampCheckpoint;
 	progress: StampProgress;
-};
-
-const invalidTokenErrorBuilder = errorBuilder(
-	"InvalidStampTokenError",
-	z.object({
-		token: z.string(),
-	}),
-);
-
-type InvalidStampTokenError = ReturnType<typeof invalidTokenErrorBuilder> & {
-	code: "invalid-stamp-token";
-	token: string;
-};
-
-const duplicateStampErrorBuilder = errorBuilder(
-	"DuplicateStampError",
-	z.object({
-		checkpoint: z.string(),
-	}),
-);
-
-type DuplicateStampError = ReturnType<typeof duplicateStampErrorBuilder> & {
-	code: "duplicate-stamp";
-	checkpoint: StampCheckpoint;
 };
 
 type ClaimStampError =
@@ -59,81 +32,53 @@ type ClaimStampAsyncResult = ResultAsync<ClaimStampSuccess, ClaimStampError>;
 
 type Clock = () => number;
 
+type ResolveCheckpoint = (
+	token: string,
+) => Result<StampCheckpoint, InvalidStampTokenError>;
+
 type Dependencies = {
 	repository: StampRepository;
-	resolveCheckpoint?: (token: string) => StampCheckpoint | null;
+	resolveCheckpoint?: ResolveCheckpoint;
 	clock?: Clock;
-};
-
-const createInvalidTokenError = (token: string): InvalidStampTokenError => {
-	const base = invalidTokenErrorBuilder("Unknown stamp token provided.", {
-		extra: { token },
-	});
-	return {
-		...base,
-		code: "invalid-stamp-token",
-		token,
-	};
-};
-
-const createDuplicateStampError = (
-	checkpoint: StampCheckpoint,
-): DuplicateStampError => {
-	const base = duplicateStampErrorBuilder(
-		"Stamp already collected for this attendee.",
-		{ extra: { checkpoint } },
-	);
-	return {
-		...base,
-		code: "duplicate-stamp",
-		checkpoint,
-	};
 };
 
 const createClaimStampService = ({
 	repository,
-	resolveCheckpoint = resolveStampToken,
+	resolveCheckpoint = resolveStampTokenResult,
 	clock = Date.now,
 }: Dependencies) => {
-	const claim = ({ token, userId }: ClaimStampInput): ClaimStampAsyncResult => {
-		const checkpoint = resolveCheckpoint(token);
-		if (checkpoint === null) {
-			return errAsync(createInvalidTokenError(token));
-		}
+	const claim = ({ token, userId }: ClaimStampInput): ClaimStampAsyncResult =>
+		resolveCheckpoint(token).asyncAndThen((checkpoint) =>
+			repository
+				.getByUserId(userId)
+				.mapErr((error): ClaimStampError => error)
+				.andThen((snapshot) => {
+					const ledger = snapshot?.ledger ?? createEmptyLedger();
+					const collectedAt = clock();
 
-		return repository
-			.getByUserId(userId)
-			.mapErr((error): ClaimStampError => error)
-			.andThen((document) => {
-				const ledger = document?.ledger ?? createEmptyLedger();
-
-				if (isStampCollected(ledger, checkpoint)) {
-					return errAsync(createDuplicateStampError(checkpoint));
-				}
-
-				const collectedAt = clock();
-				const updatedLedger = markStampCollected({
-					ledger,
-					checkpoint,
-					collectedAt,
-				});
-				const progress = createStampProgress(updatedLedger);
-
-				return repository
-					.save({
-						userId,
-						ledger: updatedLedger,
-						collectedAt,
-						createdAt: document?.createdAt,
-						lastCollectedAt: progress.lastCollectedAt,
-					})
-					.mapErr((error): ClaimStampError => error)
-					.map(() => ({
+					return collectStamp({
+						ledger,
 						checkpoint,
-						progress,
-					}));
-			});
-	};
+						collectedAt,
+					}).asyncAndThen(({ ledger: updatedLedger, progress }) => {
+						const persistInput: PersistStampLedgerInput = {
+							userId,
+							ledger: updatedLedger,
+							collectedAt,
+							createdAt: snapshot?.createdAt,
+							lastCollectedAt: progress.lastCollectedAt,
+						};
+
+						return repository
+							.save(persistInput)
+							.mapErr((error): ClaimStampError => error)
+							.map(() => ({
+								checkpoint,
+								progress,
+							}));
+					});
+				}),
+		);
 
 	return {
 		claim,

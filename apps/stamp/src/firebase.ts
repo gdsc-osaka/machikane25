@@ -43,17 +43,24 @@ const isConfigRecord = (value: unknown): value is Record<string, unknown> =>
 const parseFirebaseConfig = (): FirebaseOptions => {
 	const raw = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
 	if (!isNonEmptyString(raw)) {
-		throw new Error("NEXT_PUBLIC_FIREBASE_CONFIG is not defined.");
+		throw new Error(
+			"NEXT_PUBLIC_FIREBASE_CONFIG is not defined. Please set it in your .env.local file following the example in .env.local.example.",
+		);
 	}
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
 	} catch (error) {
-		getLogger().error(error, "Failed to parse NEXT_PUBLIC_FIREBASE_CONFIG.");
+		getLogger().error(
+			error,
+			`Failed to parse NEXT_PUBLIC_FIREBASE_CONFIG. Parse error: ${error instanceof Error ? error.message : "unknown"}`,
+		);
 		throw new Error("NEXT_PUBLIC_FIREBASE_CONFIG must be valid JSON.");
 	}
 	if (!isConfigRecord(parsed)) {
-		throw new Error("NEXT_PUBLIC_FIREBASE_CONFIG must be a JSON object.");
+		throw new Error(
+			`NEXT_PUBLIC_FIREBASE_CONFIG must be a JSON object, but received: ${typeof parsed}.`,
+		);
 	}
 	const config: Record<string, unknown> = parsed;
 

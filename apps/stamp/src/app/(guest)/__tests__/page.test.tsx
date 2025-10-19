@@ -44,7 +44,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const renderHomePage = async () => {
-	const Page = (await import("../(guest)/page")).default;
+	const Page = (await import("../page")).default;
 	return render(
 		<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
 			<Page />

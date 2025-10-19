@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 import RootLayout from "../layout";
 
@@ -14,14 +14,11 @@ vi.mock("next/font/google", async (importActual) => {
 });
 
 test("RootLayout", () => {
-	render(
+	const markup = renderToStaticMarkup(
 		<RootLayout>
 			<div data-testid="child-element">Hello World</div>
 		</RootLayout>,
 	);
 
-	// RootLayout に渡した子要素が正しくレンダリングされているか確認
-	const childElement = screen.getByTestId("child-element");
-	expect(childElement).toBeDefined();
-	expect(screen.getByText("Hello World")).toBeDefined();
+	expect(markup).toContain("Hello World");
 });

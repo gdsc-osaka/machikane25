@@ -1,4 +1,3 @@
-
 import { type Analytics, getAnalytics, isSupported } from "firebase/analytics";
 import {
 	deleteApp,

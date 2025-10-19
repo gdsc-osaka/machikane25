@@ -73,8 +73,11 @@ type StampCopyDefinition = {
 	survey: SurveyCopy;
 };
 
+interface CopyBranch {
+	readonly [key: string]: LocaleField | CopyBranch;
+}
+
 type CopyNode = LocaleField | CopyBranch;
-type CopyBranch = Record<string, CopyNode>;
 
 const SUPPORTED_LOCALES: ReadonlyArray<SupportedLocale> = ["ja", "en"];
 

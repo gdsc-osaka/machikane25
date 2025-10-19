@@ -1,26 +1,19 @@
 import { type Analytics, getAnalytics, isSupported } from "firebase/analytics";
 import {
 	deleteApp,
+	type FirebaseApp,
+	type FirebaseOptions,
 	getApp,
 	getApps,
 	initializeApp,
-	type FirebaseApp,
-	type FirebaseOptions,
 } from "firebase/app";
-import {
-	connectAuthEmulator,
-	getAuth,
-	type Auth,
-} from "firebase/auth";
+import { type Auth, connectAuthEmulator, getAuth } from "firebase/auth";
 import {
 	connectFirestoreEmulator,
-	getFirestore,
 	type Firestore,
+	getFirestore,
 } from "firebase/firestore";
-import {
-	getRemoteConfig,
-	type RemoteConfig,
-} from "firebase/remote-config";
+import { getRemoteConfig, type RemoteConfig } from "firebase/remote-config";
 import { getLogger } from "@/packages/logger";
 
 type RequiredConfigKey = "apiKey" | "authDomain" | "projectId" | "appId";
@@ -44,9 +37,7 @@ const REMOTE_CONFIG_MIN_FETCH_INTERVAL_MS = 60_000;
 const isNonEmptyString = (value: unknown): value is string =>
 	typeof value === "string" && value.trim().length > 0;
 
-const isConfigRecord = (
-	value: unknown,
-): value is Record<string, unknown> =>
+const isConfigRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null;
 
 const parseFirebaseConfig = (): FirebaseOptions => {
@@ -66,19 +57,16 @@ const parseFirebaseConfig = (): FirebaseOptions => {
 	}
 	const config: Record<string, unknown> = parsed;
 
-	const base = REQUIRED_CONFIG_KEYS.reduce<FirebaseOptions>(
-		(options, key) => {
-			const value = config[key];
-			if (!isNonEmptyString(value)) {
-				throw new Error(`Missing Firebase config key: ${String(key)}`);
-			}
-			return {
-				...options,
-				[key]: value,
-			};
-		},
-		{},
-	);
+	const base = REQUIRED_CONFIG_KEYS.reduce<FirebaseOptions>((options, key) => {
+		const value = config[key];
+		if (!isNonEmptyString(value)) {
+			throw new Error(`Missing Firebase config key: ${String(key)}`);
+		}
+		return {
+			...options,
+			[key]: value,
+		};
+	}, {});
 
 	return OPTIONAL_CONFIG_KEYS.reduce<FirebaseOptions>((options, key) => {
 		const value = config[key];
@@ -121,8 +109,7 @@ const connectEmulators = (auth: Auth, firestore: Firestore) => {
 	if (!shouldUseEmulators()) {
 		return;
 	}
-	const host =
-		process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST ?? "localhost";
+	const host = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST ?? "localhost";
 	const firestorePort = parsePort(
 		process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_PORT,
 		FIRESTORE_EMULATOR_FALLBACK_PORT,
@@ -148,7 +135,9 @@ connectEmulators(firebaseAuth, firestoreClient);
 
 const isBrowserEnvironment = () => typeof window !== "undefined";
 
-const configureRemoteConfig = (appInstance: FirebaseApp): RemoteConfig | null => {
+const configureRemoteConfig = (
+	appInstance: FirebaseApp,
+): RemoteConfig | null => {
 	if (!isBrowserEnvironment()) {
 		return null;
 	}

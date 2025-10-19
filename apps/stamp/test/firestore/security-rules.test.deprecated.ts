@@ -1,15 +1,15 @@
 /* @vitest-environment node */
 
-import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
-import {afterAll, afterEach, beforeAll, describe, expect, test} from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
 	assertFails,
 	assertSucceeds,
 	initializeTestEnvironment,
 	type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import {doc, getDoc, setDoc, Timestamp} from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 
 interface AttendeeDocument {
 	stamps: Record<string, Timestamp>;
@@ -31,9 +31,15 @@ const PROJECT_ID = "machikane25-stamp-security";
 const RULES_PATH = resolve(process.cwd(), "firestore.rules");
 const ATTENDEE_ID = "attendee-uid";
 const STAFF_ID = "staff-uid";
-const INITIAL_TIMESTAMP = Timestamp.fromDate(new Date("2025-01-01T00:00:00.000Z"));
-const UPDATED_TIMESTAMP = Timestamp.fromDate(new Date("2025-01-01T00:05:00.000Z"));
-const REDEEMED_TIMESTAMP = Timestamp.fromDate(new Date("2025-01-01T00:10:00.000Z"));
+const INITIAL_TIMESTAMP = Timestamp.fromDate(
+	new Date("2025-01-01T00:00:00.000Z"),
+);
+const UPDATED_TIMESTAMP = Timestamp.fromDate(
+	new Date("2025-01-01T00:05:00.000Z"),
+);
+const REDEEMED_TIMESTAMP = Timestamp.fromDate(
+	new Date("2025-01-01T00:10:00.000Z"),
+);
 const environmentHolder: TestEnvironmentHolder = {};
 
 const getEnvironment = () => {
@@ -92,16 +98,15 @@ const seedAttendeeDocument = async (
 
 beforeAll(async () => {
 	try {
-
-	environmentHolder.env = await initializeTestEnvironment({
-		projectId: PROJECT_ID,
-		firestore: {
-			host: FIRESTORE_EMULATOR.host,
-			port: FIRESTORE_EMULATOR.port,
-			rules: readFileSync(RULES_PATH, "utf8"),
-		},
-	});
-	console.log("env", environmentHolder.env);
+		environmentHolder.env = await initializeTestEnvironment({
+			projectId: PROJECT_ID,
+			firestore: {
+				host: FIRESTORE_EMULATOR.host,
+				port: FIRESTORE_EMULATOR.port,
+				rules: readFileSync(RULES_PATH, "utf8"),
+			},
+		});
+		console.log("env", environmentHolder.env);
 	} catch (error) {
 		console.error("Failed to initialize test environment:", error);
 		throw error;

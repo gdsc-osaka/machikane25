@@ -25,12 +25,12 @@ describe("stamp copy map", () => {
 	});
 
 	it("returns nested copy entries by locale and key", () => {
-		expect(
-			getStampCopy("ja", ["stamp", "claimSuccess", "heading"]),
-		).toBe("スタンプを獲得しました！");
-		expect(
-			getStampCopy("en", ["stamp", "claimSuccess", "heading"]),
-		).toBe("Stamp Collected!");
+		expect(getStampCopy("ja", ["stamp", "claimSuccess", "heading"])).toBe(
+			"スタンプを獲得しました！",
+		);
+		expect(getStampCopy("en", ["stamp", "claimSuccess", "heading"])).toBe(
+			"Stamp Collected!",
+		);
 	});
 
 	it("throws when accessing unknown copy keys", () => {

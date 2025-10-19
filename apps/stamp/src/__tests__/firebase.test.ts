@@ -68,7 +68,9 @@ const firebaseConfigPayload = {
 };
 
 const importFirebaseModule = async () => {
-	process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify(firebaseConfigPayload);
+	process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify(
+		firebaseConfigPayload,
+	);
 	process.env.NODE_ENV = "development";
 	vi.resetModules();
 	return import("@/firebase");

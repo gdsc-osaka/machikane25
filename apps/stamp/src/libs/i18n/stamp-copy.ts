@@ -231,8 +231,7 @@ const isLocaleField = (value: unknown): value is LocaleField =>
 		return typeof entry === "string";
 	});
 
-const isCopyBranch = (value: unknown): value is CopyBranch =>
-	isRecord(value);
+const isCopyBranch = (value: unknown): value is CopyBranch => isRecord(value);
 
 const resolveCopyNode = (
 	node: CopyNode,
@@ -267,11 +266,6 @@ const getStampCopy = (
 	return resolved[locale];
 };
 
-export {
-	getStampCopy,
-	isSupportedLocale,
-	STAMP_COPY,
-	SUPPORTED_LOCALES,
-};
+export { getStampCopy, isSupportedLocale, STAMP_COPY, SUPPORTED_LOCALES };
 
 export type { StampCopyDefinition, SupportedLocale };

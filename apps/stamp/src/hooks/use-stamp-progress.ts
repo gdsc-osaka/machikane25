@@ -9,11 +9,14 @@ type StampProgressCacheKey = [typeof STAMP_PROGRESS_CACHE_KEY, string];
 
 type StampProgressSnapshot = Record<StampIdentifier, Timestamp | null>;
 
-type StampProgressFetcher = (attendeeId: string) => Promise<StampProgressSnapshot>;
-
-const createStampProgressKey = (
+type StampProgressFetcher = (
 	attendeeId: string,
-): StampProgressCacheKey => [STAMP_PROGRESS_CACHE_KEY, attendeeId];
+) => Promise<StampProgressSnapshot>;
+
+const createStampProgressKey = (attendeeId: string): StampProgressCacheKey => [
+	STAMP_PROGRESS_CACHE_KEY,
+	attendeeId,
+];
 
 const createEmptyStampProgress = (): StampProgressSnapshot => ({
 	art: null,
@@ -29,9 +32,9 @@ const fetchStampProgress: StampProgressFetcher = async () =>
 const useStampProgress = (attendeeId: string | null) => {
 	const key = attendeeId === null ? null : createStampProgressKey(attendeeId);
 	const fallbackData = createEmptyStampProgress();
-	const fetcher =
-		attendeeId === null ? undefined : () => fetchStampProgress(attendeeId);
-	return useSWR<StampProgressSnapshot>(key, fetcher, {
+	const fetcher = () =>
+		attendeeId === null ? undefined : fetchStampProgress(attendeeId);
+	return useSWR(key, fetcher, {
 		fallbackData,
 		revalidateOnFocus: false,
 	});

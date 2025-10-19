@@ -45,7 +45,8 @@ The directory structure MUST directly mirror the architectural layers to ensure 
 ```
 src
 ├── application/
-│   └── user-service.ts      # Application Layer: Orchestrates use cases.
+│   └── user/
+│       └── create-user.ts      # Application Layer: Orchestrates use cases.
 ├── domain/
 │   └── user.ts              # Domain Layer: Core business logic, entities, value objects (defined with zod).
 └── infrastructure/

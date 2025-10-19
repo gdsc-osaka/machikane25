@@ -25,9 +25,9 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 - [X] T004 Harden Firestore security rules for attendee-only stamp writes and staff redemption (`apps/stamp/firestore.rules`)
-- [X] T005 Ensure typed Firebase client helpers for Auth/Firestore/Remote Config in `apps/stamp/src/firebase.ts`
-- [X] T006 Seed bilingual copy map shared across guest pages in `apps/stamp/src/libs/i18n/stamp-copy.ts`
-- [X] T007 Configure SWR cache keys and fallbacks for stamp progress in `apps/stamp/src/hooks/use-stamp-progress.ts`
+- [ ] T005 Ensure typed Firebase client helpers for Auth/Firestore/Remote Config in `apps/stamp/src/firebase.ts`
+- [ ] T006 Seed bilingual copy map shared across guest pages in `apps/stamp/src/libs/i18n/stamp-copy.ts`
+- [ ] T007 Configure SWR cache keys and fallbacks for stamp progress in `apps/stamp/src/hooks/use-stamp-progress.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel.
 
@@ -41,14 +41,14 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 1 ⚠️ (write first, ensure they fail)
 
-- [X] T008 [P] [US1] Add failing Vitest coverage for anonymous stamp collection flow in `apps/stamp/test/integration/claim-stamp.integration.test.ts`
-- [X] T009 [P] [US1] Add failing Vitest coverage for duplicate token rejection in `apps/stamp/src/domain/stamp.test.ts`
+- [ ] T008 [P] [US1] Add failing Vitest coverage for anonymous stamp collection flow in `apps/stamp/test/integration/claim-stamp.test.ts`
+- [ ] T009 [P] [US1] Add failing Vitest coverage for duplicate token rejection in `apps/stamp/src/domain/__tests__/stamp.test.ts`
 
 ### Implementation for User Story 1
 
-- [X] T010 [US1] Define stamp domain types and result helpers in `apps/stamp/src/domain/stamp.ts`
-- [X] T011 [US1] Implement Firestore stamp repository with token validation hooks in `apps/stamp/src/infra/firestore/stamp-repository.ts`
-- [X] T012 [US1] Create application service for claiming stamps and refreshing progress in `apps/stamp/src/application/stamps/claim-stamp.ts`
+- [ ] T010 [US1] Define stamp domain types and result helpers in `apps/stamp/src/domain/stamp.ts`
+- [ ] T011 [US1] Implement Firestore stamp repository with token validation hooks in `apps/stamp/src/infra/stamp/stamp-repository.ts` and `apps/stamp/src/infra/stamp/stamp-converter.ts`
+- [ ] T012 [US1] Create application service for claiming stamps and refreshing progress in `apps/stamp/src/application/stamps/claim-stamp.ts`
 - [ ] T013 [US1] Update Stamp Page UI to animate claims and invoke service in `apps/stamp/src/app/(guest)/stamp/[token]/page.tsx`
 - [ ] T014 [US1] Update Home Page to render five-slot board with bilingual CTA states in `apps/stamp/src/app/(guest)/page.tsx`
 - [ ] T015 [P] [US1] Populate localized copy constants for Home/Stamp states in `apps/stamp/src/application/i18n/messages.ts`

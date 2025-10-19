@@ -45,6 +45,9 @@ Any form of hard-coded value is strictly forbidden.
 - **Configuration Values:** API keys, URLs, file paths, and other environmental settings MUST be loaded from configuration files (e.g., `.env`, `config.js`) or environment variables. They must never be present in the source code.
 - **User-facing Strings:** Text for UI, logs, or errors should be managed via constants or localization files to facilitate maintenance and internationalization.
 
+### Mocking and Stubbing
+- Use mocking libraries (e.g., Vitest mocks) to simulate external dependencies in unit tests, such as infrastructure layers e.g. database access, network calls, or file I/O.
+
 ### Other Key Standards
 - **Single Responsibility Principle (SRP):** Every module, class, or function should have responsibility over a single part of the functionality.
 - **DRY (Don't Repeat Yourself):** Avoid code duplication at all costs. Abstract and reuse common logic.

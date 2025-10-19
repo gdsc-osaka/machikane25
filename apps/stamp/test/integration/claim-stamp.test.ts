@@ -1,3 +1,4 @@
+import { okAsync } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import { createClaimStampService } from "@/application/stamps/claim-stamp";
 import {
@@ -20,16 +21,18 @@ const createInMemoryRepository = (): StampRepository & {
 
 	return {
 		store,
-		async getByUserId(userId) {
+		getByUserId(userId) {
 			const entry = store.get(userId);
-			return entry
-				? {
-						...entry,
-						ledger: { ...entry.ledger },
-					}
-				: null;
+			return okAsync(
+				entry
+					? {
+							...entry,
+							ledger: { ...entry.ledger },
+						}
+					: null,
+			);
 		},
-		async save({ userId, ledger, collectedAt }) {
+		save({ userId, ledger, collectedAt }) {
 			const existing = store.get(userId);
 			const createdAt = existing?.createdAt ?? collectedAt ?? Date.now();
 			const lastCollectedAt = collectedAt ?? existing?.lastCollectedAt ?? null;
@@ -39,6 +42,8 @@ const createInMemoryRepository = (): StampRepository & {
 				lastCollectedAt,
 				ledger,
 			});
+
+			return okAsync(undefined);
 		},
 	};
 };

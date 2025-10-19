@@ -65,16 +65,18 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 2 ⚠️ (write first, ensure they fail)
 
-- [ ] T016 [P] [US2] Add failing Vitest coverage for survey unlock gating in `apps/stamp/src/app/__tests__/survey-access.test.tsx`
-- [ ] T017 [P] [US2] Add failing Vitest coverage for QR issuance idempotency in `apps/stamp/src/app/__tests__/reward-qr.test.tsx`
+- [ ] T016 [P] [US2] Add failing Vitest coverage for survey unlock gating in `apps/stamp/src/app/(guest)/form/__tests__/page.test.tsx`
+- [ ] T017 [P] [US2] Add failing Vitest coverage for QR issuance idempotency in `apps/stamp/src/app/(guest)/gift/__tests__/page.test.tsx`
+- [ ] T018 [P] [US2] Add failing Vitest coverage for Google Forms submission mocking in `apps/stamp/src/app/(guest)/actions/__tests__/submit-survey.test.ts`
+- [ ] T019 [P] [US2] Add failing Vitest coverage for reward persistence in `apps/stamp/src/application/survey/__tests__/submit-survey.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement survey submission server action posting to Google Forms in `apps/stamp/src/app/(guest)/actions/submit-survey.ts`
-- [ ] T019 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
-- [ ] T020 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
-- [ ] T021 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
-- [ ] T022 [P] [US2] Extend reward repository for QR payload persistence in `apps/stamp/src/infra/firestore/reward-repository.ts`
+- [ ] T020 [US2] Implement survey submission server action posting to Google Forms in `apps/stamp/src/app/(guest)/actions/submit-survey.ts`
+- [ ] T021 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
+- [ ] T022 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
+- [ ] T023 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
+- [ ] T024 [P] [US2] Extend reward repository for QR payload persistence in `apps/stamp/src/infra/firestore/reward-repository.ts`
 
 **Checkpoint**: User Story 2 complete—survey + reward issuance is independently testable.
 
@@ -88,16 +90,16 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 3 ⚠️ (write first, ensure they fail)
 
-- [ ] T023 [P] [US3] Add failing Vitest coverage for staff-only redemption access in `apps/stamp/src/app/__tests__/staff-auth.test.tsx`
-- [ ] T024 [P] [US3] Add failing Vitest coverage for QR scan flows (valid/duplicate/invalid) in `apps/stamp/src/app/__tests__/scan-dialogs.test.tsx`
+- [ ] T025 [P] [US3] Add failing Vitest coverage for staff-only redemption access in `apps/stamp/src/app/__tests__/staff-auth.test.tsx`
+- [ ] T026 [P] [US3] Add failing Vitest coverage for QR scan flows (valid/duplicate/invalid) in `apps/stamp/src/app/__tests__/scan-dialogs.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement staff auth guard leveraging custom claims in `apps/stamp/src/application/auth/require-staff.ts`
-- [ ] T026 [US3] Update security rules to allow staff to set `giftReceivedAt` timestamps in `firestore.rules`
-- [ ] T027 [US3] Integrate `jsqr` scanner and manual ID fallback in Scan Page UI `apps/stamp/src/app/scan/page.tsx`
-- [ ] T028 [US3] Implement reward redemption application service with duplicate protection in `apps/stamp/src/application/rewards/redeem-reward.ts`
-- [ ] T029 [P] [US3] Add bilingual dialog components for scan outcomes in `apps/stamp/src/app/scan/components/redemption-dialog.tsx`
+- [ ] T027 [US3] Implement staff auth guard leveraging custom claims in `apps/stamp/src/application/auth/require-staff.ts`
+- [ ] T028 [US3] Update security rules to allow staff to set `giftReceivedAt` timestamps in `firestore.rules`
+- [ ] T029 [US3] Integrate `jsqr` scanner and manual ID fallback in Scan Page UI `apps/stamp/src/app/scan/page.tsx`
+- [ ] T030 [US3] Implement reward redemption application service with duplicate protection in `apps/stamp/src/application/rewards/redeem-reward.ts`
+- [ ] T031 [P] [US3] Add bilingual dialog components for scan outcomes in `apps/stamp/src/app/scan/components/redemption-dialog.tsx`
 
 **Checkpoint**: User Story 3 complete—staff redemption tooling works independently.
 
@@ -105,10 +107,10 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [ ] T030 Wire Sentry performance tags for new routes in `apps/stamp/src/infra/observability/sentry.ts`
-- [ ] T031 Capture bilingual copy updates and evidence in `docs/spec/stamp/Design Doc.md`
-- [ ] T032 Update Remote Config rollout playbook with status messaging steps in `docs/spec/change-log.md`
-- [ ] T033 Verify `pnpm coverage --filter stamp` and document artifacts in `apps/stamp/test/README.md`
+- [ ] T032 Wire Sentry performance tags for new routes in `apps/stamp/src/infra/observability/sentry.ts`
+- [ ] T033 Capture bilingual copy updates and evidence in `docs/spec/stamp/Design Doc.md`
+- [ ] T034 Update Remote Config rollout playbook with status messaging steps in `docs/spec/change-log.md`
+- [ ] T035 Verify `pnpm coverage --filter stamp` and document artifacts in `apps/stamp/test/README.md`
 
 ---
 
@@ -123,8 +125,8 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 - T008 and T009 can run concurrently as independent Vitest suites.
 - T010, T011, and T015 touch different modules (domain, infra, i18n) and may proceed in parallel once tests exist.
-- T016 and T017 run concurrently; T018–T022 follow once they fail.
-- T023 and T024 can execute in parallel; T027 and T029 are UI-focused and separable.
+- T016 and T019 run concurrently; T020–T024 follow once they fail.
+- T025 and T026 can execute in parallel; T027 and T029 are UI-focused and separable.
 
 ## Implementation Strategy
 

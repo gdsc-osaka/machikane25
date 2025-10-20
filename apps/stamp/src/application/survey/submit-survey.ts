@@ -1,20 +1,27 @@
-import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow";
+import {
+	err,
+	errAsync,
+	ok,
+	okAsync,
+	Result,
+	type ResultAsync,
+} from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
 import { z } from "zod";
 import {
 	createRewardQrPayloadGenerator,
 	createRewardRecord,
 	createRewardSnapshot,
+	type RewardQrEncodingError,
 	type RewardRecord,
+	type RewardRecordInvariantError,
 	type RewardRepository,
-	RewardRecordInvariantError,
-	RewardQrEncodingError,
-	RewardRepositoryError,
+	type RewardRepositoryError,
 } from "@/domain/reward";
-import {
-	type MarkSurveyCompletedInput,
-	type SurveyLedgerPort,
+import type {
+	MarkSurveyCompletedInput,
 	SurveyLedgerError,
+	SurveyLedgerPort,
 } from "@/domain/survey";
 
 type SurveyAnswers = {
@@ -106,10 +113,10 @@ const resolveRewardQr = (
 ): Result<string, RewardSnapshotError> =>
 	snapshot.qrPayload === null
 		? err(
-			RewardSnapshotError("Reward QR payload is missing.", {
-				extra: { reason: "missing_qr_payload" },
-			}),
-		  )
+				RewardSnapshotError("Reward QR payload is missing.", {
+					extra: { reason: "missing_qr_payload" },
+				}),
+			)
 		: ok(snapshot.qrPayload);
 
 const toSubmitSurveySuccess = (
@@ -119,14 +126,11 @@ const toSubmitSurveySuccess = (
 	resolveRewardQr(createRewardSnapshot(rewardRecord)).map((qrPayload) => ({
 		attendeeId,
 		surveyStatus: "submitted",
-		rewardStatus:
-			rewardRecord.redeemedAt === null ? "issued" : "redeemed",
+		rewardStatus: rewardRecord.redeemedAt === null ? "issued" : "redeemed",
 		rewardQr: qrPayload,
 	}));
 
-const mapValidationError = (
-	cause: unknown,
-): SubmitSurveyValidationError =>
+const mapValidationError = (cause: unknown): SubmitSurveyValidationError =>
 	SubmitSurveyValidationError("Survey submission input failed validation.", {
 		cause,
 	});
@@ -206,7 +210,11 @@ const createSubmitSurveyService = ({
 	};
 };
 
-export { createSubmitSurveyService, SubmitSurveyValidationError, RewardSnapshotError };
+export {
+	createSubmitSurveyService,
+	SubmitSurveyValidationError,
+	RewardSnapshotError,
+};
 export type {
 	CreateSubmitSurveyServiceDependencies,
 	SubmitSurveyFailure,

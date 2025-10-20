@@ -38,11 +38,7 @@ const createDependencies = () => {
 	const rewardStore = new Map<string, RewardRecord>();
 
 	const markCompleted = vi.fn(
-		({
-			attendeeId,
-			completedAt,
-			responseId,
-		}: SurveyLedgerRecord) => {
+		({ attendeeId, completedAt, responseId }: SurveyLedgerRecord) => {
 			surveyRecords.push({ attendeeId, completedAt, responseId });
 			return okAsync<void, never>(undefined);
 		},

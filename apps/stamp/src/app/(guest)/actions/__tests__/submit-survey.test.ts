@@ -64,7 +64,7 @@ describe("submitSurveyAction", () => {
 		ratingPhotobooth: 5,
 		ratingAquarium: 4,
 		ratingStampRally: 5,
-	freeComment: "Great exhibits!",
+		freeComment: "Great exhibits!",
 	};
 
 	beforeEach(() => {

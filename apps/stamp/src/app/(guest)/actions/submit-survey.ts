@@ -1,16 +1,16 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { match, P } from "ts-pattern";
 import { errAsync, okAsync, Result, ResultAsync } from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
+import { match, P } from "ts-pattern";
 import { z } from "zod";
 import {
 	createSubmitSurveyService,
 	RewardSnapshotError,
-	SubmitSurveyValidationError,
 	type SubmitSurveyFailure,
 	type SubmitSurveySuccess,
+	SubmitSurveyValidationError,
 } from "@/application/survey/submit-survey";
 import {
 	RewardQrEncodingError,
@@ -21,7 +21,7 @@ import { SurveyLedgerError } from "@/domain/survey";
 import {
 	getSurveyFormConfig,
 	type SurveyFormConfig,
-	SurveyFormConfigError,
+	type SurveyFormConfigError,
 } from "@/infra/remote-config/survey";
 import { createRewardRepository } from "@/infra/reward/reward-repository";
 import { createSurveyLedger } from "@/infra/survey/survey-ledger";
@@ -114,21 +114,18 @@ const resolveSubmitSurveyService = (): ResultAsync<
 		);
 	}
 
-	return ResultAsync.fromPromise(
-		import("@/firebase"),
-		(cause) =>
-			SubmitSurveyActionError("Survey submission service is unavailable.", {
-				cause,
-				extra: { reason: "service_unavailable" },
-			}),
-	)
-		.map(({ getFirebaseClients }) => {
-			const { firestore } = getFirebaseClients();
-			return createSubmitSurveyService({
-				surveyLedger: createSurveyLedger(firestore),
-				rewards: createRewardRepository(firestore),
-			});
+	return ResultAsync.fromPromise(import("@/firebase"), (cause) =>
+		SubmitSurveyActionError("Survey submission service is unavailable.", {
+			cause,
+			extra: { reason: "service_unavailable" },
+		}),
+	).map(({ getFirebaseClients }) => {
+		const { firestore } = getFirebaseClients();
+		return createSubmitSurveyService({
+			surveyLedger: createSurveyLedger(firestore),
+			rewards: createRewardRepository(firestore),
 		});
+	});
 };
 
 const mapSurveyConfigError = (
@@ -166,44 +163,42 @@ const submitToGoogleForms = (
 				cause,
 				extra: { reason: "form_submission_failed" },
 			}),
-	)
-		.andThen((response) =>
-			response.ok
-				? okAsync(undefined)
-				: errAsync(
-					SubmitSurveyActionError(
-						"Failed to submit survey to Google Forms.",
-						{
-							extra: {
-								reason: "form_submission_failed",
-								status: response.status,
-							},
+	).andThen((response) =>
+		response.ok
+			? okAsync(undefined)
+			: errAsync(
+					SubmitSurveyActionError("Failed to submit survey to Google Forms.", {
+						extra: {
+							reason: "form_submission_failed",
+							status: response.status,
 						},
-					),
+					}),
 				),
-		);
+	);
 
 const mapActionFailureToError = (
 	error: SubmitSurveyActionError | SubmitSurveyFailure,
 ): Error => {
 	const message = match(error)
-		.with(
-			P.when(SubmitSurveyActionError.isFn),
-			(actionError) =>
-				match(actionError.extra?.reason)
-					.with("invalid_input", () =>
-						"Survey submission payload failed validation.",
-					)
-					.with("config_unavailable", () =>
-						"Survey configuration is unavailable.",
-					)
-					.with("form_submission_failed", () =>
-						"Failed to submit survey to Google Forms.",
-					)
-					.with("service_unavailable", () =>
-						"Survey submission service is unavailable.",
-					)
-					.otherwise(() => "Unable to submit survey."),
+		.with(P.when(SubmitSurveyActionError.isFn), (actionError) =>
+			match(actionError.extra?.reason)
+				.with(
+					"invalid_input",
+					() => "Survey submission payload failed validation.",
+				)
+				.with(
+					"config_unavailable",
+					() => "Survey configuration is unavailable.",
+				)
+				.with(
+					"form_submission_failed",
+					() => "Failed to submit survey to Google Forms.",
+				)
+				.with(
+					"service_unavailable",
+					() => "Survey submission service is unavailable.",
+				)
+				.otherwise(() => "Unable to submit survey."),
 		)
 		.with(
 			P.when(SubmitSurveyValidationError.isFn),
@@ -240,36 +235,35 @@ const submitSurveyAction = async (
 	const parsedInput = Result.fromThrowable(
 		() => submitSurveyActionInputSchema.parse(rawInput),
 		(cause) =>
-			SubmitSurveyActionError(
-				"Survey submission payload failed validation.",
-				{
-					cause,
-					extra: { reason: "invalid_input" },
-				},
-			),
+			SubmitSurveyActionError("Survey submission payload failed validation.", {
+				cause,
+				extra: { reason: "invalid_input" },
+			}),
 	);
 
 	const result = fromResult(parsedInput).andThen((input) =>
 		fromResult(getSurveyFormConfig().mapErr(mapSurveyConfigError)).andThen(
 			(config) => {
-			const formData = createSurveyFormData({
-				...input,
-				entryIds: config.entryIds,
-			});
+				const formData = createSurveyFormData({
+					...input,
+					entryIds: config.entryIds,
+				});
 
-			return resolveSubmitSurveyService()
-				.andThen((service) =>
-					submitToGoogleForms(config.formResponseUrl, formData).andThen(
-						() =>
+				return resolveSubmitSurveyService()
+					.andThen((service) =>
+						submitToGoogleForms(config.formResponseUrl, formData).andThen(() =>
 							service.submit({
 								attendeeId: input.attendeeId,
 								answers: input.answers,
 								responseId: `${input.attendeeId}:${randomUUID()}`,
 							}),
-					),
-				)
-				.mapErr((error): SubmitSurveyActionError | SubmitSurveyFailure => error);
-		})
+						),
+					)
+					.mapErr(
+						(error): SubmitSurveyActionError | SubmitSurveyFailure => error,
+					);
+			},
+		),
 	);
 
 	return result.match(

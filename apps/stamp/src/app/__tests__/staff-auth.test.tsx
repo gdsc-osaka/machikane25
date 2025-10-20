@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { okAsync } from "neverthrow";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type StaffAccount = {
@@ -16,25 +17,45 @@ const { requireStaffMock } = vi.hoisted(() => {
 	return { requireStaffMock: mock };
 });
 
+const redeemRewardMock = vi.hoisted(() =>
+	vi.fn(() =>
+		okAsync({
+			status: "redeemed" as const,
+			attendeeId: "guest-redeemed",
+			redeemedAt: Date.now(),
+		}),
+	),
+);
+
 vi.mock("@/application/auth/require-staff", () => ({
 	requireStaff: requireStaffMock,
 }));
 
+vi.mock("@/application/rewards/redeem-reward.client", () => ({
+	redeemReward: redeemRewardMock,
+}));
+
 const importScanPage = async () => {
-	// @ts-expect-error -- scan page implemented in US3 tasks
 	const module = await import("../scan/page");
 	return module.default;
 };
 
 const renderScanPage = async () => {
 	const Page = await importScanPage();
-	const content = await Page();
-	return render(content);
+	let result: ReturnType<typeof render> | undefined;
+	await act(async () => {
+		result = render(<Page />);
+	});
+	if (!result) {
+		throw new Error("ScanPage did not render as expected.");
+	}
+	return result;
 };
 
 describe("ScanPage staff access control", () => {
 	beforeEach(() => {
 		requireStaffMock.mockReset();
+		redeemRewardMock.mockClear();
 	});
 
 	it("shows the staff login gate when the guard requests authentication", async () => {

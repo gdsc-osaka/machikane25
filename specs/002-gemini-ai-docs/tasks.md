@@ -1,7 +1,7 @@
 # Tasks: AI Photo Booth Experience
 
 **Input**: Design docs from `/specs/002-gemini-ai-docs/`
-**Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/photobooth.openapi.yml`
+**Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/photo.openapi.yml`
 
 **Tests**: Vitest + Testing Library suites and Playwright coverage that achieve 100% statement/branch metrics for all touched modules.
 
@@ -14,9 +14,9 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T101 [P] [SETUP] Register `apps/photobooth` in `turbo.json`, `pnpm-workspace.yaml`, and root `package.json` scripts (`dev:photobooth`, `build:photobooth`, `test:stamp --filter photobooth`).
-- [ ] T102 [SETUP] Scaffold `apps/photobooth/` baseline (Next.js app router folders, `next.config.ts`, `tsconfig.json`, `biome.json`, Tailwind/PostCSS config, README) mirroring `docs/DDD.md` structure.
-- [ ] T103 [P] [SETUP] Add per-app configs (`firebase.json`, `firestore.rules`, `firestore.indexes.json`, `tsconfig.test.json`, Vitest + Playwright setup) under `apps/photobooth/`.
+- [ ] T101 [P] [SETUP] Register `apps/photo` in `turbo.json`, `pnpm-workspace.yaml`, and root `package.json` scripts (`dev:photo`, `build:photo`, `test:stamp --filter photoh`).
+- [ ] T102 [SETUP] Scaffold `apps/photo/` baseline (Next.js app router folders, `next.config.ts`, `tsconfig.json`, `biome.json`, Tailwind/PostCSS config, README) mirroring `docs/DDD.md` structure.
+- [ ] T103 [P] [SETUP] Add per-app configs (`firebase.json`, `firestore.rules`, `firestore.indexes.json`, `tsconfig.test.json`, Vitest + Playwright setup) under `apps/photo/`.
 
 ---
 
@@ -24,19 +24,19 @@
 
 **Purpose**: Core DDD layers, Firebase wiring, and security rules needed before user stories.
 
-- [ ] T201 [P] [FOUND] Create failing domain spec `apps/photobooth/test/unit/domain/visitorSession.test.ts` covering status transitions, expiry, and original image deletion timing.
+- [ ] T201 [P] [FOUND] Create failing domain spec `apps/photo/test/unit/domain/visitorSession.test.ts` covering status transitions, expiry, and original image deletion timing.
 - [ ] T202 [FOUND] Implement domain modules (`src/domain/visitorSession.ts`, `src/domain/generatedImageAsset.ts`, `src/domain/publicAccessToken.ts`) with pure functions and discriminated unions to satisfy T201.
-- [ ] T203 [P] [FOUND] Author failing converter tests `apps/photobooth/test/unit/infra/firestoreConverters.test.ts` validating Firestore → domain mapping for all entities.
+- [ ] T203 [P] [FOUND] Author failing converter tests `apps/photo/test/unit/infra/firestoreConverters.test.ts` validating Firestore → domain mapping for all entities.
 - [ ] T204 [FOUND] Implement Firestore `FirestoreDataConverter` and repositories in `src/infra/firestore/**` plus dependency-free `src/application/repositories.ts` interfaces to pass T203.
-- [ ] T205 [P] [FOUND] Add failing auth/emulator bootstrap tests `apps/photobooth/test/unit/infra/firebaseClient.test.ts` ensuring anonymous sign-in and emulator detection logic.
-- [ ] T206 [FOUND] Build `apps/photobooth/src/firebase.ts` exporting memoized Firebase clients (Auth, Firestore, Storage, Functions) with emulator support and config from `.env.local` as required by quickstart.
-- [ ] T207 [P] [FOUND] Write failing Remote Config + generation option loader tests `apps/photobooth/test/unit/application/generationOptions.test.ts`.
+- [ ] T205 [P] [FOUND] Add failing auth/emulator bootstrap tests `apps/photo/test/unit/infra/firebaseClient.test.ts` ensuring anonymous sign-in and emulator detection logic.
+- [ ] T206 [FOUND] Build `apps/photo/src/firebase.ts` exporting memoized Firebase clients (Auth, Firestore, Storage, Functions) with emulator support and config from `.env.local` as required by quickstart.
+- [ ] T207 [P] [FOUND] Write failing Remote Config + generation option loader tests `apps/photo/test/unit/application/generationOptions.test.ts`.
 - [ ] T208 [FOUND] Implement Remote Config fetcher in `src/infra/remoteConfig.ts`, in-memory cache, and application selector in `src/application/generationOptions.ts` to satisfy T207.
-- [ ] T209 [P] [FOUND] Add failing queue payload tests `apps/photobooth/test/unit/infra/generationQueue.test.ts` covering Gemini request schema and retry headers.
+- [ ] T209 [P] [FOUND] Add failing queue payload tests `apps/photo/test/unit/infra/generationQueue.test.ts` covering Gemini request schema and retry headers.
 - [ ] T210 [FOUND] Implement Cloud Tasks/Functions client in `src/infra/generationQueue.ts` and application orchestration helpers in `src/application/generationPipeline.ts` passing T209.
-- [ ] T211 [P] [FOUND] Create Firebase security regression tests `apps/photobooth/test/integration/firestoreRules.test.ts` + `storageRules.test.ts` asserting VisitorSession/PublicAccessToken access policies.
-- [ ] T212 [FOUND] Author `apps/photobooth/firestore.rules`, `storage.rules`, and emulator seed scripts ensuring anonymous attendees and staff roles match Exhaustive Testing Mandate, satisfying T211.
-- [ ] T213 [FOUND] Seed shared presentation primitives (`src/components/layout/KioskShell.tsx`, `Button`, `StatusBadge`) and i18n namespace entries in `src/libs/i18n/photobooth.{ts,ts}` reused by all stories.
+- [ ] T211 [P] [FOUND] Create Firebase security regression tests `apps/photo/test/integration/firestoreRules.test.ts` + `storageRules.test.ts` asserting VisitorSession/PublicAccessToken access policies.
+- [ ] T212 [FOUND] Author `apps/photo/firestore.rules`, `storage.rules`, and emulator seed scripts ensuring anonymous attendees and staff roles match Exhaustive Testing Mandate, satisfying T211.
+- [ ] T213 [FOUND] Seed shared presentation primitives (`src/components/layout/KioskShell.tsx`, `Button`, `StatusBadge`) and i18n namespace entries in `src/libs/i18n/photo.{ts,ts}` reused by all stories.
 
 **Checkpoint**: Foundational TDD suites green; user stories can start.
 
@@ -49,13 +49,13 @@
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T301 [P] [US1] Build failing integration test `apps/photobooth/test/integration/boothSessionFlow.test.ts` simulating Auth bootstrap, capture upload, generation queue, and polling until result.
-- [ ] T302 [P] [US1] Create failing RTL spec `apps/photobooth/test/unit/presentation/BoothPage.test.tsx` asserting countdown, theme selection, consent gating, success/timeout states.
+- [ ] T301 [P] [US1] Build failing integration test `apps/photo/test/integration/boothSessionFlow.test.ts` simulating Auth bootstrap, capture upload, generation queue, and polling until result.
+- [ ] T302 [P] [US1] Create failing RTL spec `apps/photo/test/unit/presentation/BoothPage.test.tsx` asserting countdown, theme selection, consent gating, success/timeout states.
 
 ### Implementation for User Story 1
 
 - [ ] T303 [US1] Implement session use cases (`src/application/visitorSession/createSession.ts`, `capturePhoto.ts`, `requestGeneration.ts`) enforcing status guards and enqueueing Cloud Tasks.
-- [ ] T304 [US1] Add API route handlers under `src/app/api/photobooth/sessions/**` and `.../generate/route.ts` returning OpenAPI-compliant responses and Retry-After hints.
+- [ ] T304 [US1] Add API route handlers under `src/app/api/photo/sessions/**` and `.../generate/route.ts` returning OpenAPI-compliant responses and Retry-After hints.
 - [ ] T305 [P] [US1] Implement Storage upload helper (`src/infra/storage/captureUpload.ts`) with MIME/size validation and deletion fallback, referenced by T303 and booth UI.
 - [ ] T306 [P] [US1] Add SWR hooks (`src/hooks/useVisitorSession.ts`, `src/hooks/useGenerationProgress.ts`) encapsulating polling logic and error retry policy.
 - [ ] T307 [US1] Implement kiosk page `src/app/(booth)/page.tsx` composing hooks, countdown timer, theme gallery, and localized copy.
@@ -72,13 +72,13 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T401 [P] [US2] Add failing integration test `apps/photobooth/test/integration/downloadTokenFlow.test.ts` covering token issuance, Dynamic Link redirect, asset fetch, and expiry error.
-- [ ] T402 [P] [US2] Add failing RTL spec `apps/photobooth/test/unit/presentation/DownloadPage.test.tsx` verifying QR instructions, localisation, and 48h countdown.
+- [ ] T401 [P] [US2] Add failing integration test `apps/photo/test/integration/downloadTokenFlow.test.ts` covering token issuance, Dynamic Link redirect, asset fetch, and expiry error.
+- [ ] T402 [P] [US2] Add failing RTL spec `apps/photo/test/unit/presentation/DownloadPage.test.tsx` verifying QR instructions, localisation, and 48h countdown.
 
 ### Implementation for User Story 2
 
 - [ ] T403 [US2] Implement token and asset services (`src/application/publicAccess/issueToken.ts`, `consumeToken.ts`, `getGeneratedAsset.ts`) referencing domain invariants.
-- [ ] T404 [US2] Implement API routes `src/app/api/photobooth/result/route.ts` and `src/app/api/photobooth/uploads/route.ts` enforcing validation, rate limits, and Storage writes.
+- [ ] T404 [US2] Implement API routes `src/app/api/photo/result/route.ts` and `src/app/api/photo/uploads/route.ts` enforcing validation, rate limits, and Storage writes.
 - [ ] T405 [US2] Create Dynamic Link + QR generation utilities in `src/infra/dynamicLinks.ts` and integrate with token issuance use case.
 - [ ] T406 [US2] Build attendee surfaces `src/app/(upload)/page.tsx` and `src/app/(download)/[token]/page.tsx` with SWR hooks, error toasts, and accessibility messaging.
 - [ ] T407 [P] [US2] Add hooks/tests `src/hooks/usePublicToken.ts` ensuring single-use enforcement and refetch after consumption.
@@ -94,15 +94,15 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T501 [P] [US3] Add failing integration test `apps/photobooth/test/integration/adminAquariumFlow.test.ts` covering failed event ingestion, manual retry, and status transitions.
-- [ ] T502 [P] [US3] Add failing RTL spec `apps/photobooth/test/unit/presentation/AdminPage.test.tsx` validating cards, filters, retry button, and Remote Config banner.
+- [ ] T501 [P] [US3] Add failing integration test `apps/photo/test/integration/adminAquariumFlow.test.ts` covering failed event ingestion, manual retry, and status transitions.
+- [ ] T502 [P] [US3] Add failing RTL spec `apps/photo/test/unit/presentation/AdminPage.test.tsx` validating cards, filters, retry button, and Remote Config banner.
 
 ### Implementation for User Story 3
 
 - [ ] T503 [US3] Implement aquarium repositories (`src/infra/aquarium/eventsRepository.ts`) and SWR data sources for real-time sync stats.
 - [ ] T504 [US3] Implement application service `src/application/aquarium/retryEvent.ts` to push retries through generation queue with exponential backoff metadata.
 - [ ] T505 [US3] Build admin page `src/app/(admin)/page.tsx` with bilingual UI, status table, retry controls, and audit log export.
-- [ ] T506 [US3] Implement API route `src/app/api/photobooth/aquarium/events/route.ts` and server actions logging retry outcomes to Firestore.
+- [ ] T506 [US3] Implement API route `src/app/api/photo/aquarium/events/route.ts` and server actions logging retry outcomes to Firestore.
 - [ ] T507 [P] [US3] Extend msw mocks `test/mocks/aquariumServer.ts` supporting success/failure permutations for dashboard tests.
 
 **Checkpoint**: Staff dashboard controls aquarium sync without touching attendee flows.
@@ -111,11 +111,11 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T601 [P] [POLISH] Author Playwright E2E `apps/photobooth/test/e2e/photobooth.spec.ts` spanning booth capture → token download → admin retry, wired to Firebase Emulator.
-- [ ] T602 [POLISH] Integrate logging/Sentry (`apps/photobooth/sentry.server.config.ts`, `sentry.edge.config.ts`, `src/infra/logger.ts`) ensuring errors include session IDs and aquarium event IDs.
-- [ ] T603 [P] [POLISH] Expand i18n dictionaries `src/libs/i18n/photobooth.{ts}` and add screenshot automation for PR evidence.
+- [ ] T601 [P] [POLISH] Author Playwright E2E `apps/photo/test/e2e/photo.spec.ts` spanning booth capture → token download → admin retry, wired to Firebase Emulator.
+- [ ] T602 [POLISH] Integrate logging/Sentry (`apps/photo/sentry.server.config.ts`, `sentry.edge.config.ts`, `src/infra/logger.ts`) ensuring errors include session IDs and aquarium event IDs.
+- [ ] T603 [P] [POLISH] Expand i18n dictionaries `src/libs/i18n/photo.{ts}` and add screenshot automation for PR evidence.
 - [ ] T604 [POLISH] Update operations docs (`specs/002-gemini-ai-docs/quickstart.md`, `docs/spec/change-log.md`) with Remote Config steps, Sentry release checklist, and emulator runbook.
-- [ ] T605 [POLISH] Run `pnpm lint:fix`, `pnpm coverage --filter photobooth`, archive coverage artefacts, and attach results to PR template.
+- [ ] T605 [POLISH] Run `pnpm lint:fix`, `pnpm coverage --filter photo`, archive coverage artefacts, and attach results to PR template.
 
 ---
 

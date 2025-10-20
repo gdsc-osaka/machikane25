@@ -6,7 +6,8 @@ type DocumentReference = { id: string };
 
 const collectionMock =
 	vi.fn<(firestore: unknown, path: string) => CollectionReference>();
-const docMock = vi.fn<(collectionRef: unknown, id: string) => DocumentReference>();
+const docMock =
+	vi.fn<(collectionRef: unknown, id: string) => DocumentReference>();
 const getDocMock = vi.fn();
 const setDocMock = vi.fn();
 
@@ -52,7 +53,10 @@ describe("createRewardRepository.findByAttendeeId", () => {
 		const repository = createRewardRepository({} as never);
 		const result = await repository.findByAttendeeId("guest-1");
 
-		expect(collectionMock).toHaveBeenCalledWith(expect.anything(), REWARDS_COLLECTION);
+		expect(collectionMock).toHaveBeenCalledWith(
+			expect.anything(),
+			REWARDS_COLLECTION,
+		);
 		expect(result.isOk()).toBe(true);
 		const record = result._unsafeUnwrap();
 		expect(record).not.toBeNull();

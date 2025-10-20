@@ -91,8 +91,8 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 3 ⚠️ (write first, ensure they fail)
 
-- [ ] T026 [P] [US3] Add failing Vitest coverage for staff-only redemption access in `apps/stamp/src/app/__tests__/staff-auth.test.tsx`
-- [ ] T027 [P] [US3] Add failing Vitest coverage for QR scan flows (valid/duplicate/invalid) in `apps/stamp/src/app/__tests__/scan-dialogs.test.tsx`
+- [X] T026 [P] [US3] Add failing Vitest coverage for staff-only redemption access in `apps/stamp/src/app/__tests__/staff-auth.test.tsx`
+- [X] T027 [P] [US3] Add failing Vitest coverage for QR scan flows (valid/duplicate/invalid) in `apps/stamp/src/app/__tests__/scan-dialogs.test.tsx`
 
 ### Implementation for User Story 3
 

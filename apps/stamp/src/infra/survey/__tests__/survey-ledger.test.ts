@@ -6,12 +6,18 @@ type DocumentReference = { id: string; collectionPath: string };
 
 const collectionMock =
 	vi.fn<(firestore: unknown, path: string) => CollectionReference>();
-const docMock = vi.fn<
-	(collectionRef: CollectionReference, id: string) => DocumentReference
->();
-const setDocMock = vi.fn<
-	(DocumentReference: DocumentReference, data: unknown, options: unknown) => Promise<void>
->();
+const docMock =
+	vi.fn<
+		(collectionRef: CollectionReference, id: string) => DocumentReference
+	>();
+const setDocMock =
+	vi.fn<
+		(
+			DocumentReference: DocumentReference,
+			data: unknown,
+			options: unknown,
+		) => Promise<void>
+	>();
 
 const fromMaybeMillisSpy = vi.fn((millis: number | null) => {
 	if (millis === null) {
@@ -69,8 +75,11 @@ describe("createSurveyLedger.markCompleted", () => {
 		expect(fromMaybeMillisSpy).toHaveBeenCalledWith(1_700_000_000_000);
 		expect(setDocMock).toHaveBeenCalledTimes(2);
 
-		const [ledgerDoc, ledgerData, ledgerOptions] = setDocMock.mock.calls[0] ?? [];
-		expect((ledgerDoc as DocumentReference).collectionPath).toBe("surveyLedger");
+		const [ledgerDoc, ledgerData, ledgerOptions] =
+			setDocMock.mock.calls[0] ?? [];
+		expect((ledgerDoc as DocumentReference).collectionPath).toBe(
+			"surveyLedger",
+		);
 		expect(ledgerData).toEqual({
 			completedAt: timestamp,
 			responseId: "response-123",

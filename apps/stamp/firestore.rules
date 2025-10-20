@@ -68,6 +68,12 @@ service cloud.firestore {
         );
     }
 
+    function staffGiftRedemptionAllowed(previousGiftReceivedAt, nextGiftReceivedAt) {
+      return (previousGiftReceivedAt == null
+        && nextGiftReceivedAt is timestamp)
+        || nextGiftReceivedAt == previousGiftReceivedAt;
+    }
+
     function staffUpdateAllowed() {
       return isStaff()
         && allowedUserFields(request.resource.data)
@@ -76,8 +82,10 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.language == resource.data.language
         && request.resource.data.rewardQr == resource.data.rewardQr
-        && (request.resource.data.giftReceivedAt == null
-          || request.resource.data.giftReceivedAt is timestamp);
+        && staffGiftRedemptionAllowed(
+          resource.data.giftReceivedAt,
+          request.resource.data.giftReceivedAt
+        );
     }
 
     match /users/{userId} {

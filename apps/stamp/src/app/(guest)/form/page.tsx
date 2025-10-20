@@ -44,37 +44,20 @@ import {
 	type StampProgressSnapshot,
 	useStampProgress,
 } from "@/hooks/use-stamp-progress";
+import { type SurveyQuestionId, surveyFormCopy } from "@/libs/i18n/form-copy";
 import { CHECKPOINT_LABELS, type LocaleField } from "@/libs/i18n/messages";
-import { getStampCopy } from "@/libs/i18n/stamp-copy";
 import { getLogger } from "@/packages/logger";
 
-type SurveyFormValues = {
-	ratingPhotobooth: string;
-	ratingAquarium: string;
-	ratingStampRally: string;
+type SurveyFormRatings = Record<SurveyQuestionId, string>;
+
+type SurveyFormValues = SurveyFormRatings & {
 	freeComment: string;
-};
-
-type RatingOption = {
-	value: string;
-	label: LocaleField;
-};
-
-type SurveyQuestion = {
-	name: Exclude<keyof SurveyFormValues, "freeComment">;
-	heading: LocaleField;
-	description: LocaleField;
 };
 
 type SubmissionErrorState = {
 	heading: LocaleField;
 	message: LocaleField;
 } | null;
-
-const createLocaleField = (path: ReadonlyArray<string>): LocaleField => ({
-	ja: getStampCopy("ja", path),
-	en: getStampCopy("en", path),
-});
 
 const isExhibitCheckpoint = (
 	checkpoint: StampCheckpoint,
@@ -83,117 +66,18 @@ const isExhibitCheckpoint = (
 const EXHIBIT_CHECKPOINTS: ReadonlyArray<Exclude<StampCheckpoint, "survey">> =
 	STAMP_SEQUENCE.filter(isExhibitCheckpoint);
 
-const SURVEY_HEADING = createLocaleField(["survey", "heading"]);
-const SURVEY_DESCRIPTION = createLocaleField(["survey", "inProgress"]);
-const SURVEY_COMPLETE = createLocaleField(["survey", "done"]);
-const SURVEY_PAGE_TITLE: LocaleField = {
-	ja: "アンケート",
-	en: "Survey",
-};
-
-const LOCKED_HEADING: LocaleField = {
-	ja: "アンケートはまだご利用いただけません",
-	en: "Survey Not Yet Available",
-};
-
-const LOCKED_DESCRIPTION: LocaleField = {
-	ja: "すべての展示スタンプを集めてから再度アクセスしてください。",
-	en: "Collect all exhibit stamps before returning to this page.",
-};
-
-const COMMENT_LABEL: LocaleField = {
-	ja: "ご意見・ご感想（任意）",
-	en: "Comments (optional)",
-};
-
-const COMMENT_PLACEHOLDER: LocaleField = {
-	ja: "気に入った展示や改善してほしい点があればご記入ください。",
-	en: "Share highlights or ideas to improve the festival experience.",
-};
-
-const ATTENDEE_ERROR_HEADING: LocaleField = {
-	ja: "参加者情報を取得できませんでした",
-	en: "Unable to resolve attendee identity",
-};
-
-const ATTENDEE_ERROR_MESSAGE: LocaleField = {
-	ja: "ページを再読み込みするか、ホーム画面から再度アクセスしてください。",
-	en: "Refresh the page or return to the home screen before trying again.",
-};
-
-const RATING_OPTIONS: ReadonlyArray<RatingOption> = [
-	{
-		value: "5",
-		label: {
-			ja: "とても満足",
-			en: "Very satisfied",
-		},
-	},
-	{
-		value: "4",
-		label: {
-			ja: "満足",
-			en: "Satisfied",
-		},
-	},
-	{
-		value: "3",
-		label: {
-			ja: "普通",
-			en: "Neutral",
-		},
-	},
-	{
-		value: "2",
-		label: {
-			ja: "やや不満",
-			en: "Slightly dissatisfied",
-		},
-	},
-	{
-		value: "1",
-		label: {
-			ja: "不満",
-			en: "Dissatisfied",
-		},
-	},
-];
-
-const SURVEY_QUESTIONS: ReadonlyArray<SurveyQuestion> = [
-	{
-		name: "ratingPhotobooth",
-		heading: {
-			ja: "フォトブースの満足度",
-			en: "Photo Booth Satisfaction",
-		},
-		description: {
-			ja: "体験してみた感想を教えてください。",
-			en: "Tell us how you felt about the photo booth.",
-		},
-	},
-	{
-		name: "ratingAquarium",
-		heading: {
-			ja: "水族館展示の満足度",
-			en: "Aquarium Exhibit Satisfaction",
-		},
-		description: {
-			ja: "展示のわかりやすさや楽しさはいかがでしたか？",
-			en: "How engaging and clear was the aquarium exhibit?",
-		},
-	},
-	{
-		name: "ratingStampRally",
-		heading: {
-			ja: "スタンプラリー全体の満足度",
-			en: "Overall Stamp Rally Satisfaction",
-		},
-		description: {
-			ja: "受付から景品受け取りまでの流れを振り返って評価してください。",
-			en: "Rate your experience from check-in to reward unlock.",
-		},
-	},
-];
+const {
+	pageTitle: SURVEY_PAGE_TITLE,
+	heading: SURVEY_HEADING,
+	instructions: SURVEY_DESCRIPTION,
+	completion: SURVEY_COMPLETE,
+	locked: SURVEY_LOCKED_COPY,
+	comment: SURVEY_COMMENT_COPY,
+	attendeeError: ATTENDEE_ERROR_COPY,
+	submissionError: SUBMISSION_ERROR_COPY,
+	ratingOptions: SURVEY_RATING_OPTIONS,
+	questions: SURVEY_QUESTIONS,
+} = surveyFormCopy;
 
 const COMMENT_MAX_LENGTH = 500;
 
@@ -206,14 +90,8 @@ const toRatingNumber = (value: string): number => {
 };
 
 const resolveSubmissionErrorCopy = (): SubmissionErrorState => ({
-	heading: {
-		ja: "送信に失敗しました",
-		en: "Submission Failed",
-	},
-	message: {
-		ja: "通信状況をご確認のうえ、もう一度お試しください。",
-		en: "Check your connection and try submitting again.",
-	},
+	heading: SUBMISSION_ERROR_COPY.heading,
+	message: SUBMISSION_ERROR_COPY.message,
 });
 
 const LocaleStack = ({ copy }: { copy: LocaleField }) => (
@@ -354,9 +232,9 @@ const SurveyForm = ({
 						<FieldGroup>
 							{SURVEY_QUESTIONS.map((question) => (
 								<Controller
-									key={question.name}
+									key={question.id}
 									control={control}
-									name={question.name}
+									name={question.id}
 									rules={{
 										required: {
 											value: true,
@@ -387,7 +265,7 @@ const SurveyForm = ({
 													onBlur={field.onBlur}
 													className="grid gap-3 sm:grid-cols-2"
 												>
-													{RATING_OPTIONS.map((option) => {
+													{SURVEY_RATING_OPTIONS.map((option) => {
 														const inputId = `${field.name}-${option.value}`;
 														return (
 															<FieldLabel
@@ -424,24 +302,24 @@ const SurveyForm = ({
 							>
 								<FieldTitle className="flex flex-col gap-1">
 									<span className="text-base font-semibold">
-										{COMMENT_LABEL.ja}
+										{SURVEY_COMMENT_COPY.label.ja}
 									</span>
 									<span className="text-xs text-muted-foreground">
-										{COMMENT_LABEL.en}
+										{SURVEY_COMMENT_COPY.label.en}
 									</span>
 								</FieldTitle>
 								<FieldDescription className="flex flex-col gap-1">
-									<span>{COMMENT_PLACEHOLDER.ja}</span>
+									<span>{SURVEY_COMMENT_COPY.placeholder.ja}</span>
 									<span className="text-xs text-muted-foreground">
-										{COMMENT_PLACEHOLDER.en}
+										{SURVEY_COMMENT_COPY.placeholder.en}
 									</span>
 								</FieldDescription>
 								<FieldContent>
 									<InputGroup className="min-h-24">
 										<InputGroupAddon align="block-start" className="text-xs">
-											<span>{COMMENT_LABEL.ja}</span>
+											<span>{SURVEY_COMMENT_COPY.label.ja}</span>
 											<span className="text-muted-foreground block text-[11px]">
-												{COMMENT_LABEL.en}
+												{SURVEY_COMMENT_COPY.label.en}
 											</span>
 										</InputGroupAddon>
 										<InputGroupTextarea
@@ -452,7 +330,7 @@ const SurveyForm = ({
 												},
 											})}
 											aria-invalid={errors.freeComment ? "true" : "false"}
-											placeholder={`${COMMENT_PLACEHOLDER.ja}\n${COMMENT_PLACEHOLDER.en}`}
+											placeholder={`${SURVEY_COMMENT_COPY.placeholder.ja}\n${SURVEY_COMMENT_COPY.placeholder.en}`}
 											rows={5}
 										/>
 									</InputGroup>
@@ -552,14 +430,14 @@ const SurveyFormPage = () => {
 				<Card className="w-full border-destructive/40 bg-destructive/5 shadow-md">
 					<CardHeader className="text-center">
 						<h1 className="text-2xl font-semibold tracking-tight text-destructive">
-							{ATTENDEE_ERROR_HEADING.ja}
+							{ATTENDEE_ERROR_COPY.heading.ja}
 						</h1>
-						<CardDescription>{ATTENDEE_ERROR_HEADING.en}</CardDescription>
+						<CardDescription>{ATTENDEE_ERROR_COPY.heading.en}</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col items-center gap-3 text-center text-sm">
-						<p>{ATTENDEE_ERROR_MESSAGE.ja}</p>
+						<p>{ATTENDEE_ERROR_COPY.message.ja}</p>
 						<p className="text-muted-foreground text-xs">
-							{ATTENDEE_ERROR_MESSAGE.en}
+							{ATTENDEE_ERROR_COPY.message.en}
 						</p>
 					</CardContent>
 				</Card>
@@ -576,14 +454,14 @@ const SurveyFormPage = () => {
 				>
 					<CardHeader className="text-center">
 						<h1 className="text-2xl font-semibold tracking-tight">
-							{LOCKED_HEADING.ja}
+							{SURVEY_LOCKED_COPY.heading.ja}
 						</h1>
-						<CardDescription>{LOCKED_HEADING.en}</CardDescription>
+						<CardDescription>{SURVEY_LOCKED_COPY.heading.en}</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col items-center gap-4 text-center text-sm">
-						<p>{LOCKED_DESCRIPTION.ja}</p>
+						<p>{SURVEY_LOCKED_COPY.description.ja}</p>
 						<p className="text-muted-foreground text-xs">
-							{LOCKED_DESCRIPTION.en}
+							{SURVEY_LOCKED_COPY.description.en}
 						</p>
 						<MissingStampList progress={progress} />
 					</CardContent>

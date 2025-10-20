@@ -21,13 +21,15 @@ vi.mock("next/error", () => ({
 
 vi.mock("react", async (importActual) => {
 	const actual = await importActual<typeof import("react")>();
+	const immediateEffect: typeof actual.useEffect = (callback, deps) => {
+		void deps;
+		const cleanup = callback();
+		return typeof cleanup === "function" ? cleanup : undefined;
+	};
 	return {
 		...actual,
 		default: actual,
-		useEffect: (callback: () => void | (() => void), deps?: unknown[]) => {
-			const cleanup = callback();
-			return typeof cleanup === "function" ? cleanup : undefined;
-		},
+		useEffect: immediateEffect,
 	};
 });
 

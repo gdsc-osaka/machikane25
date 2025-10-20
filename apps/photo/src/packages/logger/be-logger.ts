@@ -1,17 +1,17 @@
 import type { Logger } from "./logger";
 
-// TODO: Google Cloud Logging 用の Logger 実装を追加する
+// TODO: Add Google Cloud Logging implementation for backend usage
 export const beLogger: Logger = {
-	debug: (...args: any[]) => {
+	debug: (...args: readonly unknown[]) => {
 		console.debug(...args);
 	},
-	info: (...args: any[]) => {
+	info: (...args: readonly unknown[]) => {
 		console.info(...args);
 	},
-	warn: (...args: any[]) => {
+	warn: (...args: readonly unknown[]) => {
 		console.warn(...args);
 	},
-	error: (...args: any[]) => {
+	error: (...args: readonly unknown[]) => {
 		console.error(...args);
 	},
 };

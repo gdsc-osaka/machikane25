@@ -18,55 +18,10 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useAnonymousAttendeeId } from "@/hooks/use-anonymous-attendee-id";
+import { giftPageCopy } from "@/libs/i18n/gift-copy";
 import type { LocaleField } from "@/libs/i18n/messages";
-import { getStampCopy } from "@/libs/i18n/stamp-copy";
 
 type GiftRewardKey = ["gift-reward", string];
-
-const GIFT_PAGE_HEADING: LocaleField = {
-	ja: "景品受け取りページ",
-	en: "Reward Claim Page",
-};
-
-const HOME_BUTTON_COPY: LocaleField = {
-	ja: "ホームに戻る",
-	en: "Back to Home",
-};
-
-const ERROR_COPY: LocaleField = {
-	ja: "景品状態の取得に失敗しました。時間をおいて再度お試しください。",
-	en: "We could not load your reward. Please try again shortly.",
-};
-
-const IDENTITY_ERROR_HEADING: LocaleField = {
-	ja: "参加者情報を確認できませんでした",
-	en: "Attendee identity unavailable",
-};
-
-const IDENTITY_ERROR_MESSAGE: LocaleField = {
-	ja: "ホーム画面に戻ってから再度アクセスしてください。",
-	en: "Return to the home page before trying again.",
-};
-
-const createLocaleField = (path: ReadonlyArray<string>): LocaleField => ({
-	ja: getStampCopy("ja", path),
-	en: getStampCopy("en", path),
-});
-
-const GIFT_COPY = {
-	redeemable: {
-		heading: createLocaleField(["gift", "redeemable", "heading"]),
-		body: createLocaleField(["gift", "redeemable", "body"]),
-	},
-	redeemed: {
-		heading: createLocaleField(["gift", "redeemed", "heading"]),
-		body: createLocaleField(["gift", "redeemed", "body"]),
-	},
-	unavailable: {
-		heading: createLocaleField(["gift", "unavailable", "heading"]),
-		body: createLocaleField(["gift", "unavailable", "body"]),
-	},
-};
 
 const fetchRewardSnapshot = async (
 	key: GiftRewardKey,
@@ -149,17 +104,19 @@ const GiftPage = () => {
 				<Card className="w-full border-destructive/40 bg-destructive/10 shadow-md">
 					<CardHeader className="text-center">
 						<h1 className="text-2xl font-semibold tracking-tight text-destructive">
-							{IDENTITY_ERROR_HEADING.ja}
+							{giftPageCopy.identityError.heading.ja}
 						</h1>
-						<CardDescription>{IDENTITY_ERROR_HEADING.en}</CardDescription>
+						<CardDescription>
+							{giftPageCopy.identityError.heading.en}
+						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col items-center gap-3 text-center text-sm">
-						<p>{IDENTITY_ERROR_MESSAGE.ja}</p>
+						<p>{giftPageCopy.identityError.message.ja}</p>
 						<p className="text-muted-foreground text-xs">
-							{IDENTITY_ERROR_MESSAGE.en}
+							{giftPageCopy.identityError.message.en}
 						</p>
 						<Button asChild variant="outline" className="mt-4">
-							<Link href="/">ホームに戻る</Link>
+							<Link href="/">{giftPageCopy.homeButton.ja}</Link>
 						</Button>
 					</CardContent>
 				</Card>
@@ -171,17 +128,23 @@ const GiftPage = () => {
 		<main className="bg-background text-foreground mx-auto flex min-h-screen max-w-3xl flex-col gap-10 px-6 py-12">
 			<header className="flex flex-col items-center gap-2 text-center">
 				<h1 className="text-3xl font-semibold tracking-tight">
-					{GIFT_PAGE_HEADING.ja}
+					{giftPageCopy.pageHeading.ja}
 				</h1>
-				<p className="text-muted-foreground text-sm">{GIFT_PAGE_HEADING.en}</p>
+				<p className="text-muted-foreground text-sm">
+					{giftPageCopy.pageHeading.en}
+				</p>
 			</header>
 
 			<Card className="border-primary/20 shadow-md">
 				<CardContent className="flex flex-col items-center gap-8 py-10">
 					{error ? (
 						<div className="flex flex-col items-center gap-2 text-center">
-							<p className="font-medium text-destructive">{ERROR_COPY.ja}</p>
-							<p className="text-muted-foreground text-xs">{ERROR_COPY.en}</p>
+							<p className="font-medium text-destructive">
+								{giftPageCopy.error.ja}
+							</p>
+							<p className="text-muted-foreground text-xs">
+								{giftPageCopy.error.en}
+							</p>
 						</div>
 					) : reward === undefined || isValidating ? (
 						<div className="flex flex-col items-center gap-3">
@@ -192,27 +155,31 @@ const GiftPage = () => {
 						</div>
 					) : reward.status === "issued" ? (
 						<>
-							<RewardHeader copy={GIFT_COPY.redeemable.heading} />
+							<RewardHeader
+								copy={giftPageCopy.rewardStates.redeemable.heading}
+							/>
 							<RewardQrDisplay payload={reward.qrPayload ?? ""} />
-							<RewardBody copy={GIFT_COPY.redeemable.body} />
+							<RewardBody copy={giftPageCopy.rewardStates.redeemable.body} />
 						</>
 					) : reward.status === "redeemed" ? (
 						<>
-							<RewardHeader copy={GIFT_COPY.redeemed.heading} />
-							<RewardBody copy={GIFT_COPY.redeemed.body} />
+							<RewardHeader copy={giftPageCopy.rewardStates.redeemed.heading} />
+							<RewardBody copy={giftPageCopy.rewardStates.redeemed.body} />
 						</>
 					) : (
 						<>
-							<RewardHeader copy={GIFT_COPY.unavailable.heading} />
-							<RewardBody copy={GIFT_COPY.unavailable.body} />
+							<RewardHeader
+								copy={giftPageCopy.rewardStates.unavailable.heading}
+							/>
+							<RewardBody copy={giftPageCopy.rewardStates.unavailable.body} />
 						</>
 					)}
 
 					<Button asChild variant="outline" className="mt-4">
 						<Link href="/">
-							<span>{HOME_BUTTON_COPY.ja}</span>
+							<span>{giftPageCopy.homeButton.ja}</span>
 							<span className="ml-2 text-xs text-muted-foreground">
-								{HOME_BUTTON_COPY.en}
+								{giftPageCopy.homeButton.en}
 							</span>
 						</Link>
 					</Button>

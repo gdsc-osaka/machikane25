@@ -119,7 +119,10 @@ describe("redeem reward service", () => {
 		expect(result.isErr()).toBe(true);
 		const error = result._unsafeUnwrapErr();
 		expect(RewardAlreadyRedeemedError.isFn(error)).toBe(true);
-		expect(error.extra?.redeemedAt).toBe(1_700_000_400_000);
+		expect(error.extra !== undefined && "redeemedAt" in error.extra).toBe(true);
+		if (error.extra !== undefined && "redeemedAt" in error.extra) {
+			expect(error.extra?.redeemedAt).toBe(1_700_000_400_000);
+		}
 		expect(calls).toHaveLength(0);
 	});
 
@@ -138,7 +141,10 @@ describe("redeem reward service", () => {
 		expect(result.isErr()).toBe(true);
 		const error = result._unsafeUnwrapErr();
 		expect(RewardNotFoundError.isFn(error)).toBe(true);
-		expect(error.extra?.attendeeId).toBe("unknown-guest");
+		expect(error.extra !== undefined && "attendeeId" in error.extra).toBe(true);
+		if (error.extra !== undefined && "attendeeId" in error.extra) {
+			expect(error.extra?.attendeeId).toBe("unknown-guest");
+		}
 	});
 
 	it("propagates ledger failures", async () => {

@@ -27,6 +27,45 @@ type RewardRepository = {
 	save: (record: RewardRecord) => ResultAsync<void, RewardRepositoryError>;
 };
 
+const RewardNotFoundError = errorBuilder(
+	"RewardNotFoundError",
+	z.object({
+		attendeeId: z.string().min(1),
+	}),
+);
+
+type RewardNotFoundError = InferError<typeof RewardNotFoundError>;
+
+const RewardAlreadyRedeemedError = errorBuilder(
+	"RewardAlreadyRedeemedError",
+	z.object({
+		attendeeId: z.string().min(1),
+		redeemedAt: z.number().int().nonnegative(),
+	}),
+);
+
+type RewardAlreadyRedeemedError = InferError<typeof RewardAlreadyRedeemedError>;
+
+const RewardLedgerError = errorBuilder(
+	"RewardLedgerError",
+	z.object({
+		operation: z.literal("markRedeemed"),
+	}),
+);
+
+type RewardLedgerError = InferError<typeof RewardLedgerError>;
+
+type MarkRewardRedeemedInput = {
+	attendeeId: string;
+	redeemedAt: number;
+};
+
+type RewardLedgerPort = {
+	markRedeemed: (
+		input: MarkRewardRedeemedInput,
+	) => ResultAsync<void, RewardLedgerError>;
+};
+
 const RewardStatus = z.union([
 	z.literal("pending"),
 	z.literal("issued"),
@@ -181,14 +220,47 @@ const createRewardRecord = (
 	return ok(validation.data);
 };
 
+const markRewardRedeemed = (
+	record: RewardRecord,
+	redeemedAt: number,
+): Result<
+	RewardRecord,
+	RewardAlreadyRedeemedError | RewardRecordInvariantError
+> => {
+	if (record.redeemedAt !== null) {
+		return err(
+			RewardAlreadyRedeemedError("Reward has already been redeemed.", {
+				extra: {
+					attendeeId: record.attendeeId,
+					redeemedAt: record.redeemedAt,
+				},
+			}),
+		);
+	}
+	return createRewardRecord({
+		...record,
+		redeemedAt,
+	});
+};
+
 export {
+	markRewardRedeemed,
 	createRewardQrPayloadGenerator,
 	createRewardRecord,
 	createRewardSnapshot,
 	rewardRecordSchema,
+	RewardLedgerError,
+	RewardNotFoundError,
+	RewardAlreadyRedeemedError,
 	RewardRepositoryError,
 	RewardStatus,
 	RewardRecordInvariantError,
 	RewardQrEncodingError,
 };
-export type { RewardRecord, RewardRepository, RewardSnapshot };
+export type {
+	MarkRewardRedeemedInput,
+	RewardLedgerPort,
+	RewardRecord,
+	RewardRepository,
+	RewardSnapshot,
+};

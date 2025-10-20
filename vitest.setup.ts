@@ -22,8 +22,10 @@ class ResizeObserverStub implements ResizeObserver {
 				right: target instanceof HTMLElement ? target.offsetWidth : 0,
 				bottom: target instanceof HTMLElement ? target.offsetHeight : 0,
 				left: 0,
-				toJSON() { return this; }
-			}
+				toJSON() {
+					return this;
+				},
+			},
 		};
 		this.callback([mockEntry], this);
 	}

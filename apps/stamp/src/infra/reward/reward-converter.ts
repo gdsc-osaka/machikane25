@@ -5,7 +5,8 @@ import {
 	type WithFieldValue,
 } from "firebase/firestore";
 import {
-	rewardRecordSchema,
+	createRewardRecord,
+	RewardRecordInvariantError,
 	type RewardRecord,
 } from "@/domain/reward";
 import { timestampUtils } from "@/infra/timestamp";
@@ -20,13 +21,23 @@ const rewardConverter: FirestoreDataConverter<RewardRecord> = {
 	toFirestore(
 		record: WithFieldValue<RewardRecord>,
 	): Record<string, unknown> {
-		const payload = rewardRecordSchema.parse(record);
-		return {
-			qrPayload: payload.qrPayload,
-			issuedAt: timestampUtils.fromMaybeMillis(payload.issuedAt),
-			redeemedAt: timestampUtils.fromMaybeMillis(payload.redeemedAt),
-		};
-	},
+			return createRewardRecord(record).match(
+				(payload) => ({
+					qrPayload: payload.qrPayload,
+					issuedAt: timestampUtils.fromMaybeMillis(payload.issuedAt),
+					redeemedAt: timestampUtils.fromMaybeMillis(payload.redeemedAt),
+				}),
+				(error) => {
+					throw RewardRecordInvariantError(
+						"Failed to serialize reward record.",
+						{
+							cause: error,
+							extra: { reason: "invalid_record" },
+						},
+					);
+				},
+			);
+		},
 	fromFirestore(
 		snapshot: QueryDocumentSnapshot<Record<string, unknown>>,
 	): RewardRecord {
@@ -36,12 +47,25 @@ const rewardConverter: FirestoreDataConverter<RewardRecord> = {
 		const qrPayload =
 			typeof data.qrPayload === "string" ? data.qrPayload : "";
 
-		return rewardRecordSchema.parse({
+		const candidate: RewardRecord = {
 			attendeeId: snapshot.id,
 			qrPayload,
 			issuedAt,
 			redeemedAt,
-		});
+		};
+
+		return createRewardRecord(candidate).match(
+			(record) => record,
+			(error) => {
+				throw RewardRecordInvariantError(
+					"Failed to deserialize reward record.",
+					{
+						cause: error,
+						extra: { reason: "invalid_record" },
+					},
+				);
+			},
+		);
 	},
 };
 

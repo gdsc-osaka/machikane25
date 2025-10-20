@@ -5,6 +5,7 @@ import {
 	getDoc,
 	setDoc,
 } from "firebase/firestore";
+import { ResultAsync } from "neverthrow";
 import {
 	RewardRepositoryError,
 	type RewardRecord,
@@ -20,35 +21,32 @@ const createRewardRepository = (firestore: Firestore): RewardRepository => {
 		REWARDS_COLLECTION,
 	).withConverter(rewardConverter);
 
-	const findByAttendeeId = async (
+	const findByAttendeeId = (
 		attendeeId: string,
-	): Promise<RewardRecord | null> => {
-		try {
-			const snapshot = await getDoc(doc(rewardsCollection, attendeeId));
+	): ResultAsync<RewardRecord | null, RewardRepositoryError> =>
+		ResultAsync.fromPromise(getDoc(doc(rewardsCollection, attendeeId)), (cause) =>
+			RewardRepositoryError("Failed to load reward record.", {
+				cause,
+				extra: { operation: "find" },
+			}),
+		).map((snapshot) => {
 			if (!snapshot.exists()) {
 				return null;
 			}
 			return snapshot.data();
-		} catch (cause) {
-			throw RewardRepositoryError("Failed to load reward record.", {
-				cause,
-				extra: { operation: "find" },
-			});
-		}
-	};
+		});
 
-	const save = async (record: RewardRecord): Promise<void> => {
-		try {
-			await setDoc(doc(rewardsCollection, record.attendeeId), record, {
+	const save = (record: RewardRecord): ResultAsync<void, RewardRepositoryError> =>
+		ResultAsync.fromPromise(
+			setDoc(doc(rewardsCollection, record.attendeeId), record, {
 				merge: true,
-			});
-		} catch (cause) {
-			throw RewardRepositoryError("Failed to persist reward record.", {
-				cause,
-				extra: { operation: "save" },
-			});
-		}
-	};
+			}),
+			(cause) =>
+				RewardRepositoryError("Failed to persist reward record.", {
+					cause,
+					extra: { operation: "save" },
+				}),
+		);
 
 	return {
 		findByAttendeeId,

@@ -1,5 +1,9 @@
+import { ok, okAsync, type ResultAsync } from "neverthrow";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SubmitSurveySuccess } from "@/application/survey/submit-survey";
+import type {
+	SubmitSurveyFailure,
+	SubmitSurveySuccess,
+} from "@/application/survey/submit-survey";
 
 type SurveyAnswers = {
 	ratingPhotobooth: number;
@@ -9,19 +13,7 @@ type SurveyAnswers = {
 };
 
 const { getSurveyFormConfigMock } = vi.hoisted(() => {
-	const mock =
-		vi.fn<
-			() => {
-				formResponseUrl: string;
-				entryIds: {
-					attendeeId: string;
-					ratingPhotobooth: string;
-					ratingAquarium: string;
-					ratingStampRally: string;
-					freeComment: string;
-				};
-			}
-		>();
+	const mock = vi.fn();
 	return { getSurveyFormConfigMock: mock };
 });
 
@@ -30,7 +22,7 @@ type SubmitSurveyService = {
 		attendeeId: string;
 		answers: SurveyAnswers;
 		responseId: string;
-	}) => Promise<SubmitSurveySuccess>;
+	}) => ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure>;
 };
 
 const { createSubmitSurveyServiceMock, submitMock } = vi.hoisted(() => {
@@ -40,13 +32,11 @@ const { createSubmitSurveyServiceMock, submitMock } = vi.hoisted(() => {
 				attendeeId: string;
 				answers: SurveyAnswers;
 				responseId: string;
-			}) => Promise<SubmitSurveySuccess>
+			}) => ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure>
 		>();
-	const factory = vi.fn<(arg: { fetch: typeof fetch }) => SubmitSurveyService>(
-		() => ({
-			submit,
-		}),
-	);
+	const factory = vi.fn<() => SubmitSurveyService>(() => ({
+		submit,
+	}));
 	return { createSubmitSurveyServiceMock: factory, submitMock: submit };
 });
 
@@ -74,11 +64,12 @@ describe("submitSurveyAction", () => {
 		ratingPhotobooth: 5,
 		ratingAquarium: 4,
 		ratingStampRally: 5,
-		freeComment: "Great exhibits!",
+	freeComment: "Great exhibits!",
 	};
 
 	beforeEach(() => {
-		getSurveyFormConfigMock.mockReturnValue(formConfig);
+		delete process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
+		getSurveyFormConfigMock.mockReturnValue(ok(formConfig));
 		createSubmitSurveyServiceMock.mockClear();
 		submitMock.mockReset();
 		vi.unstubAllGlobals();
@@ -100,7 +91,7 @@ describe("submitSurveyAction", () => {
 			rewardQr: "qr-guest-42",
 		};
 
-		submitMock.mockResolvedValueOnce(success);
+		submitMock.mockReturnValueOnce(okAsync(success));
 
 		const { submitSurveyAction } = await import("../submit-survey");
 		const result = await submitSurveyAction({

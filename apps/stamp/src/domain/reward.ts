@@ -1,3 +1,4 @@
+import { err, ok, Result, ResultAsync } from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
 import { z } from "zod";
 
@@ -20,8 +21,10 @@ const RewardRepositoryError = errorBuilder(
 type RewardRepositoryError = InferError<typeof RewardRepositoryError>;
 
 type RewardRepository = {
-	findByAttendeeId: (attendeeId: string) => Promise<RewardRecord | null>;
-	save: (record: RewardRecord) => Promise<void>;
+	findByAttendeeId: (
+		attendeeId: string,
+	) => ResultAsync<RewardRecord | null, RewardRepositoryError>;
+	save: (record: RewardRecord) => ResultAsync<void, RewardRepositoryError>;
 };
 
 const RewardStatus = z.union([
@@ -63,20 +66,37 @@ const createRewardSnapshot = (record: RewardRecord | null): RewardSnapshot => {
 const attendeeIdSchema = z.string().min(1);
 const issuedAtSchema = z.number().int().nonnegative();
 
-const toBase64Url = (value: string): string => {
+const RewardQrEncodingError = errorBuilder(
+	"RewardQrEncodingError",
+	z.object({
+		reason: z.union([
+			z.literal("nonce_generation_failed"),
+			z.literal("encoding_failed"),
+		]),
+	}),
+);
+type RewardQrEncodingError = InferError<typeof RewardQrEncodingError>;
+
+const toBase64Url = (value: string): Result<string, RewardQrEncodingError> => {
 	if (typeof Buffer !== "undefined") {
-		return Buffer.from(value, "utf-8").toString("base64url");
+		return ok(Buffer.from(value, "utf-8").toString("base64url"));
 	}
 
 	if (typeof globalThis.btoa === "function") {
-		return globalThis
-			.btoa(value)
-			.replaceAll("+", "-")
-			.replaceAll("/", "_")
-			.replace(/=+$/u, "");
+		return ok(
+			globalThis
+				.btoa(value)
+				.replaceAll("+", "-")
+				.replaceAll("/", "_")
+				.replace(/=+$/u, ""),
+		);
 	}
 
-	throw new Error("Unable to encode reward payload for the current runtime.");
+	return err(
+		RewardQrEncodingError("Failed to encode reward QR payload.", {
+			extra: { reason: "encoding_failed" },
+		}),
+	);
 };
 
 const randomHexSegment = (length: number): string =>
@@ -120,32 +140,68 @@ const createRewardQrPayloadGenerator = ({
 	random = defaultRandomUuid,
 	encode = toBase64Url,
 }: CreateRewardQrPayloadGeneratorOptions = {}) => {
-	const generate = (attendeeId: string, issuedAt: number): string => {
+	const generate = (
+		attendeeId: string,
+		issuedAt: number,
+	): Result<string, RewardQrEncodingError> => {
 		const parsedAttendeeId = attendeeIdSchema.parse(attendeeId);
 		const parsedIssuedAt = issuedAtSchema.parse(issuedAt);
-		const payload = {
-			v: "1",
-			id: parsedAttendeeId,
-			issuedAt: parsedIssuedAt,
-			nonce: random(),
-		};
 
-		return encode(JSON.stringify(payload));
+		return Result.fromThrowable(
+			() => random(),
+			(cause) =>
+				RewardQrEncodingError("Failed to generate reward QR nonce.", {
+					cause,
+					extra: { reason: "nonce_generation_failed" },
+				}),
+		).andThen((nonce) =>
+			encode(
+				JSON.stringify({
+					v: "1",
+					id: parsedAttendeeId,
+					issuedAt: parsedIssuedAt,
+					nonce,
+				}),
+			),
+		);
 	};
 
 	return generate;
 };
 
+const RewardRecordInvariantError = errorBuilder(
+	"RewardRecordInvariantError",
+	z.object({ reason: z.literal("invalid_record") }),
+);
+
+type RewardRecordInvariantError = InferError<typeof RewardRecordInvariantError>;
+
+const createRewardRecord = (
+	input: RewardRecord,
+): Result<RewardRecord, RewardRecordInvariantError> => {
+	const validation = rewardRecordSchema.safeParse(input);
+	if (!validation.success) {
+		return err(
+			RewardRecordInvariantError("Reward record failed validation.", {
+				extra: { reason: "invalid_record", issues: validation.error.issues },
+			}),
+		);
+	}
+	return ok(validation.data);
+};
+
 export {
 	createRewardQrPayloadGenerator,
+	createRewardRecord,
 	createRewardSnapshot,
 	rewardRecordSchema,
 	RewardRepositoryError,
 	RewardStatus,
+	RewardRecordInvariantError,
+	RewardQrEncodingError,
 };
 export type {
 	RewardRecord,
 	RewardRepository,
-	RewardRepositoryError,
 	RewardSnapshot,
 };

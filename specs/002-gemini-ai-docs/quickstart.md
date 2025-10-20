@@ -29,6 +29,7 @@ pnpm format:photobooth
 ```
 - shadcnコンポーネント追加時は `pnpm shadcn:add` を使用し、スタイルはTailwind 4 tokensに揃える。
 - 実装中は `docs/TDD.md` のRed-Green-Refactor-Commitを順守し、各サイクル完了ごとにテスト結果を記録する。
+- TypeScriptでは`any`型を使用せず、`unknown`・ジェネリクス・ドメイン型を組み合わせて型安全性を担保する。CI lintで違反するとブロックされる。
 
 ## 4. Deploy (dress rehearsal / production)
 1. Remote Configにフォトブース設定（メンテモード、プロンプトテンプレート）を同期。

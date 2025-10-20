@@ -62,6 +62,7 @@
 - **Coverage Strategy**: 生成フロー関連のアプリケーション層／UIコンポーネント／Firebase連携のスタブを網羅し、非同期分岐（成功・失敗・タイムアウト）をVitestで明示的に検証して100%ステートメント・分岐カバレッジを確保する。
 - **Environments**: Firebase Emulator SuiteでAuth・Firestore・Functions・Storageを再現し、AI生成APIはHTTPモックサーバーで疑似レスポンスを返す。水族館連携WebhookはローカルHTTPサーバーで受信確認する。
 - **Process Reference**: 開発フェーズは `docs/TDD.md` のRed-Green-Refactor-Commitサイクルに厳密に従い、実装前に必ず失敗するテストを用意する。レビューチェックリストにもTDD順守を含める。
+- **Type Safety**: TypeScriptの実装では`any`型の宣言やアサーションを禁止し、ドメイン型・ジェネリクス・型ガードで表現力を維持してCIの型検証をパスする。
 
 ## Requirements *(mandatory)*
 

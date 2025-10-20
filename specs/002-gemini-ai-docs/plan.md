@@ -24,7 +24,7 @@ AIフォトブースでは、匿名認証で撮影からテーマ選択・AI生�
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Code Quality Stewardship**: 影響範囲はAIフォトブース体験と水族館連携。参照仕様は `docs/spec/Photo_PRD.md` と `docs/spec/photobooth/Design Doc.md`、新規仕様は `specs/002-gemini-ai-docs/spec.md`。追加コードは `apps/photo` 以下にDDD層で配置し、`docs/DDD.md` に従ってPresentation→Application→Domain→Infrastructure依存を守り、既存のlogger・i18nパッケージを再利用。`pnpm lint` / `pnpm lint:fix` とBiomをCI前に必ず通す。
+- **Code Quality Stewardship**: 影響範囲はAIフォトブース体験と水族館連携。参照仕様は `docs/spec/Photo_PRD.md` と `docs/spec/photobooth/Design Doc.md`、新規仕様は `specs/002-gemini-ai-docs/spec.md`。追加コードは `apps/photo` 以下にDDD層で配置し、`docs/DDD.md` に従ってPresentation→Application→Domain→Infrastructure依存を守り、既存のlogger・i18nパッケージを再利用。`pnpm lint` / `pnpm lint:fix` とBiomをCI前に必ず通す。全てのTypeScriptは`any`型の使用を禁じ、適切な型合成やneverthrowのResult型などで表現する。
 - **Exhaustive Testing Mandate**: 単体・結合テストは `pnpm test:photo` でVitest実行、Firebase Emulator Suiteで匿名Auth・Firestore・Functions・Storageを再現し、AI生成API・水族館Webhookはmsw/ローカルHTTPでスタブ。すべてのユースケースで100%ステートメント/分岐達成をcoverageレポートにて確認。
 - **Unified Festival Experience**: Kiosk UI、QRページ、管理ダッシュボードで日英切替を実装し、文言はi18n辞書 (`apps/photo/src/libs/i18n`) に登録。shadcnコンポーネントとTailwind tokensでスタイル統一し、デザイン差分は `docs/spec/photobooth/Design Doc.md` とFigmaリンクで証憑取得、PRでスクリーンショットと動画を添付。
 - **Performance & Resilience Envelope**: 生成要求はバックオフ＋キュー管理でレート制御。Remote Configでメンテ表示・遅延モード切替を用意し、Sentryで生成失敗/水族館送信エラーを監視。Storage原本削除はCloud Functionsの定期ジョブで5分以内実施。管理UIは5秒ごとSWR再検証、全フローで2秒以内にフィードバック表示。

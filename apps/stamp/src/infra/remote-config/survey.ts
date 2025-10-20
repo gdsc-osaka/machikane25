@@ -15,10 +15,7 @@ type SurveyFormConfig = {
 	entryIds: SurveyFormEntryIds;
 };
 
-const entryIdSchema = z
-	.string()
-	.min(1)
-	.optional();
+const entryIdSchema = z.string().min(1).optional();
 
 const entryMapSchema = z.object({
 	attendeeId: entryIdSchema,
@@ -102,28 +99,28 @@ const parseSurveyFormConfig = (
 		})
 		.andThen((config) => {
 			const { entryMap } = config;
-			return selectEntryId(["attendeeId", "uid"], entryMap, "attendeeId")
-				.andThen((attendeeId) =>
+			return selectEntryId(
+				["attendeeId", "uid"],
+				entryMap,
+				"attendeeId",
+			).andThen((attendeeId) =>
+				selectEntryId(
+					["ratingPhotobooth", "photoBoothRating"],
+					entryMap,
+					"ratingPhotobooth",
+				).andThen((ratingPhotobooth) =>
 					selectEntryId(
-						["ratingPhotobooth", "photoBoothRating"],
+						["ratingAquarium", "aquariumRating"],
 						entryMap,
-						"ratingPhotobooth",
-					).andThen((ratingPhotobooth) =>
+						"ratingAquarium",
+					).andThen((ratingAquarium) =>
 						selectEntryId(
-							["ratingAquarium", "aquariumRating"],
+							["ratingStampRally", "stampRallyRating"],
 							entryMap,
-							"ratingAquarium",
-						).andThen((ratingAquarium) =>
-							selectEntryId(
-								["ratingStampRally", "stampRallyRating"],
-								entryMap,
-								"ratingStampRally",
-							).andThen((ratingStampRally) =>
-								selectEntryId(
-									["freeComment"],
-									entryMap,
-									"freeComment",
-								).map((freeComment) => ({
+							"ratingStampRally",
+						).andThen((ratingStampRally) =>
+							selectEntryId(["freeComment"], entryMap, "freeComment").map(
+								(freeComment) => ({
 									formResponseUrl: config.formUrl,
 									entryIds: {
 										attendeeId,
@@ -132,14 +129,18 @@ const parseSurveyFormConfig = (
 										ratingStampRally,
 										freeComment,
 									},
-								})),
+								}),
 							),
 						),
 					),
-				);
+				),
+			);
 		});
 
-const getSurveyFormConfig = (): Result<SurveyFormConfig, SurveyFormConfigError> => {
+const getSurveyFormConfig = (): Result<
+	SurveyFormConfig,
+	SurveyFormConfigError
+> => {
 	const raw = process.env[SURVEY_FORM_CONFIG_ENV];
 	if (typeof raw !== "string" || raw.trim().length === 0) {
 		return err(

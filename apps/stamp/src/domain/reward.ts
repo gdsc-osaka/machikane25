@@ -1,4 +1,4 @@
-import { err, ok, Result, ResultAsync } from "neverthrow";
+import { err, ok, type Result, type ResultAsync } from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
 import { z } from "zod";
 
@@ -122,18 +122,14 @@ const defaultRandomUuid = (): string => {
 		randomHexSegment(6),
 	];
 
-	return [
-		segments[0],
-		segments[1],
-		segments[2],
-		segments[3],
-		segments[4],
-	].join("-");
+	return [segments[0], segments[1], segments[2], segments[3], segments[4]].join(
+		"-",
+	);
 };
 
 type CreateRewardQrPayloadGeneratorOptions = {
 	random?: () => string;
-	encode?: (value: string) => string;
+	encode?: (value: string) => Result<string, RewardQrEncodingError>;
 };
 
 const createRewardQrPayloadGenerator = ({
@@ -146,23 +142,15 @@ const createRewardQrPayloadGenerator = ({
 	): Result<string, RewardQrEncodingError> => {
 		const parsedAttendeeId = attendeeIdSchema.parse(attendeeId);
 		const parsedIssuedAt = issuedAtSchema.parse(issuedAt);
+		const nonce = random();
 
-		return Result.fromThrowable(
-			() => random(),
-			(cause) =>
-				RewardQrEncodingError("Failed to generate reward QR nonce.", {
-					cause,
-					extra: { reason: "nonce_generation_failed" },
-				}),
-		).andThen((nonce) =>
-			encode(
-				JSON.stringify({
-					v: "1",
-					id: parsedAttendeeId,
-					issuedAt: parsedIssuedAt,
-					nonce,
-				}),
-			),
+		return encode(
+			JSON.stringify({
+				v: "1",
+				id: parsedAttendeeId,
+				issuedAt: parsedIssuedAt,
+				nonce,
+			}),
 		);
 	};
 
@@ -171,7 +159,10 @@ const createRewardQrPayloadGenerator = ({
 
 const RewardRecordInvariantError = errorBuilder(
 	"RewardRecordInvariantError",
-	z.object({ reason: z.literal("invalid_record") }),
+	z.object({
+		reason: z.literal("invalid_record"),
+		issues: z.array(z.any().transform((v) => v as z.core.$ZodIssue)),
+	}),
 );
 
 type RewardRecordInvariantError = InferError<typeof RewardRecordInvariantError>;
@@ -200,8 +191,4 @@ export {
 	RewardRecordInvariantError,
 	RewardQrEncodingError,
 };
-export type {
-	RewardRecord,
-	RewardRepository,
-	RewardSnapshot,
-};
+export type { RewardRecord, RewardRepository, RewardSnapshot };

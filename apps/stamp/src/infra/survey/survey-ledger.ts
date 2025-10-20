@@ -1,9 +1,4 @@
-import {
-	collection,
-	doc,
-	type Firestore,
-	setDoc,
-} from "firebase/firestore";
+import { collection, doc, type Firestore, setDoc } from "firebase/firestore";
 import { ResultAsync } from "neverthrow";
 import {
 	type MarkSurveyCompletedInput,
@@ -65,8 +60,5 @@ const createSurveyLedger = (firestore: Firestore) => {
 	};
 };
 
-export {
-	createSurveyLedger,
-	SURVEY_LEDGER_COLLECTION,
-};
+export { createSurveyLedger, SURVEY_LEDGER_COLLECTION };
 export type { MarkSurveyCompletedInput };

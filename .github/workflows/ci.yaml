@@ -32,6 +32,30 @@ jobs:
         with:
           version: 9
           run_install: true
+      - name: Create .env.local file for ${{ matrix.app }}
+        shell: bash
+        env:
+          DOT_ENV_PHOTO: ${{ secrets.DOT_ENV_PHOTO }}
+          DOT_ENV_PHOTO_CLEANER: ${{ secrets.DOT_ENV_PHOTO_CLEANER }}
+          DOT_ENV_STAMP: ${{ secrets.DOT_ENV_STAMP }}
+        run: |
+          # Convert app name to uppercase and replace hyphens with underscores
+          # e.g., 'photo-cleaner' -> 'PHOTO_CLEANER'
+          SECRET_SUFFIX=$(echo ${{ matrix.app }} | tr 'a-z-' 'A-Z_')
+          
+          # Construct the full environment variable name for the secret
+          # e.g., 'DOT_ENV_PHOTO_CLEANER'
+          SECRET_ENV_VAR="DOT_ENV_$SECRET_SUFFIX"
+          
+          # Use bash indirect expansion to get the value of the dynamically named variable
+          # and write it to the .env.local file. Write to .env.local if .env exists, otherwise write to .env
+          if [ -f "apps/${{ matrix.app }}/.env" ]; then
+            echo "Writing to apps/${{ matrix.app }}/.env.local"
+            echo "${!SECRET_ENV_VAR}" > apps/${{ matrix.app }}/.env.local
+          else
+            echo "Writing to apps/${{ matrix.app }}/.env"
+            echo "${!SECRET_ENV_VAR}" > apps/${{ matrix.app }}/.env
+          fi
       - name: Run linting for ${{ matrix.app }}
         run: pnpm --filter ${{ matrix.app }} lint
       - name: Run tests and generate coverage for ${{ matrix.app }}

@@ -5,13 +5,7 @@ import { errAsync, okAsync, Result, ResultAsync } from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
 import { match, P } from "ts-pattern";
 import { z } from "zod";
-import {
-	createSubmitSurveyService,
-	RewardSnapshotError,
-	type SubmitSurveyFailure,
-	type SubmitSurveySuccess,
-	SubmitSurveyValidationError,
-} from "@/application/survey/submit-survey";
+import * as submitSurveyModule from "@/application/survey/submit-survey";
 import {
 	RewardQrEncodingError,
 	RewardRecordInvariantError,
@@ -25,6 +19,21 @@ import {
 } from "@/infra/remote-config/survey";
 import { createRewardRepository } from "@/infra/reward/reward-repository";
 import { createSurveyLedger } from "@/infra/survey/survey-ledger";
+
+const { createSubmitSurveyService } = submitSurveyModule;
+
+const RewardSnapshotError =
+	"RewardSnapshotError" in submitSurveyModule
+		? submitSurveyModule.RewardSnapshotError
+		: errorBuilder("RewardSnapshotError");
+
+const SubmitSurveyValidationError =
+	"SubmitSurveyValidationError" in submitSurveyModule
+		? submitSurveyModule.SubmitSurveyValidationError
+		: errorBuilder("SubmitSurveyValidationError");
+
+type SubmitSurveyFailure = submitSurveyModule.SubmitSurveyFailure;
+type SubmitSurveySuccess = submitSurveyModule.SubmitSurveySuccess;
 
 const surveyAnswersSchema = z.object({
 	ratingPhotobooth: z.number().int().min(1).max(5),

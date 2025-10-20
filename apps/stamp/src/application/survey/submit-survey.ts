@@ -73,10 +73,7 @@ const submitSurveyInputSchema = z.object({
 	responseId: z.string().min(1),
 });
 
-const SubmitSurveyValidationError = errorBuilder(
-	"SubmitSurveyValidationError",
-	z.object({}),
-);
+const SubmitSurveyValidationError = errorBuilder("SubmitSurveyValidationError");
 
 type SubmitSurveyValidationError = InferError<
 	typeof SubmitSurveyValidationError
@@ -96,17 +93,6 @@ type SubmitSurveyFailure =
 	| RewardQrEncodingError
 	| RewardRecordInvariantError
 	| RewardSnapshotError;
-
-const fromResult = <Value, Failure>(
-	result: Result<Value, Failure>,
-): ResultAsync<Value, Failure> =>
-	(() => {
-		try {
-			return okAsync<Value, Failure>(result._unsafeUnwrap());
-		} catch {
-			return errAsync<Value, Failure>(result._unsafeUnwrapErr());
-		}
-	})();
 
 const resolveRewardQr = (
 	snapshot: ReturnType<typeof createRewardSnapshot>,
@@ -144,8 +130,8 @@ const createSubmitSurveyService = ({
 	const toSuccess = (
 		attendeeId: string,
 		rewardRecord: RewardRecord,
-	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> =>
-		fromResult(toSubmitSurveySuccess(attendeeId, rewardRecord)).mapErr(
+	): Result<SubmitSurveySuccess, SubmitSurveyFailure> =>
+		toSubmitSurveySuccess(attendeeId, rewardRecord).mapErr(
 			(error): SubmitSurveyFailure => error,
 		);
 
@@ -153,19 +139,17 @@ const createSubmitSurveyService = ({
 		attendeeId: string,
 	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> => {
 		const issuedAt = clock();
-		return fromResult(generateQrPayload(attendeeId, issuedAt))
+		return generateQrPayload(attendeeId, issuedAt)
 			.mapErr((error): SubmitSurveyFailure => error)
-			.andThen((qrPayload) =>
-				fromResult(
-					createRewardRecord({
-						attendeeId,
-						qrPayload,
-						issuedAt,
-						redeemedAt: null,
-					}),
-				)
+			.asyncAndThen((qrPayload) =>
+				createRewardRecord({
+					attendeeId,
+					qrPayload,
+					issuedAt,
+					redeemedAt: null,
+				})
 					.mapErr((error): SubmitSurveyFailure => error)
-					.andThen((rewardRecord) =>
+					.asyncAndThen((rewardRecord) =>
 						rewards
 							.save(rewardRecord)
 							.mapErr((error): SubmitSurveyFailure => error)
@@ -177,12 +161,10 @@ const createSubmitSurveyService = ({
 	const submit = (
 		rawInput: SubmitSurveyInput,
 	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> =>
-		fromResult(
-			Result.fromThrowable(
-				() => submitSurveyInputSchema.parse(rawInput),
-				mapValidationError,
-			),
-		).andThen((input) => {
+		Result.fromThrowable(
+			() => submitSurveyInputSchema.parse(rawInput),
+			mapValidationError,
+		)().asyncAndThen((input) => {
 			const completedAt = clock();
 			const record: MarkSurveyCompletedInput = {
 				attendeeId: input.attendeeId,

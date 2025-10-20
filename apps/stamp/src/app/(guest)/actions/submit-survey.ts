@@ -72,17 +72,6 @@ const SubmitSurveyActionError = errorBuilder(
 
 type SubmitSurveyActionError = InferError<typeof SubmitSurveyActionError>;
 
-const fromResult = <Value, Failure>(
-	result: Result<Value, Failure>,
-): ResultAsync<Value, Failure> =>
-	(() => {
-		try {
-			return okAsync<Value, Failure>(result._unsafeUnwrap());
-		} catch {
-			return errAsync<Value, Failure>(result._unsafeUnwrapErr());
-		}
-	})();
-
 const hasFirebaseConfig = (): boolean => {
 	const raw = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
 	return typeof raw === "string" && raw.trim().length > 0;
@@ -241,9 +230,10 @@ const submitSurveyAction = async (
 			}),
 	);
 
-	const result = fromResult(parsedInput).andThen((input) =>
-		fromResult(getSurveyFormConfig().mapErr(mapSurveyConfigError)).andThen(
-			(config) => {
+	const result = parsedInput().asyncAndThen((input) =>
+		getSurveyFormConfig()
+			.mapErr(mapSurveyConfigError)
+			.asyncAndThen((config) => {
 				const formData = createSurveyFormData({
 					...input,
 					entryIds: config.entryIds,
@@ -262,8 +252,7 @@ const submitSurveyAction = async (
 					.mapErr(
 						(error): SubmitSurveyActionError | SubmitSurveyFailure => error,
 					);
-			},
-		),
+			}),
 	);
 
 	return result.match(

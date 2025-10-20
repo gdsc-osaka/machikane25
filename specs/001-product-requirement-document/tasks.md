@@ -96,10 +96,10 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement staff auth guard leveraging custom claims in `apps/stamp/src/application/auth/require-staff.ts`
+- [ ] T028 [US3] Implement staff auth guard leveraging custom claims in `apps/stamp/src/application/auth/require-staff.ts`. Implement infra and domain layer as needed.
 - [ ] T029 [US3] Update security rules to allow staff to set `giftReceivedAt` timestamps in `firestore.rules`
 - [ ] T030 [US3] Integrate `jsqr` scanner and manual ID fallback in Scan Page UI `apps/stamp/src/app/scan/page.tsx`
-- [ ] T031 [US3] Implement reward redemption application service with duplicate protection in `apps/stamp/src/application/rewards/redeem-reward.ts`
+- [ ] T031 [US3] Implement reward redemption application service with duplicate protection in `apps/stamp/src/application/rewards/redeem-reward.ts`. Implement infra and domain layer as needed.
 - [ ] T032 [P] [US3] Add bilingual dialog components for scan outcomes in `apps/stamp/src/app/scan/components/redemption-dialog.tsx`
 
 **Checkpoint**: User Story 3 complete—staff redemption tooling works independently.

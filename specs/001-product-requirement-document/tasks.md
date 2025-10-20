@@ -72,10 +72,10 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement survey submission server action posting to Google Forms in `apps/stamp/src/app/(guest)/actions/submit-survey.ts`
-- [ ] T021 [US2] Add reward domain types and QR payload generator in `apps/stamp/src/domain/reward.ts`
-- [ ] T022 [P] [US2] Add reward repository for QR payload persistence in `apps/stamp/src/infra/reward/reward-repository.ts` and `apps/stamp/src/infra/reward/reward-converter.ts`
-- [ ] T023 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
+- [X] T020 [US2] Implement survey submission server action posting to Google Forms in `apps/stamp/src/app/(guest)/actions/submit-survey.ts`
+- [X] T021 [US2] Add reward domain types and QR payload generator in `apps/stamp/src/domain/reward.ts`
+- [X] T022 [P] [US2] Add reward repository for QR payload persistence in `apps/stamp/src/infra/reward/reward-repository.ts` and `apps/stamp/src/infra/reward/reward-converter.ts`
+- [X] T023 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
 - [ ] T024 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
 - [ ] T025 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
 

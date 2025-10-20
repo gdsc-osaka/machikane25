@@ -30,9 +30,9 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.12.4",
 	"devDependencies": {
-		"@firebase/rules-unit-testing": "^5.0.0",
 		"@biomejs/biome": "2.2.6",
 		"@eslint/eslintrc": "^3",
+		"@firebase/rules-unit-testing": "^5.0.0",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.0",
 		"@vitejs/plugin-react": "^5.0.4",
@@ -46,5 +46,8 @@
 		"typescript": "^5",
 		"vite-tsconfig-paths": "^5.1.4",
 		"vitest": "^3.2.4"
+	},
+	"dependencies": {
+		"@sentry/nextjs": "^10.20.0"
 	}
 }

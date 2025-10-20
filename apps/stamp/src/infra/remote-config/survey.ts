@@ -81,7 +81,7 @@ const parseSurveyFormConfig = (
 				cause,
 				extra: { reason: "parse_failed" },
 			}),
-	)
+	)()
 		.map((parsed) => surveyFormConfigSchema.safeParse(parsed))
 		.andThen((result) => {
 			if (!result.success) {
@@ -159,4 +159,4 @@ export {
 	SURVEY_FORM_CONFIG_ENV,
 	SurveyFormConfigError,
 };
-export type { SurveyFormConfig, SurveyFormEntryIds, SurveyFormConfigError };
+export type { SurveyFormConfig, SurveyFormEntryIds };

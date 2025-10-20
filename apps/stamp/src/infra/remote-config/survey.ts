@@ -1,3 +1,5 @@
+import { err, ok, Result } from "neverthrow";
+import { errorBuilder, type InferError } from "obj-err";
 import { z } from "zod";
 
 type SurveyFormEntryIds = {
@@ -37,73 +39,123 @@ const surveyFormConfigSchema = z.object({
 
 const SURVEY_FORM_CONFIG_ENV = "SURVEY_FORM_URL_MAP";
 
+const SurveyFormConfigError = errorBuilder(
+	"SurveyFormConfigError",
+	z.object({
+		reason: z.union([
+			z.literal("missing_env"),
+			z.literal("parse_failed"),
+			z.literal("validation_failed"),
+			z.literal("missing_entry_id"),
+		]),
+		field: z.string().optional(),
+	}),
+);
+
+type SurveyFormConfigError = InferError<typeof SurveyFormConfigError>;
+
 const selectEntryId = (
 	candidates: ReadonlyArray<keyof z.infer<typeof entryMapSchema>>,
 	entryMap: z.infer<typeof entryMapSchema>,
 	field: keyof SurveyFormEntryIds,
-): string => {
+): Result<string, SurveyFormConfigError> => {
 	const resolved = candidates
 		.map((candidate) => entryMap[candidate])
 		.find((value): value is string => typeof value === "string");
 
 	if (!resolved) {
-		throw new Error(
-			`Missing entry ID for ${field}. Update ${SURVEY_FORM_CONFIG_ENV} to include this value.`,
+		return err(
+			SurveyFormConfigError("Missing entry ID for survey form field.", {
+				extra: { reason: "missing_entry_id", field },
+			}),
 		);
 	}
 
-	return resolved;
+	return ok(resolved);
 };
 
-const parseSurveyFormConfig = (raw: string): SurveyFormConfig => {
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(raw);
-	} catch (cause) {
-		throw new Error("Failed to parse survey form configuration JSON.", {
-			cause,
+const parseSurveyFormConfig = (
+	raw: string,
+): Result<SurveyFormConfig, SurveyFormConfigError> =>
+	Result.fromThrowable(
+		() => JSON.parse(raw),
+		(cause) =>
+			SurveyFormConfigError("Failed to parse survey form configuration JSON.", {
+				cause,
+				extra: { reason: "parse_failed" },
+			}),
+	)
+		.map((parsed) => surveyFormConfigSchema.safeParse(parsed))
+		.andThen((result) => {
+			if (!result.success) {
+				return err(
+					SurveyFormConfigError(
+						"Survey form configuration did not match the expected schema.",
+						{
+							cause: result.error,
+							extra: { reason: "validation_failed" },
+						},
+					),
+				);
+			}
+			return ok(result.data);
+		})
+		.andThen((config) => {
+			const { entryMap } = config;
+			return selectEntryId(["attendeeId", "uid"], entryMap, "attendeeId")
+				.andThen((attendeeId) =>
+					selectEntryId(
+						["ratingPhotobooth", "photoBoothRating"],
+						entryMap,
+						"ratingPhotobooth",
+					).andThen((ratingPhotobooth) =>
+						selectEntryId(
+							["ratingAquarium", "aquariumRating"],
+							entryMap,
+							"ratingAquarium",
+						).andThen((ratingAquarium) =>
+							selectEntryId(
+								["ratingStampRally", "stampRallyRating"],
+								entryMap,
+								"ratingStampRally",
+							).andThen((ratingStampRally) =>
+								selectEntryId(
+									["freeComment"],
+									entryMap,
+									"freeComment",
+								).map((freeComment) => ({
+									formResponseUrl: config.formUrl,
+									entryIds: {
+										attendeeId,
+										ratingPhotobooth,
+										ratingAquarium,
+										ratingStampRally,
+										freeComment,
+									},
+								})),
+							),
+						),
+					),
+				);
 		});
-	}
 
-	const config = surveyFormConfigSchema.parse(parsed);
-	const { entryMap } = config;
-
-	const entryIds: SurveyFormEntryIds = {
-		attendeeId: selectEntryId(["attendeeId", "uid"], entryMap, "attendeeId"),
-		ratingPhotobooth: selectEntryId(
-			["ratingPhotobooth", "photoBoothRating"],
-			entryMap,
-			"ratingPhotobooth",
-		),
-		ratingAquarium: selectEntryId(
-			["ratingAquarium", "aquariumRating"],
-			entryMap,
-			"ratingAquarium",
-		),
-		ratingStampRally: selectEntryId(
-			["ratingStampRally", "stampRallyRating"],
-			entryMap,
-			"ratingStampRally",
-		),
-		freeComment: selectEntryId(["freeComment"], entryMap, "freeComment"),
-	};
-
-	return {
-		formResponseUrl: config.formUrl,
-		entryIds,
-	};
-};
-
-const getSurveyFormConfig = (): SurveyFormConfig => {
+const getSurveyFormConfig = (): Result<SurveyFormConfig, SurveyFormConfigError> => {
 	const raw = process.env[SURVEY_FORM_CONFIG_ENV];
 	if (typeof raw !== "string" || raw.trim().length === 0) {
-		throw new Error(
-			`Survey form configuration is missing. Define ${SURVEY_FORM_CONFIG_ENV} in the server environment.`,
+		return err(
+			SurveyFormConfigError("Survey form configuration is missing.", {
+				extra: { reason: "missing_env" },
+			}),
 		);
 	}
 
 	return parseSurveyFormConfig(raw);
 };
 
-export { getSurveyFormConfig, parseSurveyFormConfig, SURVEY_FORM_CONFIG_ENV };
-export type { SurveyFormConfig, SurveyFormEntryIds };
+export {
+	getSurveyFormConfig,
+	parseSurveyFormConfig,
+	SURVEY_FORM_CONFIG_ENV,
+	SurveyFormConfigError,
+};
+export type { SurveyFormConfig, SurveyFormEntryIds, SurveyFormConfigError };

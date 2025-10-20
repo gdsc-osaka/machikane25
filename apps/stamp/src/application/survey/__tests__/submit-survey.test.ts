@@ -1,3 +1,4 @@
+import { ok, okAsync } from "neverthrow";
 import { describe, expect, it, vi } from "vitest";
 import { createSubmitSurveyService } from "@/application/survey/submit-survey";
 
@@ -36,25 +37,25 @@ const createDependencies = () => {
 	const surveyRecords: Array<SurveyLedgerRecord> = [];
 	const rewardStore = new Map<string, RewardRecord>();
 
-	const markCompleted = vi.fn<
+	const markCompleted = vi.fn(
 		({
 			attendeeId,
 			completedAt,
 			responseId,
-		}: SurveyLedgerRecord) => Promise<void>
-	>(async ({ attendeeId, completedAt, responseId }) => {
-		surveyRecords.push({ attendeeId, completedAt, responseId });
-	});
-
-	const findByAttendeeId = vi.fn<
-		(attendeeId: string) => Promise<RewardRecord | null>
-	>(async (attendeeId) => rewardStore.get(attendeeId) ?? null);
-
-	const saveReward = vi.fn<(record: RewardRecord) => Promise<void>>(
-		async (record) => {
-			rewardStore.set(record.attendeeId, record);
+		}: SurveyLedgerRecord) => {
+			surveyRecords.push({ attendeeId, completedAt, responseId });
+			return okAsync<void, never>(undefined);
 		},
 	);
+
+	const findByAttendeeId = vi.fn((attendeeId: string) =>
+		okAsync<RewardRecord | null, never>(rewardStore.get(attendeeId) ?? null),
+	);
+
+	const saveReward = vi.fn((record: RewardRecord) => {
+		rewardStore.set(record.attendeeId, record);
+		return okAsync<void, never>(undefined);
+	});
 
 	const dependencies: Dependencies = {
 		surveyLedger: {
@@ -64,7 +65,8 @@ const createDependencies = () => {
 			findByAttendeeId,
 			save: saveReward,
 		},
-		generateQrPayload: (attendeeId: string) => `qr-${attendeeId}`,
+		generateQrPayload: (attendeeId: string) =>
+			ok<string, never>(`qr-${attendeeId}`),
 		clock: createClock(),
 	};
 
@@ -108,7 +110,8 @@ describe("createSubmitSurveyService", () => {
 			redeemedAt: null,
 		});
 
-		expect(result).toEqual({
+		expect(result.isOk()).toBe(true);
+		expect(result._unsafeUnwrap()).toEqual({
 			attendeeId: "guest-21",
 			surveyStatus: "submitted",
 			rewardStatus: "issued",
@@ -149,7 +152,8 @@ describe("createSubmitSurveyService", () => {
 		});
 		expect(saveReward).not.toHaveBeenCalled();
 		expect(findByAttendeeId).toHaveBeenCalledTimes(1);
-		expect(result).toEqual({
+		expect(result.isOk()).toBe(true);
+		expect(result._unsafeUnwrap()).toEqual({
 			attendeeId: "guest-99",
 			surveyStatus: "submitted",
 			rewardStatus: "issued",

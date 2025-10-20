@@ -4,13 +4,12 @@ import {
 	type Firestore,
 	setDoc,
 } from "firebase/firestore";
+import { ResultAsync } from "neverthrow";
+import {
+	type MarkSurveyCompletedInput,
+	SurveyLedgerError,
+} from "@/domain/survey";
 import { timestampUtils } from "@/infra/timestamp";
-
-type MarkSurveyCompletedInput = {
-	attendeeId: string;
-	completedAt: number;
-	responseId: string;
-};
 
 const SURVEY_LEDGER_COLLECTION = "surveyLedger";
 const USERS_COLLECTION = "users";
@@ -22,11 +21,11 @@ const createSurveyLedger = (firestore: Firestore) => {
 	);
 	const usersCollection = collection(firestore, USERS_COLLECTION);
 
-	const markCompleted = async ({
+	const markCompleted = ({
 		attendeeId,
 		completedAt,
 		responseId,
-	}: MarkSurveyCompletedInput): Promise<void> => {
+	}: MarkSurveyCompletedInput): ResultAsync<void, SurveyLedgerError> => {
 		const completedAtTimestamp = timestampUtils.fromMaybeMillis(completedAt);
 		const ledgerUpdate = setDoc(
 			doc(surveyLedgerCollection, attendeeId),
@@ -51,11 +50,14 @@ const createSurveyLedger = (firestore: Firestore) => {
 			{ merge: true },
 		);
 
-		try {
-			await Promise.all([ledgerUpdate, attendeeUpdate]);
-		} catch (cause) {
-			throw new Error("Failed to record survey completion.", { cause });
-		}
+		return ResultAsync.fromPromise(
+			Promise.all([ledgerUpdate, attendeeUpdate]),
+			(cause) =>
+				SurveyLedgerError("Failed to record survey completion.", {
+					cause,
+					extra: { operation: "markCompleted" },
+				}),
+		).map(() => undefined);
 	};
 
 	return {
@@ -63,5 +65,8 @@ const createSurveyLedger = (firestore: Firestore) => {
 	};
 };
 
-export { createSurveyLedger, SURVEY_LEDGER_COLLECTION };
+export {
+	createSurveyLedger,
+	SURVEY_LEDGER_COLLECTION,
+};
 export type { MarkSurveyCompletedInput };

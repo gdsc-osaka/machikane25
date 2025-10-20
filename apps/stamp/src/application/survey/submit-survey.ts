@@ -1,11 +1,21 @@
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow";
+import { errorBuilder, type InferError } from "obj-err";
 import { z } from "zod";
 import {
 	createRewardQrPayloadGenerator,
+	createRewardRecord,
 	createRewardSnapshot,
-	rewardRecordSchema,
 	type RewardRecord,
-	type RewardSnapshot,
+	type RewardRepository,
+	RewardRecordInvariantError,
+	RewardQrEncodingError,
+	RewardRepositoryError,
 } from "@/domain/reward";
+import {
+	type MarkSurveyCompletedInput,
+	type SurveyLedgerPort,
+	SurveyLedgerError,
+} from "@/domain/survey";
 
 type SurveyAnswers = {
 	ratingPhotobooth: number;
@@ -27,28 +37,20 @@ type SubmitSurveySuccess = {
 	rewardQr: string;
 };
 
-type SurveyLedger = {
-	markCompleted: (input: {
-		attendeeId: string;
-		completedAt: number;
-		responseId: string;
-	}) => Promise<void>;
-};
-
-type RewardGateway = {
-	findByAttendeeId: (attendeeId: string) => Promise<RewardRecord | null>;
-	save: (record: RewardRecord) => Promise<void>;
-};
-
 type CreateSubmitSurveyServiceDependencies = {
-	surveyLedger: SurveyLedger;
-	rewards: RewardGateway;
-	generateQrPayload?: (attendeeId: string, issuedAt: number) => string;
+	surveyLedger: Pick<SurveyLedgerPort, "markCompleted">;
+	rewards: RewardRepository;
+	generateQrPayload?: (
+		attendeeId: string,
+		issuedAt: number,
+	) => Result<string, RewardQrEncodingError>;
 	clock?: () => number;
 };
 
 type SubmitSurveyService = {
-	submit: (input: SubmitSurveyInput) => Promise<SubmitSurveySuccess>;
+	submit: (
+		input: SubmitSurveyInput,
+	) => ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure>;
 };
 
 const surveyAnswersSchema = z.object({
@@ -64,25 +66,70 @@ const submitSurveyInputSchema = z.object({
 	responseId: z.string().min(1),
 });
 
-const resolveRewardQr = (snapshot: RewardSnapshot): string => {
-	if (snapshot.qrPayload === null) {
-		throw new Error("Reward QR payload is missing from the snapshot.");
-	}
-	return snapshot.qrPayload;
-};
+const SubmitSurveyValidationError = errorBuilder(
+	"SubmitSurveyValidationError",
+	z.object({}),
+);
+
+type SubmitSurveyValidationError = InferError<
+	typeof SubmitSurveyValidationError
+>;
+
+const RewardSnapshotError = errorBuilder(
+	"RewardSnapshotError",
+	z.object({ reason: z.literal("missing_qr_payload") }),
+);
+
+type RewardSnapshotError = InferError<typeof RewardSnapshotError>;
+
+type SubmitSurveyFailure =
+	| SubmitSurveyValidationError
+	| SurveyLedgerError
+	| RewardRepositoryError
+	| RewardQrEncodingError
+	| RewardRecordInvariantError
+	| RewardSnapshotError;
+
+const fromResult = <Value, Failure>(
+	result: Result<Value, Failure>,
+): ResultAsync<Value, Failure> =>
+	(() => {
+		try {
+			return okAsync<Value, Failure>(result._unsafeUnwrap());
+		} catch {
+			return errAsync<Value, Failure>(result._unsafeUnwrapErr());
+		}
+	})();
+
+const resolveRewardQr = (
+	snapshot: ReturnType<typeof createRewardSnapshot>,
+): Result<string, RewardSnapshotError> =>
+	snapshot.qrPayload === null
+		? err(
+			RewardSnapshotError("Reward QR payload is missing.", {
+				extra: { reason: "missing_qr_payload" },
+			}),
+		  )
+		: ok(snapshot.qrPayload);
 
 const toSubmitSurveySuccess = (
 	attendeeId: string,
-	snapshot: RewardSnapshot,
-): SubmitSurveySuccess => {
-	const rewardStatus = snapshot.status === "pending" ? "issued" : snapshot.status;
-	return {
+	rewardRecord: RewardRecord,
+): Result<SubmitSurveySuccess, RewardSnapshotError> =>
+	resolveRewardQr(createRewardSnapshot(rewardRecord)).map((qrPayload) => ({
 		attendeeId,
 		surveyStatus: "submitted",
-		rewardStatus,
-		rewardQr: resolveRewardQr(snapshot),
-	};
-};
+		rewardStatus:
+			rewardRecord.redeemedAt === null ? "issued" : "redeemed",
+		rewardQr: qrPayload,
+	}));
+
+const mapValidationError = (
+	cause: unknown,
+): SubmitSurveyValidationError =>
+	SubmitSurveyValidationError("Survey submission input failed validation.", {
+		cause,
+	});
 
 const createSubmitSurveyService = ({
 	surveyLedger,
@@ -90,52 +137,79 @@ const createSubmitSurveyService = ({
 	generateQrPayload = createRewardQrPayloadGenerator(),
 	clock = Date.now,
 }: CreateSubmitSurveyServiceDependencies): SubmitSurveyService => {
-	const submit = async (
-		rawInput: SubmitSurveyInput,
-	): Promise<SubmitSurveySuccess> => {
-		const input = submitSurveyInputSchema.parse(rawInput);
-
-		const completedAt = clock();
-		await surveyLedger.markCompleted({
-			attendeeId: input.attendeeId,
-			completedAt,
-			responseId: input.responseId,
-		});
-
-		const existingReward = await rewards.findByAttendeeId(input.attendeeId);
-		if (existingReward !== null) {
-			return toSubmitSurveySuccess(
-				input.attendeeId,
-				createRewardSnapshot(existingReward),
-			);
-		}
-
-		const issuedAt = clock();
-		const qrPayload = generateQrPayload(input.attendeeId, issuedAt);
-
-		const rewardRecord = rewardRecordSchema.parse({
-			attendeeId: input.attendeeId,
-			qrPayload,
-			issuedAt,
-			redeemedAt: null,
-		});
-
-		await rewards.save(rewardRecord);
-
-		return toSubmitSurveySuccess(
-			input.attendeeId,
-			createRewardSnapshot(rewardRecord),
+	const toSuccess = (
+		attendeeId: string,
+		rewardRecord: RewardRecord,
+	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> =>
+		fromResult(toSubmitSurveySuccess(attendeeId, rewardRecord)).mapErr(
+			(error): SubmitSurveyFailure => error,
 		);
+
+	const issueNewReward = (
+		attendeeId: string,
+	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> => {
+		const issuedAt = clock();
+		return fromResult(generateQrPayload(attendeeId, issuedAt))
+			.mapErr((error): SubmitSurveyFailure => error)
+			.andThen((qrPayload) =>
+				fromResult(
+					createRewardRecord({
+						attendeeId,
+						qrPayload,
+						issuedAt,
+						redeemedAt: null,
+					}),
+				)
+					.mapErr((error): SubmitSurveyFailure => error)
+					.andThen((rewardRecord) =>
+						rewards
+							.save(rewardRecord)
+							.mapErr((error): SubmitSurveyFailure => error)
+							.andThen(() => toSuccess(attendeeId, rewardRecord)),
+					),
+			);
 	};
+
+	const submit = (
+		rawInput: SubmitSurveyInput,
+	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> =>
+		fromResult(
+			Result.fromThrowable(
+				() => submitSurveyInputSchema.parse(rawInput),
+				mapValidationError,
+			),
+		).andThen((input) => {
+			const completedAt = clock();
+			const record: MarkSurveyCompletedInput = {
+				attendeeId: input.attendeeId,
+				completedAt,
+				responseId: input.responseId,
+			};
+
+			return surveyLedger
+				.markCompleted(record)
+				.mapErr((error): SubmitSurveyFailure => error)
+				.andThen(() =>
+					rewards
+						.findByAttendeeId(input.attendeeId)
+						.mapErr((error): SubmitSurveyFailure => error)
+						.andThen((existing) =>
+							existing === null
+								? issueNewReward(input.attendeeId)
+								: toSuccess(input.attendeeId, existing),
+						),
+				);
+		});
 
 	return {
 		submit,
 	};
 };
 
-export { createSubmitSurveyService };
+export { createSubmitSurveyService, SubmitSurveyValidationError, RewardSnapshotError };
 export type {
 	CreateSubmitSurveyServiceDependencies,
+	SubmitSurveyFailure,
 	SubmitSurveyInput,
 	SubmitSurveyService,
 	SubmitSurveySuccess,

@@ -12,6 +12,7 @@ pnpm dev:photobooth          # TurbopackでNext.jsアプリを起動 (port 4002�
 pnpm firebase:emulators      # Auth / Firestore / Functions / Storage を起動
 ```
 - `apps/photobooth/src/firebase.ts` が Emulator Suite を自動認識する設定になっていることを確認する。
+- コーディング前に `docs/DDD.md` を開き、対象レイヤと依存方向を確認する。
 
 ## 2. Testing
 ```bash
@@ -27,6 +28,7 @@ pnpm lint:fix
 pnpm format:photobooth
 ```
 - shadcnコンポーネント追加時は `pnpm shadcn:add` を使用し、スタイルはTailwind 4 tokensに揃える。
+- 実装中は `docs/TDD.md` のRed-Green-Refactor-Commitを順守し、各サイクル完了ごとにテスト結果を記録する。
 
 ## 4. Deploy (dress rehearsal / production)
 1. Remote Configにフォトブース設定（メンテモード、プロンプトテンプレート）を同期。

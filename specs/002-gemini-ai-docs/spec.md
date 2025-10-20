@@ -61,6 +61,7 @@
 - **Suites**: `pnpm test:stamp` でユースケース・ドメイン層のユニットテストとReactコンポーネントの統合テストを実行し、必要に応じてPlaywrightベースのE2Eテストを追加する。
 - **Coverage Strategy**: 生成フロー関連のアプリケーション層／UIコンポーネント／Firebase連携のスタブを網羅し、非同期分岐（成功・失敗・タイムアウト）をVitestで明示的に検証して100%ステートメント・分岐カバレッジを確保する。
 - **Environments**: Firebase Emulator SuiteでAuth・Firestore・Functions・Storageを再現し、AI生成APIはHTTPモックサーバーで疑似レスポンスを返す。水族館連携WebhookはローカルHTTPサーバーで受信確認する。
+- **Process Reference**: 開発フェーズは `docs/TDD.md` のRed-Green-Refactor-Commitサイクルに厳密に従い、実装前に必ず失敗するテストを用意する。レビューチェックリストにもTDD順守を含める。
 
 ## Requirements *(mandatory)*
 
@@ -73,6 +74,7 @@
 - **FR-005**: System MUST生成結果を水族館展示バックエンドへイベント連携し、成功/失敗ステータスを管理UIで確認できるよう記録する。
 - **FR-006**: System MUST生成完了後5分以内に元画像データを削除し、生成画像はアクセス制御された状態で保持する。
 - **FR-007**: System MUST管理UIでAI生成APIエラー・Webhook失敗・待機中件数をリアルタイム表示し、運営者が手動再送とメンテナンス切替を行えるようにする。
+- **FR-008**: System MUST設計・実装ともに `docs/DDD.md` のレイヤリング規約（Presentation→Application→Domain→Infrastructure）を遵守し、層を跨ぐ直接依存やクラス利用を禁止する。
 
 ### Key Entities *(include if feature involves data)*
 
@@ -87,6 +89,7 @@
 - **サービス依存**: AI生成APIとFirebaseサービスの利用枠が祭り期間中のピーク需要を満たすよう事前に割り当て済みである。
 - **運用前提**: ブースには常時スタッフが配置され、端末リセットやメンテナンスモード切替を実施できる。
 - **プライバシー前提**: 事前掲示物と口頭案内により、来場者が撮影・生成・データ保持ポリシーへ同意したうえで参加する。
+- **開発プロセス前提**: 実装チームは機能追加毎に `docs/DDD.md` と `docs/TDD.md` を参照し、コードレビューで遵守事項を確認する。
 
 ## Success Criteria *(mandatory)*
 

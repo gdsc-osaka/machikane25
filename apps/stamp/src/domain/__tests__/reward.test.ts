@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { err, ok } from "neverthrow";
+import {err, ok, type Result} from "neverthrow";
 import { ZodError } from "zod";
 import {
 	createRewardQrPayloadGenerator,
@@ -52,8 +52,8 @@ describe("createRewardSnapshot", () => {
 });
 
 describe("createRewardQrPayloadGenerator", () => {
-	const randomMock = vi.fn<[], string>();
-	const encodeMock = vi.fn<[string], ReturnType<typeof ok<string>>>();
+	const randomMock = vi.fn<() => string>();
+	const encodeMock = vi.fn<(arg: string) => Result<string, RewardQrEncodingError>>();
 
 	beforeEach(() => {
 		randomMock.mockReset();
@@ -112,6 +112,142 @@ describe("createRewardQrPayloadGenerator", () => {
 
 		expect(result.isErr()).toBe(true);
 		expect(result._unsafeUnwrapErr()).toBe(failure);
+	});
+
+	it("encodes payload using default Buffer-based encoder", () => {
+		const generate = createRewardQrPayloadGenerator();
+		const issuedAt = 1_700_000_000_123;
+
+		const result = generate("guest-default", issuedAt);
+
+		expect(result.isOk()).toBe(true);
+		const payload = result._unsafeUnwrap();
+		const decoded = JSON.parse(
+			Buffer.from(payload, "base64url").toString("utf-8"),
+		) as {
+			v: string;
+			id: string;
+			issuedAt: number;
+			nonce: string;
+		};
+		expect(decoded.v).toBe("1");
+		expect(decoded.id).toBe("guest-default");
+		expect(decoded.issuedAt).toBe(issuedAt);
+		expect(typeof decoded.nonce).toBe("string");
+		expect(decoded.nonce.length).toBeGreaterThan(0);
+	});
+
+	it("falls back to global btoa encoding when Buffer is unavailable", () => {
+		const globalAny = globalThis as typeof globalThis & {
+			Buffer?: typeof Buffer;
+			btoa?: (value: string) => string;
+			crypto?: Crypto;
+		};
+		const bufferDescriptor = Object.getOwnPropertyDescriptor(
+			globalAny,
+			"Buffer",
+		);
+		const originalBuffer = bufferDescriptor?.get
+			? bufferDescriptor.get.call(globalAny)
+			: bufferDescriptor?.value;
+		const btoaDescriptor = Object.getOwnPropertyDescriptor(globalAny, "btoa");
+		const cryptoDescriptor = Object.getOwnPropertyDescriptor(globalAny, "crypto");
+
+		try {
+			Object.defineProperty(globalAny, "Buffer", {
+				configurable: true,
+				value: undefined,
+				writable: true,
+			});
+			Object.defineProperty(globalAny, "btoa", {
+				configurable: true,
+				value: (value: string) =>
+					(originalBuffer as typeof Buffer).from(value, "utf-8").toString("base64"),
+				writable: true,
+			});
+			Object.defineProperty(globalAny, "crypto", {
+				configurable: true,
+				value: {
+					randomUUID: () => "nonce-fallback",
+				},
+				writable: true,
+			});
+
+			const generate = createRewardQrPayloadGenerator();
+			const result = generate("guest-browser", 42);
+
+			expect(result.isOk()).toBe(true);
+			const payload = result._unsafeUnwrap();
+			const decoded = JSON.parse(
+				(originalBuffer as typeof Buffer)
+					.from(payload, "base64url")
+					.toString("utf-8"),
+			) as { id: string; issuedAt: number; nonce: string };
+			expect(decoded.id).toBe("guest-browser");
+			expect(decoded.nonce).toBe("nonce-fallback");
+		} finally {
+			if (bufferDescriptor) {
+				Object.defineProperty(globalAny, "Buffer", bufferDescriptor);
+			} else {
+				Reflect.deleteProperty(globalAny, "Buffer");
+			}
+			if (btoaDescriptor) {
+				Object.defineProperty(globalAny, "btoa", btoaDescriptor);
+			} else {
+				Reflect.deleteProperty(globalAny, "btoa");
+			}
+			if (cryptoDescriptor) {
+				Object.defineProperty(globalAny, "crypto", cryptoDescriptor);
+			} else {
+				Reflect.deleteProperty(globalAny, "crypto");
+			}
+		}
+	});
+
+	it("generates nonce using fallback UUID implementation when crypto is unavailable", () => {
+		const globalAny = globalThis as typeof globalThis & { crypto?: Crypto };
+		const cryptoDescriptor = Object.getOwnPropertyDescriptor(globalAny, "crypto");
+		const mathRandomValues = Array.from({ length: 16 }, (_, index) => index / 32);
+		let cursor = 0;
+		const mathRandomSpy = vi
+			.spyOn(Math, "random")
+			.mockImplementation(
+				() => mathRandomValues[cursor++] ?? mathRandomValues.at(-1) ?? 0,
+			);
+
+		try {
+			Object.defineProperty(globalAny, "crypto", {
+				configurable: true,
+				value: undefined,
+				writable: true,
+			});
+
+			const generate = createRewardQrPayloadGenerator({
+				encode: (value) => ok(value),
+			});
+
+			const result = generate("guest-fallback", 123);
+
+			expect(result.isOk()).toBe(true);
+			const payload = JSON.parse(result._unsafeUnwrap()) as {
+				id: string;
+				issuedAt: number;
+				nonce: string;
+			};
+			expect(payload.id).toBe("guest-fallback");
+			expect(payload.issuedAt).toBe(123);
+			expect(payload.nonce).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+			);
+			expect(cursor).toBeGreaterThan(0);
+		} finally {
+			mathRandomSpy.mockRestore();
+			if (cryptoDescriptor) {
+				Object.defineProperty(globalAny, "crypto", cryptoDescriptor);
+			} else {
+				Reflect.deleteProperty(globalAny, "crypto");
+			}
+		}
 	});
 });
 

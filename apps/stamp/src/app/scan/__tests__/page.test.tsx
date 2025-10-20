@@ -33,7 +33,7 @@ vi.mock("@/application/auth/require-staff", () => ({
 	requireStaff: requireStaffMock,
 }));
 
-vi.mock("@/libs/jsqr", () => ({
+vi.mock("jsqr", () => ({
 	default: jsQrMock,
 }));
 

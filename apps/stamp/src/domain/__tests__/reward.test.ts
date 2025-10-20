@@ -1,12 +1,12 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import {err, ok, type Result} from "neverthrow";
+import { err, ok, type Result } from "neverthrow";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 import {
 	createRewardQrPayloadGenerator,
 	createRewardRecord,
 	createRewardSnapshot,
-	type RewardRecord,
 	RewardQrEncodingError,
+	type RewardRecord,
 	RewardRecordInvariantError,
 } from "../reward";
 
@@ -53,7 +53,8 @@ describe("createRewardSnapshot", () => {
 
 describe("createRewardQrPayloadGenerator", () => {
 	const randomMock = vi.fn<() => string>();
-	const encodeMock = vi.fn<(arg: string) => Result<string, RewardQrEncodingError>>();
+	const encodeMock =
+		vi.fn<(arg: string) => Result<string, RewardQrEncodingError>>();
 
 	beforeEach(() => {
 		randomMock.mockReset();
@@ -151,7 +152,10 @@ describe("createRewardQrPayloadGenerator", () => {
 			? bufferDescriptor.get.call(globalAny)
 			: bufferDescriptor?.value;
 		const btoaDescriptor = Object.getOwnPropertyDescriptor(globalAny, "btoa");
-		const cryptoDescriptor = Object.getOwnPropertyDescriptor(globalAny, "crypto");
+		const cryptoDescriptor = Object.getOwnPropertyDescriptor(
+			globalAny,
+			"crypto",
+		);
 
 		try {
 			Object.defineProperty(globalAny, "Buffer", {
@@ -162,7 +166,9 @@ describe("createRewardQrPayloadGenerator", () => {
 			Object.defineProperty(globalAny, "btoa", {
 				configurable: true,
 				value: (value: string) =>
-					(originalBuffer as typeof Buffer).from(value, "utf-8").toString("base64"),
+					(originalBuffer as typeof Buffer)
+						.from(value, "utf-8")
+						.toString("base64"),
 				writable: true,
 			});
 			Object.defineProperty(globalAny, "crypto", {
@@ -206,8 +212,14 @@ describe("createRewardQrPayloadGenerator", () => {
 
 	it("generates nonce using fallback UUID implementation when crypto is unavailable", () => {
 		const globalAny = globalThis as typeof globalThis & { crypto?: Crypto };
-		const cryptoDescriptor = Object.getOwnPropertyDescriptor(globalAny, "crypto");
-		const mathRandomValues = Array.from({ length: 16 }, (_, index) => index / 32);
+		const cryptoDescriptor = Object.getOwnPropertyDescriptor(
+			globalAny,
+			"crypto",
+		);
+		const mathRandomValues = Array.from(
+			{ length: 16 },
+			(_, index) => index / 32,
+		);
 		let cursor = 0;
 		const mathRandomSpy = vi
 			.spyOn(Math, "random")

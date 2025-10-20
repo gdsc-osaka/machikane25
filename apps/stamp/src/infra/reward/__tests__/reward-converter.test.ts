@@ -1,8 +1,13 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	type RewardRecord,
-	RewardRecordInvariantError,
-} from "@/domain/reward";
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
+import { type RewardRecord, RewardRecordInvariantError } from "@/domain/reward";
 
 class MockTimestamp {
 	readonly millis: number;

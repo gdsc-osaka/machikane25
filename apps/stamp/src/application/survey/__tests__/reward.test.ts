@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, errAsync, ok, okAsync } from "neverthrow";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	RewardQrEncodingError,
 	type RewardRecord,
@@ -35,9 +35,8 @@ vi.mock("@/firebase", () => ({
 }));
 
 vi.mock("@/domain/reward", async () => {
-	const actual = await vi.importActual<typeof import("@/domain/reward")>(
-		"@/domain/reward",
-	);
+	const actual =
+		await vi.importActual<typeof import("@/domain/reward")>("@/domain/reward");
 	return {
 		...actual,
 		createRewardQrPayloadGenerator: mocks.createRewardQrPayloadGenerator,

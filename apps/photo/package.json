@@ -34,7 +34,7 @@
 		"jotai": "^2.15.0",
 		"lucide-react": "^0.545.0",
 		"neverthrow": "^8.2.0",
-		"next": "15.5.5",
+		"next": "15.5.6",
 		"next-themes": "^0.4.6",
 		"obj-err": "^1.1.1",
 		"react": "19.1.0",

@@ -1,23 +1,11 @@
 "use client";
 
-import jsQR from "jsqr";
-import {
-	useCallback,
-	useEffect,
-	useId,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import {
-	requireStaff,
-	type StaffAccess,
-} from "@/application/auth/require-staff";
+import { useCallback, useEffect, useState } from "react";
+import { requireStaff } from "@/application/auth/require-staff";
 import { redeemReward } from "@/application/rewards/redeem-reward.client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import {
 	RewardAlreadyRedeemedError,
 	RewardLedgerError,
@@ -29,14 +17,9 @@ import {
 	RedemptionDialog,
 	type RedemptionDialogState,
 } from "./components/redemption-dialog";
-
-type AuthorizedStaff = Extract<StaffAccess, { status: "authorized" }>;
-
-type StaffGateState =
-	| { status: "loading" }
-	| { status: "needs-auth" }
-	| { status: "authorized"; staff: AuthorizedStaff["staff"] }
-	| { status: "error"; error: Error };
+import { StaffAccessGate } from "./components/staff-access-gate";
+import { useQrScanner } from "./hooks/use-qr-scanner";
+import type { StaffGateState } from "./types";
 
 type ScanMode = "scanner" | "manual";
 
@@ -96,69 +79,7 @@ const ScanPage = () => {
 		null,
 	);
 
-	const videoRef = useRef<HTMLVideoElement | null>(null);
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const streamRef = useRef<MediaStream | null>(null);
-	const animationFrameRef = useRef<number | null>(null);
-	const scanningDisabledRef = useRef(false);
-
-	const stopCamera = useCallback(() => {
-		if (animationFrameRef.current !== null) {
-			cancelAnimationFrame(animationFrameRef.current);
-			animationFrameRef.current = null;
-		}
-		if (streamRef.current) {
-			streamRef.current.getTracks().map((track) => track.stop());
-			streamRef.current = null;
-		}
-	}, []);
-
-	useEffect(() => {
-		let cancelled = false;
-		const resolveAccess = async () => {
-			try {
-				const access = await requireStaff();
-				if (cancelled) {
-					return;
-				}
-				if (access.status === "needs-auth") {
-					setGateState({ status: "needs-auth" });
-				} else {
-					setGateState({ status: "authorized", staff: access.staff });
-				}
-			} catch (error) {
-				if (!cancelled) {
-					setGateState({
-						status: "error",
-						error:
-							error instanceof Error ? error : new Error("Staff guard failed."),
-					});
-				}
-			}
-		};
-		resolveAccess();
-		return () => {
-			cancelled = true;
-			stopCamera();
-		};
-	}, [stopCamera]);
-
-	const guard = useMemo(() => gateState, [gateState]);
-
-	const handleDialogClose = useCallback(() => {
-		setDialogState(null);
-		scanningDisabledRef.current = false;
-	}, []);
-
-	const handleSwitchToManual = useCallback(() => {
-		stopCamera();
-		setMode("manual");
-		setDialogState(null);
-		scanningDisabledRef.current = false;
-	}, [stopCamera]);
-
 	const redeemAttendee = useCallback(async (attendeeId: string) => {
-		scanningDisabledRef.current = true;
 		try {
 			await redeemReward({ attendeeId }).match(
 				async (result) => {
@@ -201,18 +122,14 @@ const ScanPage = () => {
 		}
 	}, []);
 
-	const handlePayload = useCallback(
+	const handleScanPayload = useCallback(
 		(payload: string) => {
-			if (scanningDisabledRef.current) {
-				return;
-			}
 			const decoded = decodePayload(payload);
 			if (decoded === null) {
 				setDialogState({
 					status: "invalid",
 					error: "format",
 				});
-				scanningDisabledRef.current = true;
 				return;
 			}
 			void redeemAttendee(decoded.attendeeId);
@@ -220,86 +137,66 @@ const ScanPage = () => {
 		[redeemAttendee],
 	);
 
-	useEffect(() => {
-		if (guard.status !== "authorized" || mode !== "scanner") {
-			stopCamera();
-			return;
-		}
-		let cancelled = false;
+	const handleScannerError = useCallback((error: Error) => {
+		setDialogState({
+			status: "invalid",
+			error: "not-found",
+		});
+		logger.error("Unable to start camera stream.", error);
+	}, []);
 
-		const startScanner = async () => {
-			if (typeof navigator === "undefined" || !navigator.mediaDevices) {
-				return;
-			}
+	const {
+		videoRef,
+		canvasRef,
+		stop: stopScanner,
+		resume: resumeScanner,
+	} = useQrScanner({
+		enabled: gateState.status === "authorized" && mode === "scanner",
+		onScan: handleScanPayload,
+		onError: handleScannerError,
+	});
+
+	useEffect(() => {
+		let cancelled = false;
+		const resolveAccess = async () => {
 			try {
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: { ideal: "environment" } },
-				});
+				const access = await requireStaff();
 				if (cancelled) {
-					stream.getTracks().map((track) => track.stop());
 					return;
 				}
-				streamRef.current = stream;
-				const video = videoRef.current;
-				if (!video) {
-					return;
+				if (access.status === "needs-auth") {
+					setGateState({ status: "needs-auth" });
+				} else {
+					setGateState({ status: "authorized", staff: access.staff });
 				}
-				video.srcObject = stream;
-				await video.play();
-				const canvas = canvasRef.current;
-				if (!canvas) {
-					return;
-				}
-				const context = canvas.getContext("2d", { willReadFrequently: true });
-				if (!context) {
-					return;
-				}
-				const scanFrame = () => {
-					if (cancelled || scanningDisabledRef.current) {
-						animationFrameRef.current = requestAnimationFrame(scanFrame);
-						return;
-					}
-					if (video.videoWidth === 0 || video.videoHeight === 0) {
-						animationFrameRef.current = requestAnimationFrame(scanFrame);
-						return;
-					}
-					canvas.width = video.videoWidth;
-					canvas.height = video.videoHeight;
-					context.drawImage(video, 0, 0, canvas.width, canvas.height);
-					const imageData = context.getImageData(
-						0,
-						0,
-						canvas.width,
-						canvas.height,
-					);
-					const result = jsQR(
-						imageData.data,
-						imageData.width,
-						imageData.height,
-					);
-					if (result?.data) {
-						handlePayload(result.data);
-					}
-					animationFrameRef.current = requestAnimationFrame(scanFrame);
-				};
-				scanningDisabledRef.current = false;
-				animationFrameRef.current = requestAnimationFrame(scanFrame);
 			} catch (error) {
-				setDialogState({
-					status: "invalid",
-					error: "not-found",
-				});
-				logger.error("Unable to start camera stream.", error);
+				if (!cancelled) {
+					setGateState({
+						status: "error",
+						error:
+							error instanceof Error ? error : new Error("Staff guard failed."),
+					});
+				}
 			}
 		};
-
-		void startScanner();
-
+		void resolveAccess();
 		return () => {
 			cancelled = true;
-			stopCamera();
+			stopScanner();
 		};
-	}, [guard, mode, handlePayload, stopCamera]);
+	}, [stopScanner]);
+
+	const handleDialogClose = useCallback(() => {
+		setDialogState(null);
+		resumeScanner();
+	}, [resumeScanner]);
+
+	const handleSwitchToManual = useCallback(() => {
+		stopScanner();
+		setMode("manual");
+		setDialogState(null);
+		resumeScanner();
+	}, [stopScanner, resumeScanner]);
 
 	const handleManualSubmit = useCallback(
 		async (event: React.FormEvent<HTMLFormElement>) => {
@@ -312,51 +209,8 @@ const ScanPage = () => {
 		[manualInput, redeemAttendee],
 	);
 
-	const renderGate = () => {
-		if (guard.status === "loading") {
-			return (
-				<main className="bg-background text-foreground mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-4 px-6 py-16">
-					<Spinner className="size-6 text-primary" />
-					<p className="text-sm text-muted-foreground">
-						職員認証の状態を確認しています…
-					</p>
-				</main>
-			);
-		}
-
-		if (guard.status === "needs-auth") {
-			return (
-				<main
-					data-testid="staff-login-gate"
-					className="bg-background text-foreground mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 py-16"
-				>
-					<Card className="w-full border-primary/20 shadow-md">
-						<CardHeader className="text-center text-xl font-semibold">
-							スタッフアカウントでサインインしてください
-						</CardHeader>
-						<CardContent className="space-y-3 text-center text-sm">
-							<p>
-								特設スタッフログインページからメールアドレスとパスワードでサインインします。
-							</p>
-							<p className="text-muted-foreground text-xs">
-								Please sign in with your staff email to access the redemption
-								console.
-							</p>
-						</CardContent>
-					</Card>
-				</main>
-			);
-		}
-
-		if (guard.status === "error") {
-			throw guard.error;
-		}
-
-		return null;
-	};
-
-	if (guard.status !== "authorized") {
-		return renderGate();
+	if (gateState.status !== "authorized") {
+		return <StaffAccessGate state={gateState} />;
 	}
 
 	const isScannerMode = mode === "scanner";
@@ -405,9 +259,9 @@ const ScanPage = () => {
 							<div className="text-sm">
 								<p className="font-medium">
 									Staff:{" "}
-									{guard.staff.displayName ??
-										guard.staff.email ??
-										guard.staff.uid}
+									{gateState.staff.displayName ??
+										gateState.staff.email ??
+										gateState.staff.uid}
 								</p>
 								<p className="text-muted-foreground text-xs">
 									Use the manual entry form if the camera cannot read a QR code.
@@ -422,7 +276,7 @@ const ScanPage = () => {
 									} else {
 										setMode("scanner");
 										setDialogState(null);
-										scanningDisabledRef.current = false;
+										resumeScanner();
 									}
 								}}
 								aria-label={

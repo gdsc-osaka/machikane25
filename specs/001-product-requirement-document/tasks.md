@@ -76,8 +76,8 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 - [X] T021 [US2] Add reward domain types and QR payload generator in `apps/stamp/src/domain/reward.ts`
 - [X] T022 [P] [US2] Add reward repository for QR payload persistence in `apps/stamp/src/infra/reward/reward-repository.ts` and `apps/stamp/src/infra/reward/reward-converter.ts`
 - [X] T023 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
-- [ ] T024 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
-- [ ] T025 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
+- [X] T024 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
+- [X] T025 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
 
 **Checkpoint**: User Story 2 complete—survey + reward issuance is independently testable.
 

@@ -11,7 +11,21 @@ class ResizeObserverStub implements ResizeObserver {
 	}
 
 	observe(target: Element, options?: ResizeObserverOptions | undefined): void {
-		this.callback([], this);
+		const mockEntry = {
+			target,
+			contentRect: {
+				x: 0,
+				y: 0,
+				width: target instanceof HTMLElement ? target.offsetWidth : 0,
+				height: target instanceof HTMLElement ? target.offsetHeight : 0,
+				top: 0,
+				right: target instanceof HTMLElement ? target.offsetWidth : 0,
+				bottom: target instanceof HTMLElement ? target.offsetHeight : 0,
+				left: 0,
+				toJSON() { return this; }
+			}
+		};
+		this.callback([mockEntry], this);
 	}
 
 	unobserve(target: Element): void {

@@ -1,0 +1,98 @@
+# Feature Specification: AI Photo Booth Experience
+
+**Feature Branch**: `[002-gemini-ai-docs]`  
+**Created**: 2025-10-21  
+**Status**: Draft  
+**Input**: User description: "geminiの画像生成機能を用いた大学祭用のAIフォトブースの機能を作成したい。詳細はdocs/spec/Photo_PRD.mdを参照してください。"
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Festival Visitor Generates AI Portrait (Priority: P1)
+
+来場者として、ブース端末の案内に従い、匿名認証されたうえで写真を撮り、好みのテーマを選んでAI生成画像をその場で確認したい。
+
+**Why this priority**: 生成体験の提供が企画の核となるため、これが成立しなければブース価値が失われる。
+
+**Independent Test**: Firebase EmulatorとAI生成APIモックで撮影→テーマ選択→生成→結果表示までの一連フローを再現し、端末1台のみでも完結する。
+
+**Acceptance Scenarios**:
+
+1. **Given** 匿名認証済みの来場者が撮影画面にいる, **When** カウントダウン後に撮影を確定すると, **Then** 写真が保存されテーマ選択画面へ遷移する。
+2. **Given** 来場者がテーマを選び規約に同意した, **When** 生成リクエストを送信すると, **Then** 60秒以内に生成画像が表示され成功メッセージが示される。
+
+---
+
+### User Story 2 - Visitor Retrieves Image Later (Priority: P2)
+
+来場者として、生成が終わったあとに提示されたQRコードやURLから自分の画像に48時間以内でアクセスし、データをダウンロードしたい。
+
+**Why this priority**: 体験の余韻と共有価値を高め、後日でも満足度を維持するための重要機能だが、当日体験より優先度は下がる。
+
+**Independent Test**: QRコード生成→Dynamic Link経由アクセス→匿名トークン検証→画像表示の流れを単独の統合テストで検証できる。
+
+**Acceptance Scenarios**:
+
+1. **Given** 来場者が結果画面でQRコードを受け取った, **When** 別端末で24時間以内にアクセスすると, **Then** 一回限りの匿名トークン検証後に生成画像が閲覧・保存できる。
+
+---
+
+### User Story 3 - Staff Monitors Sync to Aquarium Display (Priority: P3)
+
+運営スタッフとして、生成結果がインタラクティブアート水族館に正しく送られているかをダッシュボードで把握し、失敗時はリトライ操作をしたい。
+
+**Why this priority**: 展示間連携で全体演出を支える要素であり、来場者体験を間接的に守るために必要。
+
+**Independent Test**: 管理UIモックを使い、生成済みセッションに対する成功/失敗イベントを注入し、可視化とリトライが動作することを確認可能。
+
+**Acceptance Scenarios**:
+
+1. **Given** 管理者がUUIDトークンでダッシュボードに入った, **When** 水族館連携失敗イベントが発生すると, **Then** 対象セッションに失敗ステータスと再送ボタンが表示され再送信できる。
+
+---
+
+### Edge Cases
+
+- 撮影後に来場者が端末操作を放置した場合、一定時間後にセッションをタイムアウトさせ撮影画面へ戻す。
+- AI生成APIがタイムアウトまたはレート制限になった場合、来場者にリトライ案内を表示し、管理UIで失敗理由を記録する。
+- QRコード発行後に有効期限を過ぎてアクセスされた場合、失効メッセージと再発行案内を提示する。
+
+## Quality & Coverage Plan *(mandatory)*
+
+- **Suites**: `pnpm test:stamp` でユースケース・ドメイン層のユニットテストとReactコンポーネントの統合テストを実行し、必要に応じてPlaywrightベースのE2Eテストを追加する。
+- **Coverage Strategy**: 生成フロー関連のアプリケーション層／UIコンポーネント／Firebase連携のスタブを網羅し、非同期分岐（成功・失敗・タイムアウト）をVitestで明示的に検証して100%ステートメント・分岐カバレッジを確保する。
+- **Environments**: Firebase Emulator SuiteでAuth・Firestore・Functions・Storageを再現し、AI生成APIはHTTPモックサーバーで疑似レスポンスを返す。水族館連携WebhookはローカルHTTPサーバーで受信確認する。
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: System MUST匿名認証を自動で実施し、来場者が追加入力なしで撮影フローに入れるようにする。
+- **FR-002**: System MUST来場者に対してWebカメラ撮影または画像アップロードを提供し、JPEG/PNGかつ20MB以下のみ受け付ける。
+- **FR-003**: System MUST来場者が選んだテーマと撮影画像をAI生成サービスへ送信し、平均60秒以内に生成結果を提示する。
+- **FR-004**: System MUST生成結果とメタデータを来場者用ストレージ領域に保存し、48時間有効なQRコードとURLを即時に発行する。
+- **FR-005**: System MUST生成結果を水族館展示バックエンドへイベント連携し、成功/失敗ステータスを管理UIで確認できるよう記録する。
+- **FR-006**: System MUST生成完了後5分以内に元画像データを削除し、生成画像はアクセス制御された状態で保持する。
+- **FR-007**: System MUST管理UIでAI生成APIエラー・Webhook失敗・待機中件数をリアルタイム表示し、運営者が手動再送とメンテナンス切替を行えるようにする。
+
+### Key Entities *(include if feature involves data)*
+
+- **VisitorSession**: 匿名UID、撮影時刻、選択テーマ、進行ステータス、元画像参照、QRトークン参照を保持する来場者単位のセッション。
+- **GeneratedImageAsset**: 生成画像のストレージパス、プレビューURL、作成時刻、公開期限、アクセス制御フラグを管理する成果物。
+- **PublicAccessToken**: 一時的なアクセスコード、関連セッションID、有効期限、失効状態を保持し、QR/URLアクセス制御に利用する。
+- **AquariumSyncEvent**: 水族館展示へ送信されたイベントの対象セッション、送信時刻、ステータス、リトライ回数、最後のエラーメッセージを記録する。
+
+### Dependencies & Assumptions
+
+- **ネットワーク前提**: 祭り会場の有線または専用Wi-Fiが安定しており、AI生成APIとFirebaseに常時接続できる。
+- **サービス依存**: AI生成APIとFirebaseサービスの利用枠が祭り期間中のピーク需要を満たすよう事前に割り当て済みである。
+- **運用前提**: ブースには常時スタッフが配置され、端末リセットやメンテナンスモード切替を実施できる。
+- **プライバシー前提**: 事前掲示物と口頭案内により、来場者が撮影・生成・データ保持ポリシーへ同意したうえで参加する。
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: 来場者体験の90%が撮影開始から生成結果表示までを平均60秒以内で完了できる。
+- **SC-002**: 生成リクエストの95%以上が初回実行で成功し、残りはリトライ後に成功率98%以上を維持する。
+- **SC-003**: QR/URLアクセスの85%以上が48時間以内に生成画像の閲覧またはダウンロード完了まで到達する。
+- **SC-004**: 水族館展示への連携イベント成功率が98%以上を維持し、障害発生時は15分以内に運営者がステータスを確認できる。

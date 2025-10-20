@@ -1,4 +1,4 @@
-# Repository Guidelines
+﻿# Repository Guidelines
 Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Domain-Driven Development and Test-Driven Development practices.
 
 ## Project Structure & Module Organization

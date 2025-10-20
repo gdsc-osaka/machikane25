@@ -1,0 +1,260 @@
+openapi: 3.1.0
+info:
+  title: AI Photo Booth API
+  version: 0.1.0
+servers:
+  - url: https://photo.fes2025.gdsc-osaka.jp
+paths:
+  /api/photobooth/sessions:
+    post:
+      summary: Create or resume a visitor session
+      description: Assigns an anonymous visitor session tied to the current auth UID and booth device.
+      security:
+        - firebaseAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                boothId:
+                  type: string
+                  description: Physical booth identifier.
+              required:
+                - boothId
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitorSession'
+        '409':
+          description: Session already active for this device
+  /api/photobooth/sessions/{sessionId}:
+    get:
+      summary: Get session state
+      security:
+        - firebaseAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitorSession'
+        '404':
+          description: Session not found
+  /api/photobooth/sessions/{sessionId}/capture:
+    post:
+      summary: Attach captured photo metadata
+      security:
+        - firebaseAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                originalImageRef:
+                  type: string
+                  description: Firebase Storage path to uploaded photo.
+              required:
+                - originalImageRef
+      responses:
+        '200':
+          description: Capture acknowledged
+        '400':
+          description: Invalid session state
+  /api/photobooth/sessions/{sessionId}/generate:
+    post:
+      summary: Submit generation request
+      security:
+        - firebaseAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                themeId:
+                  type: string
+                promptSelections:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PromptSelection'
+              required:
+                - themeId
+                - promptSelections
+      responses:
+        '202':
+          description: Generation queued
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Recommended polling interval in seconds.
+        '409':
+          description: Generation already in progress
+  /api/photobooth/sessions/{sessionId}/result:
+    get:
+      summary: Retrieve generated asset metadata
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Generated asset available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedImageAsset'
+        '404':
+          description: No generated asset available
+  /api/photobooth/uploads:
+    post:
+      summary: Smartphone upload entry point
+      description: Allows attendee to upload a photo linked to a booth session via single-use token.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadToken:
+                  type: string
+                photo:
+                  type: string
+                  format: binary
+              required:
+                - uploadToken
+                - photo
+      responses:
+        '200':
+          description: Upload accepted
+        '400':
+          description: Token invalid or expired
+  /api/photobooth/aquarium/events:
+    post:
+      summary: Outbound webhook to aquarium display
+      description: Called by queue worker when a new generated image should be displayed in the aquarium experience.
+      security:
+        - aquariumKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AquariumPayload'
+      responses:
+        '200':
+          description: Event accepted
+        '409':
+          description: Duplicate or stale event
+
+components:
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+  securitySchemes:
+    firebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    aquariumKey:
+      type: apiKey
+      in: header
+      name: X-Aquarium-Key
+  schemas:
+    VisitorSession:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [capturing, selecting-theme, generating, completed, failed, expired]
+        themeId:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+        publicTokenId:
+          type: string
+          nullable: true
+      required:
+        - id
+        - status
+        - expiresAt
+    PromptSelection:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [location, outfit, person, style, pose]
+        optionId:
+          type: string
+      required:
+        - type
+        - optionId
+    GeneratedImageAsset:
+      type: object
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        previewUrl:
+          type: string
+          format: uri
+        storagePath:
+          type: string
+        aquariumSyncStatus:
+          type: string
+          enum: [pending, sent, failed]
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - previewUrl
+        - storagePath
+        - aquariumSyncStatus
+        - expiresAt
+    AquariumPayload:
+      type: object
+      properties:
+        eventId:
+          type: string
+        sessionId:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        themeTags:
+          type: array
+          items:
+            type: string
+        generatedAt:
+          type: string
+          format: date-time
+      required:
+        - eventId
+        - sessionId
+        - imageUrl
+        - generatedAt

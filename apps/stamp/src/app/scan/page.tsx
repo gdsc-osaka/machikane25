@@ -1,5 +1,6 @@
 "use client";
 
+import jsQR from "jsqr";
 import {
 	useCallback,
 	useEffect,
@@ -23,7 +24,6 @@ import {
 	RewardNotFoundError,
 	RewardRepositoryError,
 } from "@/domain/reward";
-import jsQR from "@/libs/jsqr";
 import { getLogger } from "@/packages/logger";
 import {
 	RedemptionDialog,

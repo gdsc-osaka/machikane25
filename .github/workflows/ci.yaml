@@ -92,6 +92,42 @@ jobs:
       - name: Check Firebase deployment
         shell: bash
         run: pnpm run deploy:fire:check
+  ci-art:
+    name: CI (art)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Cache Unity Library
+        uses: actions/cache@v3
+        with:
+          path: apps/art/Library
+          key: Library-apps-art-${{ hashFiles('apps/art/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            Library-apps-art-
+      - name: Activate Unity License
+        uses: game-ci/unity-activate@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      - name: Run Unity Tests for art
+        uses: game-ci/unity-test-runner@v4
+        with:
+          projectPath: apps/art
+      - name: Build Unity Project for art
+        id: builder
+        uses: game-ci/unity-builder@v4
+        with:
+          projectPath: apps/art
+          # WebGL, StandaloneWindows64, Android, iOS
+          targetPlatform: WebGL
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-art-${{ steps.builder.outputs.targetPlatform }}
+          path: ${{ steps.builder.outputs.buildPath }}
+          retention-days: 1
   # すべてのCIジョブが成功した後に、カバレッジレポートを投稿するジョブ
   report-coverage:
     name: Report Coverage

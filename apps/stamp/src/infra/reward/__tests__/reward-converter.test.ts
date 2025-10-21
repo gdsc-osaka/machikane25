@@ -26,8 +26,7 @@ class MockTimestamp {
 }
 
 const fromMaybeMillisSpy = vi.fn<
-	[number | null | MockTimestamp],
-	MockTimestamp | null
+	(arg: number | null | MockTimestamp) => MockTimestamp | null
 >((value) => {
 	if (value === null) {
 		return null;

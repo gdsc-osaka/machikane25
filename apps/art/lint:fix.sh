@@ -1,0 +1,1 @@
+dotnet format --verbosity diagnostic Assembly-CSharp.csproj

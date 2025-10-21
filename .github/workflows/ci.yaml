@@ -105,12 +105,6 @@ jobs:
           key: Library-apps-art-${{ hashFiles('apps/art/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: |
             Library-apps-art-
-      - name: Activate Unity License
-        uses: game-ci/unity-activate@v2
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
       - name: Run Unity Tests for art
         uses: game-ci/unity-test-runner@v4
         with:

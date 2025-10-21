@@ -105,6 +105,12 @@ jobs:
           key: Library-apps-art-${{ hashFiles('apps/art/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: |
             Library-apps-art-
+      - name: Restore .NET tools
+        run: dotnet tool restore
+        working-directory: ./apps/art
+      - name: Run dotnet format for art
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+        working-directory: ./apps/art
       - name: Run Unity Tests for art
         uses: game-ci/unity-test-runner@v4
         with:

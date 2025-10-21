@@ -109,7 +109,9 @@ jobs:
         run: dotnet tool restore
         working-directory: ./apps/art
       - name: Run dotnet format for art
-        run: dotnet format --verify-no-changes --verbosity diagnostic
+        run: |
+          chmod +x lint.sh
+          ./lint.sh
         working-directory: ./apps/art
       - name: Run Unity Tests for art
         uses: game-ci/unity-test-runner@v4

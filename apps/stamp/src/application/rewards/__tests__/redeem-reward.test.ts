@@ -1,5 +1,3 @@
-"use client";
-
 import { errAsync, okAsync } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import {

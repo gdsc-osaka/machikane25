@@ -1,5 +1,3 @@
-"use client";
-
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardLedgerError } from "@/domain/reward";
 
@@ -9,10 +7,14 @@ type DocumentReference = { id: string };
 const collectionMock =
 	vi.fn<(firestore: unknown, path: string) => CollectionReference>();
 const docMock = vi.fn<(collection: unknown, id: string) => DocumentReference>();
-const setDocMock = vi.fn<
-	[DocumentReference, Record<string, unknown>, { merge: boolean }],
-	Promise<unknown>
->();
+const setDocMock =
+	vi.fn<
+		(
+			arg1: DocumentReference,
+			arg2: Record<string, unknown>,
+			arg3: { merge: boolean },
+		) => Promise<unknown>
+	>();
 const fromMaybeMillisMock = vi.fn<(value: number) => unknown>();
 
 vi.mock("firebase/firestore", () => ({

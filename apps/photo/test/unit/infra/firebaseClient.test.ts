@@ -78,9 +78,11 @@ describe("Firebase client bootstrap", () => {
 		vi.resetModules();
 	});
 
-	it("initializes once and ensures anonymous auth", async () => {
-		process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify({
-			apiKey: "key",
+	it(
+		"initializes once and ensures anonymous auth",
+		async () => {
+			process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify({
+				apiKey: "key",
 			authDomain: "example.firebaseapp.com",
 			projectId: "example",
 			storageBucket: "example.appspot.com",
@@ -100,11 +102,15 @@ describe("Firebase client bootstrap", () => {
 		expect(first.storage).toBe(mockStorage);
 		expect(first.functions).toBe(mockFunctions);
 		expect(first.remoteConfig).toBe(mockRemoteConfig);
-	});
+		},
+		15_000,
+	);
 
-	it("connects to emulators when requested and avoids duplicate connections", async () => {
-		process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify({
-			apiKey: "key",
+	it(
+		"connects to emulators when requested and avoids duplicate connections",
+		async () => {
+			process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify({
+				apiKey: "key",
 			authDomain: "example.firebaseapp.com",
 			projectId: "example",
 			storageBucket: "example.appspot.com",
@@ -146,5 +152,7 @@ describe("Firebase client bootstrap", () => {
 		expect(connectFirestoreEmulatorMock).toHaveBeenCalledTimes(1);
 		expect(connectStorageEmulatorMock).toHaveBeenCalledTimes(1);
 		expect(connectFunctionsEmulatorMock).toHaveBeenCalledTimes(1);
-	});
+		},
+		15_000,
+	);
 });

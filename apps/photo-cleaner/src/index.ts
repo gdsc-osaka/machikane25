@@ -7,26 +7,14 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import * as logger from "firebase-functions/logger";
+import { logger } from "firebase-functions";
 import { onRequest } from "firebase-functions/v2/https";
 // Some environments may not have up-to-date type declarations for these v2 paths.
-// @ts-ignore
 import { onObjectFinalized } from "firebase-functions/v2/storage";
-// @ts-ignore
-import { onSchedule } from "firebase-functions/v2/scheduler";
-// @ts-ignore
 import * as admin from "firebase-admin";
-
+import { CloudTasksClient } from "@google-cloud/tasks";
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
-
-export const helloWorld = onRequest(
-	{ region: "asia-northeast2" },
-	(request: any, response: any) => {
-		logger.info("Hello logs!", { structuredData: true });
-		response.send("Hello from Firebase!");
-	},
-);
 
 // Initialize Admin SDK
 if (!admin.apps.length) {
@@ -35,80 +23,90 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 const storage = admin.storage();
+
 const TASKS_COLLECTION = "photo-cleaner-delete-tasks";
+const REGION = "asia-northeast2";
+const PROJECT_ID = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT!;
+const LOCATION_ID = "asia-northeast2";
+const QUEUE_ID = "file-delete-queue";
+
+const tasksClient = new CloudTasksClient();
 
 /**
- * When a new object is finalized in Storage, create a Firestore task to delete it 15 minutes later.
+ * ファイルが Cloud Storage にアップロードされたとき、
+ * Cloud Tasks を使用して 15分後に削除タスクをスケジュールする。
  */
-export const scheduleDelete = onObjectFinalized({ region: "asia-northeast2" }, async (object: any) => {
+export const scheduleDelete = onObjectFinalized({ region: REGION }, async (object: any) => {
 	try {
-		const bucket = (object && object.bucket) || undefined;
-		const name = (object && object.name) || undefined;
-		if (!bucket || !name) {
+		const bucket = object.bucket;
+		const filePath = object.name;
+		if (!bucket || !filePath) {
 			logger.warn('Received storage finalize without bucket or name', { object });
 			return;
 		}
 
-		const now = Date.now();
-		const deleteAt = new Date(now + 15 * 60 * 1000); // 15 minutes
+		if (!filePath.startsWith("photos/"))return;
 
 		await db.collection(TASKS_COLLECTION).add({
 			bucket,
-			name,
-			status: 'pending',
-			createdAt: admin.firestore.Timestamp.fromMillis(now),
-			deleteAt: admin.firestore.Timestamp.fromDate(deleteAt),
+			filePath,
 		});
 
-		logger.info('Scheduled delete for storage object', { bucket, name, deleteAt: deleteAt.toISOString() });
-	} catch (err) {
-		logger.error('Error scheduling delete for storage object', err);
+		// 15分後に実行される削除タスクを作成
+		const url = `https://${REGION}-${PROJECT_ID}.cloudfunctions.net/deleteFile`;
+		const payload = JSON.stringify({ bucket, filePath});
+
+		const parent = tasksClient.queuePath(PROJECT_ID, LOCATION_ID, QUEUE_ID);
+		const task = {
+			httpRequest: {
+				httpMethod: "POST",
+				url,
+				headers: { "Content-Type": "application/json" },
+				body: Buffer.from(payload).toString("base64"),
+			},
+			scheduleTime: {
+				seconds: Math.floor(Date.now() / 1000) + 15 * 60, // 15分後
+			},
+		};
+
+		await tasksClient.createTask({ parent, task });
+		logger.info("Scheduled file deletion via Cloud Tasks", {
+			filePath,
+			deleteAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+		});
+	} catch (error) {
+		logger.error("Error scheduling delete task", error);
 	}
 });
 
 /**
- * Runs every minute and deletes expired tasks from Storage.
+ * Cloud Tasks によって呼び出され、指定ファイルと Firestore データを削除する関数。
  */
-export const runCleaner = onSchedule({ region: "asia-northeast2", schedule: 'every 1 minutes' }, async (event: any) => {
-	const now = admin.firestore.Timestamp.now();
+export const deleteFile = onRequest({ region: REGION }, async (req, res) => {
 	try {
-		const q = db.collection(TASKS_COLLECTION)
-			.where('status', '==', 'pending')
-			.where('deleteAt', '<=', now)
-			.limit(100);
-
-		const snap = await q.get();
-		if (snap.empty) {
-			logger.debug('No expired delete tasks');
+		const { bucket, filePath } = req.body;
+		if (!bucket || !filePath) {
+			logger.warn("Invalid delete request", req.body);
+			res.status(400).send("Invalid request");
 			return;
 		}
 
-		for (const doc of snap.docs) {
-			const data = doc.data();
-			// try to mark as deleting to avoid races
-			try {
-				await db.runTransaction(async (tx: any) => {
-					const d = await tx.get(doc.ref);
-					if (!d.exists) return;
-					const status = d.get('status');
-					if (status !== 'pending') return;
-					tx.update(doc.ref, { status: 'deleting', startedAt: admin.firestore.Timestamp.now() });
-				});
+		// Storage ファイル削除
+		await storage.bucket(bucket).file(filePath).delete();
+		logger.info("Deleted file from storage", { bucket, filePath });
 
-				try {
-					await storage.bucket(data.bucket).file(data.name).delete();
-					await doc.ref.update({ status: 'deleted', deletedAt: admin.firestore.Timestamp.now() });
-					logger.info('Deleted storage object', { id: doc.id, bucket: data.bucket, name: data.name });
-				} catch (err) {
-					// file deletion failed
-					await doc.ref.update({ status: 'failed', error: String(err), lastAttemptAt: admin.firestore.Timestamp.now() });
-					logger.error('Failed to delete storage object', { id: doc.id, error: err });
-				}
-			} catch (txErr) {
-				logger.error('Transaction failed for delete task', { id: doc.id, error: txErr });
-			}
-		}
-	} catch (err) {
-		logger.error('Error running cleaner', err);
+		// Firestore データ削除
+		const snap = await db.collection(TASKS_COLLECTION).where("filePath", "==", filePath).get();
+		if (snap.empty) return;
+		const batch = db.batch();
+		snap.docs.forEach((doc) => batch.delete(doc.ref));
+		await batch.commit();
+
+		logger.info("Deleted Firestore data for file", { filePath });
+
+		res.status(200).send("File and Firestore data deleted successfully");
+	} catch (error) {
+		logger.error("Failed to delete file or Firestore data", error);
+		res.status(500).send("Deletion failed");
 	}
 });

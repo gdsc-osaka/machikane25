@@ -8,6 +8,7 @@ import {
 	failGeneration,
 	expireSession,
 	needsOriginalImageDeletion,
+	VisitorSessionError,
 } from "@/domain/visitorSession";
 
 const addMinutes = (value: Date, minutes: number) =>
@@ -19,15 +20,11 @@ const addHours = (value: Date, hours: number) =>
 describe("VisitorSession domain", () => {
 	it("creates a session in capturing status with a 48 hour expiry window", () => {
 		const now = new Date("2025-10-21T00:00:00.000Z");
-		const result = createVisitorSession({
+		const session = createVisitorSession({
 			id: "session-1",
 			anonymousUid: "anon-uid",
 			now,
 		});
-		if (result.isErr()) {
-			throw result.error;
-		}
-		const session = result.value;
 		expect(session.status).toBe("capturing");
 		expect(session.createdAt).toEqual(now);
 		expect(session.updatedAt).toEqual(now);
@@ -42,156 +39,127 @@ describe("VisitorSession domain", () => {
 		const themeSelectedAt = addMinutes(createdAt, 2);
 		const generationStartedAt = addMinutes(createdAt, 3);
 		const completedAt = addMinutes(createdAt, 4);
-		const sessionResult = createVisitorSession({
+		const session = createVisitorSession({
 			id: "session-2",
 			anonymousUid: "anon-uid",
 			now: createdAt,
 		});
-		if (sessionResult.isErr()) {
-			throw sessionResult.error;
-		}
-		const selectingResult = captureOriginalImage(sessionResult.value, {
+		const selecting = captureOriginalImage(session, {
 			storagePath: "originals/session-2.jpg",
 			capturedAt: captureAt,
 		});
-		if (selectingResult.isErr()) {
-			throw selectingResult.error;
-		}
-		expect(selectingResult.value.status).toBe("selecting-theme");
-		expect(selectingResult.value.originalImageRetentionDeadline).toEqual(
+		expect(selecting.status).toBe("selecting-theme");
+		expect(selecting.originalImageRetentionDeadline).toEqual(
 			addMinutes(captureAt, 5),
 		);
 
-		const themedResult = selectTheme(selectingResult.value, {
+		const themed = selectTheme(selecting, {
 			themeId: "theme-fireworks",
 			selectedAt: themeSelectedAt,
 		});
-		if (themedResult.isErr()) {
-			throw themedResult.error;
-		}
-		expect(themedResult.value.themeId).toBe("theme-fireworks");
-		expect(themedResult.value.status).toBe("selecting-theme");
+		expect(themed.themeId).toBe("theme-fireworks");
+		expect(themed.status).toBe("selecting-theme");
 
-		const generatingResult = startGeneration(themedResult.value, {
+		const generating = startGeneration(themed, {
 			requestedAt: generationStartedAt,
 		});
-		if (generatingResult.isErr()) {
-			throw generatingResult.error;
-		}
-		expect(generatingResult.value.status).toBe("generating");
+		expect(generating.status).toBe("generating");
 
-		const completedResult = completeGeneration(generatingResult.value, {
+		const completed = completeGeneration(generating, {
 			completedAt,
 			generatedImageRef: "generated/session-2.png",
 			publicTokenId: "token-123",
 			aquariumEventId: "sync-abc",
 		});
-		if (completedResult.isErr()) {
-			throw completedResult.error;
-		}
-		expect(completedResult.value.status).toBe("completed");
-		expect(completedResult.value.generatedImageRef).toBe(
+		expect(completed.status).toBe("completed");
+		expect(completed.generatedImageRef).toBe(
 			"generated/session-2.png",
 		);
-		expect(completedResult.value.publicTokenId).toBe("token-123");
-		expect(completedResult.value.aquariumEventId).toBe("sync-abc");
+		expect(completed.publicTokenId).toBe("token-123");
+		expect(completed.aquariumEventId).toBe("sync-abc");
+		expect(completed.originalImageRetentionDeadline).toEqual(
+			addMinutes(captureAt, 5),
+		);
+		expect(completed.failureReason).toBeNull();
+		expect(
+			needsOriginalImageDeletion(completed, addMinutes(captureAt, 4)),
+		).toBe(false);
+		expect(
+			needsOriginalImageDeletion(completed, addMinutes(captureAt, 5)),
+		).toBe(true);
 	});
 
 	it("marks generation failure and preserves original retention for cleanup", () => {
 		const now = new Date("2025-10-21T00:00:00.000Z");
-		const sessionResult = createVisitorSession({
+		const session = createVisitorSession({
 			id: "session-3",
 			anonymousUid: "anon-uid",
 			now,
 		});
-		if (sessionResult.isErr()) {
-			throw sessionResult.error;
-		}
-		const capturedResult = captureOriginalImage(sessionResult.value, {
+		const captured = captureOriginalImage(session, {
 			storagePath: "originals/session-3.jpg",
 			capturedAt: addMinutes(now, 1),
 		});
-		if (capturedResult.isErr()) {
-			throw capturedResult.error;
-		}
-		const themedResult = selectTheme(capturedResult.value, {
+		const themed = selectTheme(captured, {
 			themeId: "theme-neon",
 			selectedAt: addMinutes(now, 2),
 		});
-		if (themedResult.isErr()) {
-			throw themedResult.error;
-		}
-		const generatingResult = startGeneration(themedResult.value, {
+		const generating = startGeneration(themed, {
 			requestedAt: addMinutes(now, 3),
 		});
-		if (generatingResult.isErr()) {
-			throw generatingResult.error;
-		}
-		const failedResult = failGeneration(generatingResult.value, {
+		const failed = failGeneration(generating, {
 			failedAt: addMinutes(now, 6),
 			reason: "timeout",
 		});
-		if (failedResult.isErr()) {
-			throw failedResult.error;
-		}
-		expect(failedResult.value.status).toBe("failed");
-		expect(failedResult.value.originalImageRetentionDeadline).toEqual(
+		expect(failed.status).toBe("failed");
+		expect(failed.failureReason).toBe("timeout");
+		expect(failed.originalImageRetentionDeadline).toEqual(
 			addMinutes(addMinutes(now, 1), 5),
 		);
 	});
 
 	it("rejects generation without mandatory theme and original image context", () => {
 		const now = new Date("2025-10-21T00:00:00.000Z");
-		const sessionResult = createVisitorSession({
+		const session = createVisitorSession({
 			id: "session-4",
 			anonymousUid: "anon-uid",
 			now,
 		});
-		if (sessionResult.isErr()) {
-			throw sessionResult.error;
-		}
-		const generationResult = startGeneration(sessionResult.value, {
-			requestedAt: addMinutes(now, 1),
-		});
-		expect(generationResult.isErr()).toBe(true);
-		if (generationResult.isErr()) {
-			expect(generationResult.error.type).toBe("invalid-transition");
+		try {
+			startGeneration(session, {
+				requestedAt: addMinutes(now, 1),
+			});
+			throw new Error("expected startGeneration to throw");
+		} catch (error) {
+			const typed = error as VisitorSessionError;
+			expect(typed.type).toBe("invalid-transition");
 		}
 	});
 
 	it("expires when the expiry timestamp is reached and signals original purge", () => {
 		const createdAt = new Date("2025-10-21T00:00:00.000Z");
-		const sessionResult = createVisitorSession({
+		const session = createVisitorSession({
 			id: "session-5",
 			anonymousUid: "anon-uid",
 			now: createdAt,
 		});
-		if (sessionResult.isErr()) {
-			throw sessionResult.error;
-		}
-		const capturedResult = captureOriginalImage(sessionResult.value, {
+		const captured = captureOriginalImage(session, {
 			storagePath: "originals/session-5.jpg",
 			capturedAt: addMinutes(createdAt, 2),
 		});
-		if (capturedResult.isErr()) {
-			throw capturedResult.error;
-		}
 		const expiryInstant = addHours(createdAt, 48);
-		const expiredResult = expireSession(capturedResult.value, {
+		const expired = expireSession(captured, {
 			expiredAt: expiryInstant,
 		});
-		if (expiredResult.isErr()) {
-			throw expiredResult.error;
-		}
-		expect(expiredResult.value.status).toBe("expired");
+		expect(expired.status).toBe("expired");
 		expect(
 			needsOriginalImageDeletion(
-				expiredResult.value,
+				expired,
 				addMinutes(addMinutes(createdAt, 2), 5),
 			),
 		).toBe(true);
 		expect(
-			needsOriginalImageDeletion(expiredResult.value, addMinutes(createdAt, 2)),
+			needsOriginalImageDeletion(expired, addMinutes(createdAt, 2)),
 		).toBe(false);
 	});
 });

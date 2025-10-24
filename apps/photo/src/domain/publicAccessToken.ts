@@ -1,5 +1,3 @@
-import { Err, Ok, Result } from "neverthrow";
-
 export type PublicAccessToken = Readonly<{
   id: string;
   sessionId: string;
@@ -9,7 +7,7 @@ export type PublicAccessToken = Readonly<{
   consumedAt: Date | null;
 }>;
 
-export type PublicAccessTokenError =
+export type PublicAccessTokenError = Readonly<
   | {
       type: "invalid-argument";
       message: string;
@@ -17,55 +15,62 @@ export type PublicAccessTokenError =
   | {
       type: "invalid-transition";
       message: string;
-    };
+    }
+>;
 
 export const createPublicAccessToken = (input: {
   id: string;
   sessionId: string;
   now: Date;
   expiresAt: Date;
-}): Result<PublicAccessToken, PublicAccessTokenError> => {
+}): PublicAccessToken => {
   if (!input.id || !input.sessionId) {
-    return Err({
+    const error: PublicAccessTokenError = {
       type: "invalid-argument",
       message: "id and sessionId are required",
-    });
+    };
+    throw error;
   }
   if (input.expiresAt.getTime() <= input.now.getTime()) {
-    return Err({
+    const error: PublicAccessTokenError = {
       type: "invalid-argument",
       message: "expiresAt must be in the future",
-    });
+    };
+    throw error;
   }
-  return Ok({
+  const token: PublicAccessToken = {
     id: input.id,
     sessionId: input.sessionId,
     isConsumed: false,
     createdAt: input.now,
     expiresAt: input.expiresAt,
     consumedAt: null,
-  });
+  };
+  return token;
 };
 
 export const consumePublicAccessToken = (
   token: PublicAccessToken,
   input: { now: Date },
-): Result<PublicAccessToken, PublicAccessTokenError> => {
+): PublicAccessToken => {
   if (token.isConsumed) {
-    return Err({
+    const error: PublicAccessTokenError = {
       type: "invalid-transition",
       message: "Token already consumed",
-    });
+    };
+    throw error;
   }
   if (token.expiresAt.getTime() < input.now.getTime()) {
-    return Err({
+    const error: PublicAccessTokenError = {
       type: "invalid-transition",
       message: "Token already expired",
-    });
+    };
+    throw error;
   }
-  return Ok({
+  const consumedToken: PublicAccessToken = {
     ...token,
     isConsumed: true,
     consumedAt: input.now,
-  });
+  };
+  return consumedToken;
 };

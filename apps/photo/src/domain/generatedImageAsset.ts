@@ -1,5 +1,3 @@
-import { Err, Ok, Result } from "neverthrow";
-
 export type AquariumSyncStatus = "pending" | "sent" | "failed" | "retrying";
 
 export type GeneratedImageAsset = Readonly<{
@@ -15,7 +13,7 @@ export type GeneratedImageAsset = Readonly<{
   lastAttemptAt: Date | null;
 }>;
 
-export type GeneratedImageAssetError =
+export type GeneratedImageAssetError = Readonly<
   | {
       type: "invalid-argument";
       message: string;
@@ -23,7 +21,8 @@ export type GeneratedImageAssetError =
   | {
       type: "invalid-transition";
       message: string;
-    };
+    }
+>;
 
 const isValidUrl = (value: string) => {
   try {
@@ -41,32 +40,36 @@ export const createGeneratedImageAsset = (input: {
   previewUrl: string;
   createdAt: Date;
   expiresAt: Date;
-}): Result<GeneratedImageAsset, GeneratedImageAssetError> => {
+}): GeneratedImageAsset => {
   if (!input.id || !input.sessionId) {
-    return Err({
+    const error: GeneratedImageAssetError = {
       type: "invalid-argument",
       message: "id and sessionId are required",
-    });
+    };
+    throw error;
   }
   if (!input.storagePath) {
-    return Err({
+    const error: GeneratedImageAssetError = {
       type: "invalid-argument",
       message: "storagePath is required",
-    });
+    };
+    throw error;
   }
   if (!isValidUrl(input.previewUrl)) {
-    return Err({
+    const error: GeneratedImageAssetError = {
       type: "invalid-argument",
       message: "previewUrl must be a valid URL",
-    });
+    };
+    throw error;
   }
   if (input.expiresAt.getTime() <= input.createdAt.getTime()) {
-    return Err({
+    const error: GeneratedImageAssetError = {
       type: "invalid-argument",
       message: "expiresAt must be after createdAt",
-    });
+    };
+    throw error;
   }
-  return Ok({
+  const asset: GeneratedImageAsset = {
     id: input.id,
     sessionId: input.sessionId,
     storagePath: input.storagePath,
@@ -77,7 +80,8 @@ export const createGeneratedImageAsset = (input: {
     lastError: null,
     attempts: 0,
     lastAttemptAt: null,
-  });
+  };
+  return asset;
 };
 
 export const updateAquariumSyncStatus = (
@@ -88,24 +92,27 @@ export const updateAquariumSyncStatus = (
     updatedAt: Date;
     attempts: number;
   },
-): Result<GeneratedImageAsset, GeneratedImageAssetError> => {
+): GeneratedImageAsset => {
   if (input.attempts < 0) {
-    return Err({
+    const error: GeneratedImageAssetError = {
       type: "invalid-argument",
       message: "attempts must be non-negative",
-    });
+    };
+    throw error;
   }
   if (input.status === "failed" && !input.lastError) {
-    return Err({
+    const error: GeneratedImageAssetError = {
       type: "invalid-argument",
       message: "failed status requires lastError",
-    });
+    };
+    throw error;
   }
-  return Ok({
+  const updatedAsset: GeneratedImageAsset = {
     ...asset,
     aquariumSyncStatus: input.status,
     lastError: input.lastError,
     attempts: input.attempts,
     lastAttemptAt: input.updatedAt,
-  });
+  };
+  return updatedAsset;
 };

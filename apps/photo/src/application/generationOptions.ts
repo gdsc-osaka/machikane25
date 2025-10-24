@@ -1,4 +1,3 @@
-import { Ok, Result } from "neverthrow";
 import {
   GenerationOptionType,
   GenerationOptionsConfig,
@@ -15,11 +14,10 @@ export type GenerationOptionsState = Readonly<{
   options: ReadonlyArray<GenerationOptionsConfig["options"][number]>;
 }>;
 
-const CACHE_KEY = "generation-options";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map<
-  string,
+  RemoteConfigLike,
   { value: GenerationOptionsState; expiresAt: number }
 >();
 
@@ -32,24 +30,61 @@ const buildState = (
   options: config.options.filter((option) => option.isActive),
 });
 
+const isRemoteConfigError = (
+  value: unknown,
+): value is RemoteConfigError => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const typeValue = Reflect.get(value, "type");
+  const messageValue = Reflect.get(value, "message");
+  return (
+    (typeValue === "missing-key" || typeValue === "invalid-payload") &&
+    typeof messageValue === "string"
+  );
+};
+
+const buildLoadError = (
+  error: unknown,
+): RemoteConfigError | Error => {
+  if (isRemoteConfigError(error)) {
+    const details =
+      typeof error.details === "string" && error.details.length > 0
+        ? ` (${error.details})`
+        : "";
+    return {
+      ...error,
+      message: `[${error.type}] ${error.message}${details}`,
+    };
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error("Failed to load generation options");
+};
+
 export const loadGenerationOptions = (
   remoteConfig: RemoteConfigLike,
   input: { now: Date },
-): Result<GenerationOptionsState, RemoteConfigError> => {
-  const cached = cache.get(CACHE_KEY);
+): GenerationOptionsState => {
+  const cached = cache.get(remoteConfig);
   if (cached && cached.expiresAt > input.now.getTime()) {
-    return Ok(cached.value);
+    return cached.value;
   }
-  const configResult = readGenerationOptionsConfig(remoteConfig);
-  if (configResult.isErr()) {
-    return configResult;
+  try {
+    const config = readGenerationOptionsConfig(remoteConfig);
+    const state = buildState(config);
+    cache.set(remoteConfig, {
+      value: state,
+      expiresAt: input.now.getTime() + CACHE_TTL_MS,
+    });
+    return state;
+  } catch (error) {
+    if (cache.has(remoteConfig)) {
+      cache.delete(remoteConfig);
+    }
+    throw buildLoadError(error);
   }
-  const state = buildState(configResult.value);
-  cache.set(CACHE_KEY, {
-    value: state,
-    expiresAt: input.now.getTime() + CACHE_TTL_MS,
-  });
-  return Ok(state);
 };
 
 export const selectOptionsByType = (

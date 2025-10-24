@@ -35,8 +35,11 @@ const Home = () => (
         AI Photo Booth
       </p>
       <h1 className="text-4xl font-semibold tracking-tight text-neutral-50">
-        Experience Surface Directory
+        Photo
       </h1>
+      <p className="text-xl font-medium tracking-tight text-neutral-200">
+        Experience Surface Directory
+      </p>
       <p className="max-w-2xl text-neutral-400">
         Explore the kiosk, guest, and staff surfaces that power the Gemini-backed
         photo experience. Each route is implemented as a dedicated App Router group.

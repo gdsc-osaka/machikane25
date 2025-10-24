@@ -7,6 +7,7 @@ import {
 	serializeGeneratedImageAsset,
 	serializePublicAccessToken,
 	serializeVisitorSession,
+	FirestoreConverterError,
 } from "@/infra/firestore/converters";
 import {
 	captureOriginalImage,
@@ -32,44 +33,28 @@ const makeDate = (value: string) => new Date(value);
 describe("Firestore converters", () => {
 	it("round-trips a visitor session between domain and Firestore formats", () => {
 		const createdAt = makeDate("2025-10-21T00:00:00.000Z");
-		const sessionResult = createVisitorSession({
+		const sessionBase = createVisitorSession({
 			id: "session-1",
 			anonymousUid: "anon-1",
 			now: createdAt,
 		});
-		if (sessionResult.isErr()) {
-			throw sessionResult.error;
-		}
-		const capturedResult = captureOriginalImage(sessionResult.value, {
+		const captured = captureOriginalImage(sessionBase, {
 			storagePath: "originals/session-1.jpg",
 			capturedAt: makeDate("2025-10-21T00:05:00.000Z"),
 		});
-		if (capturedResult.isErr()) {
-			throw capturedResult.error;
-		}
-		const themedResult = selectTheme(capturedResult.value, {
+		const themed = selectTheme(captured, {
 			themeId: "theme-neon",
 			selectedAt: makeDate("2025-10-21T00:06:00.000Z"),
 		});
-		if (themedResult.isErr()) {
-			throw themedResult.error;
-		}
-		const generatingResult = startGeneration(themedResult.value, {
+		const generating = startGeneration(themed, {
 			requestedAt: makeDate("2025-10-21T00:07:00.000Z"),
 		});
-		if (generatingResult.isErr()) {
-			throw generatingResult.error;
-		}
-		const completedResult = completeGeneration(generatingResult.value, {
+		const session = completeGeneration(generating, {
 			completedAt: makeDate("2025-10-21T00:08:00.000Z"),
 			generatedImageRef: "generated/session-1.png",
 			publicTokenId: "token-1",
 			aquariumEventId: "event-1",
 		});
-		if (completedResult.isErr()) {
-			throw completedResult.error;
-		}
-		const session = completedResult.value;
 		const record = serializeVisitorSession(session);
 		expect(record).toStrictEqual({
 			anonymousUid: "anon-1",
@@ -79,6 +64,7 @@ describe("Firestore converters", () => {
 			generatedImageRef: "generated/session-1.png",
 			publicTokenId: "token-1",
 			aquariumEventId: "event-1",
+			failureReason: null,
 			createdAt: Timestamp.fromDate(session.createdAt),
 			updatedAt: Timestamp.fromDate(session.updatedAt),
 			expiresAt: Timestamp.fromDate(session.expiresAt),
@@ -94,10 +80,7 @@ describe("Firestore converters", () => {
 			id: "session-1",
 			data: record,
 		});
-		if (parsed.isErr()) {
-			throw parsed.error;
-		}
-		expect(parsed.value).toStrictEqual(session);
+		expect(parsed).toStrictEqual(session);
 	});
 
 	it("flags invalid visitor session payloads", () => {
@@ -115,20 +98,23 @@ describe("Firestore converters", () => {
 			originalImageRetentionDeadline: null,
 			statusHistory: [],
 		};
-		const result = deserializeVisitorSession({
-			id: "session-2",
-			data: invalidRecord,
-		});
-		expect(result.isErr()).toBe(true);
-		if (result.isErr()) {
-			expect(result.error.type).toBe("invalid-record");
+		try {
+			deserializeVisitorSession({
+				id: "session-2",
+				data: invalidRecord,
+			});
+			throw new Error("expected deserializeVisitorSession to throw");
+		} catch (error) {
+			const typed = error as FirestoreConverterError;
+			expect(typed.type).toBe("invalid-record");
+			expect(typed.message).toBe("Invalid visitor session status for status");
 		}
 	});
 
 	it("round-trips generated image assets and fails on inconsistent timestamps", () => {
 		const createdAt = makeDate("2025-10-21T01:00:00.000Z");
 		const expiresAt = makeDate("2025-10-23T01:00:00.000Z");
-		const assetResult = createGeneratedImageAsset({
+		const pendingAsset = createGeneratedImageAsset({
 			id: "asset-1",
 			sessionId: "session-1",
 			storagePath: "generated/session-1.png",
@@ -136,20 +122,13 @@ describe("Firestore converters", () => {
 			createdAt,
 			expiresAt,
 		});
-		if (assetResult.isErr()) {
-			throw assetResult.error;
-		}
-		const pendingAsset = assetResult.value;
-		const syncedResult = updateAquariumSyncStatus(pendingAsset, {
+		const syncedAsset = updateAquariumSyncStatus(pendingAsset, {
 			status: "sent",
 			lastError: null,
 			updatedAt: makeDate("2025-10-21T01:10:00.000Z"),
 			attempts: 1,
 		});
-		if (syncedResult.isErr()) {
-			throw syncedResult.error;
-		}
-		const serialized = serializeGeneratedImageAsset(syncedResult.value);
+		const serialized = serializeGeneratedImageAsset(syncedAsset);
 		expect(serialized).toStrictEqual({
 			sessionId: "session-1",
 			storagePath: "generated/session-1.png",
@@ -157,7 +136,7 @@ describe("Firestore converters", () => {
 			aquariumSyncStatus: "sent",
 			lastError: null,
 			attempts: 1,
-			lastAttemptAt: Timestamp.fromDate(syncedResult.value.lastAttemptAt!),
+			lastAttemptAt: Timestamp.fromDate(syncedAsset.lastAttemptAt!),
 			createdAt: Timestamp.fromDate(createdAt),
 			expiresAt: Timestamp.fromDate(expiresAt),
 		});
@@ -165,79 +144,75 @@ describe("Firestore converters", () => {
 			id: "asset-1",
 			data: serialized,
 		});
-		if (parsed.isErr()) {
-			throw parsed.error;
-		}
-		expect(parsed.value).toStrictEqual(syncedResult.value);
+		expect(parsed).toStrictEqual(syncedAsset);
 
-		const invalid = deserializeGeneratedImageAsset({
-			id: "asset-err",
-			data: {
-				sessionId: "session-1",
-				storagePath: "generated/session-1.png",
-				previewUrl: "https://example.com/session-1.png",
-				aquariumSyncStatus: "sent",
-				lastError: null,
-				attempts: 1,
-				lastAttemptAt: null,
-				createdAt: Timestamp.fromDate(expiresAt),
-				expiresAt: Timestamp.fromDate(createdAt),
-			},
-		});
-		expect(invalid.isErr()).toBe(true);
-		if (invalid.isErr()) {
-			expect(invalid.error.details).toContain("expiresAt");
+		try {
+			deserializeGeneratedImageAsset({
+				id: "asset-err",
+				data: {
+					sessionId: "session-1",
+					storagePath: "generated/session-1.png",
+					previewUrl: "https://example.com/session-1.png",
+					aquariumSyncStatus: "sent",
+					lastError: null,
+					attempts: 1,
+					lastAttemptAt: null,
+					createdAt: Timestamp.fromDate(expiresAt),
+					expiresAt: Timestamp.fromDate(createdAt),
+				},
+			});
+			throw new Error("expected deserializeGeneratedImageAsset to throw");
+		} catch (error) {
+			const typed = error as FirestoreConverterError;
+			expect(typed.type).toBe("invalid-record");
+			expect(typed.message).toBe("expiresAt must be after createdAt");
+			expect(typed.details).toContain("expiresAt=");
 		}
 	});
 
 	it("serializes and deserializes public access tokens and validates consumption windows", () => {
 		const createdAt = makeDate("2025-10-21T02:00:00.000Z");
 		const expiresAt = makeDate("2025-10-23T02:00:00.000Z");
-		const tokenResult = createPublicAccessToken({
+		const token = createPublicAccessToken({
 			id: "token-1",
 			sessionId: "session-1",
 			expiresAt,
 			now: createdAt,
 		});
-		if (tokenResult.isErr()) {
-			throw tokenResult.error;
-		}
-		const consumedResult = consumePublicAccessToken(tokenResult.value, {
+		const consumedToken = consumePublicAccessToken(token, {
 			now: makeDate("2025-10-21T04:00:00.000Z"),
 		});
-		if (consumedResult.isErr()) {
-			throw consumedResult.error;
-		}
-		const serialized = serializePublicAccessToken(consumedResult.value);
+		const serialized = serializePublicAccessToken(consumedToken);
 		expect(serialized).toStrictEqual({
 			sessionId: "session-1",
 			isConsumed: true,
 			expiresAt: Timestamp.fromDate(expiresAt),
 			createdAt: Timestamp.fromDate(createdAt),
-			consumedAt: Timestamp.fromDate(consumedResult.value.consumedAt!),
+			consumedAt: Timestamp.fromDate(consumedToken.consumedAt!),
 		});
 		const parsed = deserializePublicAccessToken({
 			id: "token-1",
 			data: serialized,
 		});
-		if (parsed.isErr()) {
-			throw parsed.error;
-		}
-		expect(parsed.value).toStrictEqual(consumedResult.value);
+		expect(parsed).toStrictEqual(consumedToken);
 
-		const expired = deserializePublicAccessToken({
-			id: "token-expired",
-			data: {
-				sessionId: "session-1",
-				isConsumed: false,
-				expiresAt: Timestamp.fromMillis(1),
-				createdAt: Timestamp.fromMillis(5),
-				consumedAt: null,
-			},
-		});
-		expect(expired.isErr()).toBe(true);
-		if (expired.isErr()) {
-			expect(expired.error.details).toContain("createdAt must be before expiresAt");
+		try {
+			deserializePublicAccessToken({
+				id: "token-expired",
+				data: {
+					sessionId: "session-1",
+					isConsumed: false,
+					expiresAt: Timestamp.fromMillis(1),
+					createdAt: Timestamp.fromMillis(5),
+					consumedAt: null,
+				},
+			});
+			throw new Error("expected deserializePublicAccessToken to throw");
+		} catch (error) {
+			const typed = error as FirestoreConverterError;
+			expect(typed.type).toBe("invalid-record");
+			expect(typed.message).toBe("createdAt must be before expiresAt");
+			expect(typed.details).toContain("expiresAt=");
 		}
 	});
 });

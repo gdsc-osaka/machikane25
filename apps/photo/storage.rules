@@ -18,9 +18,17 @@ service firebase.storage {
         && sessionDoc(sessionId).data.anonymousUid == request.auth.uid;
     }
 
+    function isAllowedOriginalUpload() {
+      return request.resource != null
+        && (request.resource.contentType == "image/jpeg"
+          || request.resource.contentType == "image/png")
+        && request.resource.size <= 20 * 1024 * 1024;
+    }
+
     match /originals/{sessionId}/{fileName} {
       allow read: if false;
-      allow write: if isSessionOwner(sessionId);
+      allow write: if isSessionOwner(sessionId)
+        && (request.resource == null || isAllowedOriginalUpload());
     }
 
     match /generated/{sessionId}/{fileName} {

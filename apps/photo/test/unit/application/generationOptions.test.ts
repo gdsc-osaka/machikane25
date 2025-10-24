@@ -65,23 +65,20 @@ describe("Generation options loader", () => {
 		const remoteConfig = createRemoteConfigStub({
 			PHOTO_GENERATION_OPTIONS: optionsPayload,
 		});
-		const result = loadGenerationOptions(remoteConfig, {
+		const state = loadGenerationOptions(remoteConfig, {
 			now: new Date("2025-10-21T08:00:00.000Z"),
 		});
-		if (result.isErr()) {
-			throw result.error;
-		}
-		expect(result.value.maintenanceMode).toBe(false);
-		expect(result.value.version).toBe(2);
-		expect(result.value.updatedAt.toISOString()).toBe("2025-10-20T12:00:00.000Z");
-		expect(result.value.options).toHaveLength(2);
+		expect(state.maintenanceMode).toBe(false);
+		expect(state.version).toBe(2);
+		expect(state.updatedAt.toISOString()).toBe("2025-10-20T12:00:00.000Z");
+		expect(state.options).toHaveLength(2);
 		const locations = selectOptionsByType(
-			result.value,
+			state,
 			GenerationOptionType.Location,
 		);
 		expect(locations).toHaveLength(1);
 		expect(locations[0]?.id).toBe("fireworks");
-		const outfits = selectOptionsByType(result.value, GenerationOptionType.Outfit);
+		const outfits = selectOptionsByType(state, GenerationOptionType.Outfit);
 		expect(outfits[0]?.displayName.ja).toBe("浴衣");
 	});
 
@@ -93,9 +90,6 @@ describe("Generation options loader", () => {
 		const first = loadGenerationOptions(remoteConfig, {
 			now: new Date("2025-10-21T08:00:00.000Z"),
 		});
-		if (first.isErr()) {
-			throw first.error;
-		}
 		remoteConfig.update({
 			PHOTO_GENERATION_OPTIONS: JSON.stringify({
 				version: 3,
@@ -107,21 +101,15 @@ describe("Generation options loader", () => {
 		const second = loadGenerationOptions(remoteConfig, {
 			now: new Date("2025-10-21T08:00:15.000Z"),
 		});
-		if (second.isErr()) {
-			throw second.error;
-		}
-		expect(second.value.version).toBe(first.value.version);
+		expect(second.version).toBe(first.version);
 		expect(remoteConfig.callLog).toHaveLength(1);
 
 		const third = loadGenerationOptions(remoteConfig, {
 			now: new Date("2025-10-21T08:05:01.000Z"),
 		});
-		if (third.isErr()) {
-			throw third.error;
-		}
 		expect(remoteConfig.callLog.length).toBeGreaterThan(1);
-		expect(third.value.version).toBe(3);
-		expect(third.value.maintenanceMode).toBe(true);
+		expect(third.version).toBe(3);
+		expect(third.maintenanceMode).toBe(true);
 	});
 
 	it("returns an error when Remote Config payload is malformed", () => {
@@ -129,12 +117,13 @@ describe("Generation options loader", () => {
 		const remoteConfig = createRemoteConfigStub({
 			PHOTO_GENERATION_OPTIONS: "{broken json",
 		});
-		const result = loadGenerationOptions(remoteConfig, {
-			now: new Date("2025-10-21T08:00:00.000Z"),
-		});
-		expect(result.isErr()).toBe(true);
-		if (result.isErr()) {
-			expect(result.error.type).toBe("invalid-payload");
+		try {
+			loadGenerationOptions(remoteConfig, {
+				now: new Date("2025-10-21T08:00:00.000Z"),
+			});
+			throw new Error("expected loadGenerationOptions to throw");
+		} catch (error) {
+			expect((error as { type?: string }).type).toBe("invalid-payload");
 		}
 	});
 });

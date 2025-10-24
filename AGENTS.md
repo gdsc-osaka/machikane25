@@ -22,7 +22,6 @@ Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Dom
 - In DDD, never use classes; prefer plain objects and functions. Use interfaces for abstractions, union types and discriminated unions for variants, and higher-order functions for composition. Read docs/DDD.md for details.
 - Format using `pnpm lint:fix` and confirm no Biome or ESLint diagnostics remain.
 - Use FirestoreDataConverter for Firestore data mapping.
-
 ## Testing Guidelines
 - Use Vitest with `@testing-library/react` + `@testing-library/jest-dom`. Name specs `*.test.ts` or `*.test.tsx`.
 - Hit 100% statement and branch coverage for non-trivial files; validate with `pnpm coverage --filter stamp`.

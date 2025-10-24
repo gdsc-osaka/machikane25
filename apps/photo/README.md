@@ -28,5 +28,5 @@ Tailwind v4 is configured via `@tailwindcss/postcss`. Add tokens in `globals.css
 
 - Use `const` and immutable patterns; favour array methods (`map`, `filter`, `reduce`) instead of loops.
 - No `as` assertions—add precise types, guards, or schema parsers.
-- Stick to `neverthrow` for explicit success/error flows in application/domain code.
+- Handle errors with explicit `try`/`catch` blocks and domain-specific error objects; neverthrow and obj-err are not used.
 - Update `docs/spec/change-log.md` whenever operational behaviour changes.

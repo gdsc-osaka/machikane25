@@ -12,35 +12,23 @@ import {
 
 const buildGeneratingSession = () => {
 	const createdAt = new Date("2025-10-21T09:00:00.000Z");
-	const sessionResult = createVisitorSession({
+	const session = createVisitorSession({
 		id: "session-queue",
 		anonymousUid: "anon-queue",
 		now: createdAt,
 	});
-	if (sessionResult.isErr()) {
-		throw sessionResult.error;
-	}
-	const capturedResult = captureOriginalImage(sessionResult.value, {
+	const captured = captureOriginalImage(session, {
 		storagePath: "originals/session-queue.jpg",
 		capturedAt: new Date("2025-10-21T09:01:00.000Z"),
 	});
-	if (capturedResult.isErr()) {
-		throw capturedResult.error;
-	}
-	const themedResult = selectTheme(capturedResult.value, {
+	const themed = selectTheme(captured, {
 		themeId: "theme-fireworks",
 		selectedAt: new Date("2025-10-21T09:02:00.000Z"),
 	});
-	if (themedResult.isErr()) {
-		throw themedResult.error;
-	}
-	const generatingResult = startGeneration(themedResult.value, {
+	const generating = startGeneration(themed, {
 		requestedAt: new Date("2025-10-21T09:03:30.000Z"),
 	});
-	if (generatingResult.isErr()) {
-		throw generatingResult.error;
-	}
-	return generatingResult.value;
+	return generating;
 };
 
 describe("Generation queue payload", () => {

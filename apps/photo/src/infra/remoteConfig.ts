@@ -1,5 +1,4 @@
 import type { RemoteConfig } from "firebase/remote-config";
-import { Err, Ok, Result } from "neverthrow";
 
 export type GenerationOptionType =
   | "location"
@@ -34,7 +33,7 @@ export type GenerationOptionsConfig = Readonly<{
   options: ReadonlyArray<GenerationOption>;
 }>;
 
-export type RemoteConfigError =
+export type RemoteConfigError = Readonly<
   | {
       type: "missing-key";
       message: string;
@@ -43,37 +42,74 @@ export type RemoteConfigError =
       type: "invalid-payload";
       message: string;
       details?: string;
-    };
+    }
+>;
 
 const REMOTE_CONFIG_OPTIONS_KEY = "PHOTO_GENERATION_OPTIONS";
 
 const isStringRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const mapResultArray = <T, U>(
-  items: ReadonlyArray<T>,
-  mapper: (item: T, index: number) => Result<U, RemoteConfigError>,
-): Result<ReadonlyArray<U>, RemoteConfigError> => {
-  const mapped: U[] = [];
-  for (const [index, item] of items.entries()) {
-    const result = mapper(item, index);
-    if (result.isErr()) {
-      return result;
-    }
-    mapped.push(result.value);
-  }
-  return Ok(mapped);
+const buildRemoteConfigError = (
+  type: RemoteConfigError["type"],
+  message: string,
+  details?: string,
+): RemoteConfigError => {
+  const error: RemoteConfigError = {
+    type,
+    message,
+    details,
+  };
+  return error;
 };
+
+const isRemoteConfigError = (value: unknown): value is RemoteConfigError => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const typeValue = Reflect.get(value, "type");
+  const messageValue = Reflect.get(value, "message");
+  if (
+    messageValue === undefined ||
+    typeof messageValue !== "string"
+  ) {
+    return false;
+  }
+  return (
+    typeValue === "missing-key" ||
+    typeValue === "invalid-payload"
+  );
+};
+
+const extractErrorMessage = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object" && value !== null) {
+    const candidate = Reflect.get(value, "message");
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+  }
+  return "Unknown error";
+};
+
+const isGenerationOptionType = (
+  value: unknown,
+): value is GenerationOptionType =>
+  typeof value === "string" &&
+  Object.values(GenerationOptionType).some((candidate) => candidate === value);
 
 const parseOption = (
   raw: unknown,
   index: number,
-): Result<GenerationOption, RemoteConfigError> => {
+): GenerationOption => {
   if (!isStringRecord(raw)) {
-    return Err({
-      type: "invalid-payload",
-      message: `Option at index ${index} must be an object`,
-    });
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option at index ${index} must be an object`,
+    );
+    throw error;
   }
   const id = raw.id;
   const type = raw.type;
@@ -82,47 +118,50 @@ const parseOption = (
   const isActiveValue = raw.isActive;
 
   if (typeof id !== "string" || id.length === 0) {
-    return Err({
-      type: "invalid-payload",
-      message: `Option at index ${index} is missing id`,
-    });
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option at index ${index} is missing id`,
+    );
+    throw error;
   }
-  if (
-    typeof type !== "string" ||
-    !Object.values(GenerationOptionType).some((value) => value === type)
-  ) {
-    return Err({
-      type: "invalid-payload",
-      message: `Option ${id} has invalid type`,
-    });
+  if (!isGenerationOptionType(type)) {
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option ${id} has invalid type`,
+    );
+    throw error;
   }
   if (!isStringRecord(displayName)) {
-    return Err({
-      type: "invalid-payload",
-      message: `Option ${id} displayName must be an object`,
-    });
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option ${id} displayName must be an object`,
+    );
+    throw error;
   }
   const displayNameJa = displayName.ja;
   const displayNameEn = displayName.en;
   if (typeof displayNameJa !== "string" || typeof displayNameEn !== "string") {
-    return Err({
-      type: "invalid-payload",
-      message: `Option ${id} displayName requires ja and en strings`,
-    });
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option ${id} displayName requires ja and en strings`,
+    );
+    throw error;
   }
   if (imagePathValue !== null && typeof imagePathValue !== "string") {
-    return Err({
-      type: "invalid-payload",
-      message: `Option ${id} imagePath must be string or null`,
-    });
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option ${id} imagePath must be string or null`,
+    );
+    throw error;
   }
   if (typeof isActiveValue !== "boolean") {
-    return Err({
-      type: "invalid-payload",
-      message: `Option ${id} isActive must be boolean`,
-    });
+    const error = buildRemoteConfigError(
+      "invalid-payload",
+      `Option ${id} isActive must be boolean`,
+    );
+    throw error;
   }
-  return Ok({
+  const option: GenerationOption = {
     id,
     type,
     displayName: {
@@ -131,25 +170,28 @@ const parseOption = (
     },
     imagePath: imagePathValue,
     isActive: isActiveValue,
-  });
+  };
+  return option;
 };
 
 export const parseGenerationOptionsPayload = (
   payload: string,
-): Result<GenerationOptionsConfig, RemoteConfigError> => {
+): GenerationOptionsConfig => {
   if (!payload) {
-    return Err({
-      type: "missing-key",
-      message: `${REMOTE_CONFIG_OPTIONS_KEY} is empty`,
-    });
+    const error = buildRemoteConfigError(
+      "missing-key",
+      `${REMOTE_CONFIG_OPTIONS_KEY} is empty`,
+    );
+    throw error;
   }
   try {
     const parsed = JSON.parse(payload);
     if (!isStringRecord(parsed)) {
-      return Err({
-        type: "invalid-payload",
-        message: "Payload is not an object",
-      });
+      const error = buildRemoteConfigError(
+        "invalid-payload",
+        "Payload is not an object",
+      );
+      throw error;
     }
     const version = parsed.version;
     const updatedAtValue = parsed.updatedAt;
@@ -158,57 +200,64 @@ export const parseGenerationOptionsPayload = (
     const optionsValue = parsed.options ?? [];
 
     if (typeof version !== "number" || Number.isNaN(version)) {
-      return Err({
-        type: "invalid-payload",
-        message: "version must be a number",
-      });
+      const error = buildRemoteConfigError(
+        "invalid-payload",
+        "version must be a number",
+      );
+      throw error;
     }
     if (typeof updatedAtValue !== "string") {
-      return Err({
-        type: "invalid-payload",
-        message: "updatedAt must be ISO string",
-      });
+      const error = buildRemoteConfigError(
+        "invalid-payload",
+        "updatedAt must be ISO string",
+      );
+      throw error;
     }
     const updatedAt = new Date(updatedAtValue);
     if (Number.isNaN(updatedAt.getTime())) {
-      return Err({
-        type: "invalid-payload",
-        message: "updatedAt is not a valid date",
-      });
+      const error = buildRemoteConfigError(
+        "invalid-payload",
+        "updatedAt is not a valid date",
+      );
+      throw error;
     }
     if (!Array.isArray(optionsValue)) {
-      return Err({
-        type: "invalid-payload",
-        message: "options must be an array",
-      });
+      const error = buildRemoteConfigError(
+        "invalid-payload",
+        "options must be an array",
+      );
+      throw error;
     }
-    const parsedOptions = mapResultArray(
-      optionsValue,
-      (option, index) => parseOption(option, index),
+    const parsedOptions = optionsValue.map((option, index) =>
+      parseOption(option, index),
     );
-    if (parsedOptions.isErr()) {
-      return parsedOptions;
-    }
-    return Ok({
+    const config: GenerationOptionsConfig = {
       version,
       updatedAt,
       maintenanceMode: Boolean(maintenanceModeValue),
-      options: parsedOptions.value,
-    });
+      options: parsedOptions,
+    };
+    return config;
   } catch (error) {
-    return Err({
-      type: "invalid-payload",
-      message: "Failed to parse payload",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
+    if (isRemoteConfigError(error)) {
+      throw error;
+    }
+    const fallback = buildRemoteConfigError(
+      "invalid-payload",
+      "Failed to parse payload",
+      extractErrorMessage(error),
+    );
+    throw fallback;
   }
 };
 
-type RemoteConfigLike = Pick<RemoteConfig, "getValue">;
+type RemoteConfigLike = {
+  getValue: (key: string) => { asString: () => string };
+};
 
 export const readGenerationOptionsConfig = (
   source: RemoteConfigLike,
-): Result<GenerationOptionsConfig, RemoteConfigError> => {
+): GenerationOptionsConfig => {
   const payload = source.getValue(REMOTE_CONFIG_OPTIONS_KEY).asString();
   return parseGenerationOptionsPayload(payload);
 };
@@ -216,3 +265,4 @@ export const readGenerationOptionsConfig = (
 export const REMOTE_CONFIG_KEYS = {
   generationOptions: REMOTE_CONFIG_OPTIONS_KEY,
 };
+

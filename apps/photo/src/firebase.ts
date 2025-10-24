@@ -63,6 +63,17 @@ const readNumber = (source: object, key: string) => {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 };
 
+const resolveAuthKey = (auth: Auth) => {
+  const appCandidate = Reflect.get(auth, "app");
+  if (typeof appCandidate === "object" && appCandidate !== null) {
+    const nameCandidate = Reflect.get(appCandidate, "name");
+    if (typeof nameCandidate === "string" && nameCandidate.length > 0) {
+      return nameCandidate;
+    }
+  }
+  return "default";
+};
+
 const parseFirebaseConfig = (): FirebaseOptions => {
   const raw = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
   if (!raw) {
@@ -155,7 +166,7 @@ const ensureAnonymousUser = (auth: Auth) => {
   if (auth.currentUser) {
     return Promise.resolve();
   }
-  const key = auth.app.name ?? "default";
+  const key = resolveAuthKey(auth);
   const existing = anonymousSignInPromises.get(key);
   if (existing) {
     return existing;

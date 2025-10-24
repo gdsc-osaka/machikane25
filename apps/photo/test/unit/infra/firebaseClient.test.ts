@@ -12,7 +12,7 @@ const getStorageMock = vi.fn();
 const getFunctionsMock = vi.fn();
 const getRemoteConfigMock = vi.fn();
 
-const mockAuth = { currentUser: null };
+const mockAuth = { currentUser: null } as { currentUser: null | { uid: string } };
 const mockFirestore = { app: "test" };
 const mockStorage = { app: "test" };
 const mockFunctions = { app: "test" };

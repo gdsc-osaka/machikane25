@@ -1,6 +1,9 @@
 import { FirestoreDataConverter, Timestamp } from "firebase/firestore";
-import { Err, Ok, Result } from "neverthrow";
-import { VisitorSession, VisitorSessionStatus } from "@/domain/visitorSession";
+import {
+  VisitorSession,
+  VisitorSessionStatus,
+  VisitorSessionStatusHistoryEntry,
+} from "@/domain/visitorSession";
 import {
   AquariumSyncStatus,
   GeneratedImageAsset,
@@ -25,36 +28,73 @@ const AQUARIUM_SYNC_STATUSES: ReadonlyArray<AquariumSyncStatus> = [
   "retrying",
 ];
 
-export type FirestoreConverterError = {
+export type FirestoreConverterError = Readonly<{
   type: "invalid-record";
   message: string;
   details?: string;
-};
+}>;
 
 type SnapshotData = Readonly<{
   id: string;
   data: FirestoreRecord;
 }>;
 
+const buildConverterError = (
+  message: string,
+  details?: string,
+): FirestoreConverterError => {
+  const error: FirestoreConverterError = {
+    type: "invalid-record",
+    message,
+    details,
+  };
+  return error;
+};
+
+const isFirestoreConverterError = (
+  value: unknown,
+): value is FirestoreConverterError => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const typeValue = Reflect.get(value, "type");
+  const messageValue = Reflect.get(value, "message");
+  if (typeValue !== "invalid-record") {
+    return false;
+  }
+  return typeof messageValue === "string";
+};
+
+const extractMessage = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object" && value !== null) {
+    const messageCandidate = Reflect.get(value, "message");
+    if (typeof messageCandidate === "string") {
+      return messageCandidate;
+    }
+  }
+  return "Unknown error";
+};
+
 const ensureStringField = (
   record: FirestoreRecord,
   key: string,
-): Result<string, FirestoreConverterError> => {
+): string => {
   const value = record[key];
-  return typeof value === "string"
-    ? Ok(value)
-    : Err({
-        type: "invalid-record",
-        message: `Expected string for ${key}`,
-      });
+  if (typeof value === "string") {
+    return value;
+  }
+  throw buildConverterError(`Expected string for ${key}`);
 };
 
 const ensureOptionalStringField = (
   record: FirestoreRecord,
   key: string,
-): Result<string | null, FirestoreConverterError> => {
+): string | null => {
   if (!(key in record) || record[key] === null) {
-    return Ok(null);
+    return null;
   }
   return ensureStringField(record, key);
 };
@@ -62,14 +102,12 @@ const ensureOptionalStringField = (
 const ensureBooleanField = (
   record: FirestoreRecord,
   key: string,
-): Result<boolean, FirestoreConverterError> => {
+): boolean => {
   const value = record[key];
-  return typeof value === "boolean"
-    ? Ok(value)
-    : Err({
-        type: "invalid-record",
-        message: `Expected boolean for ${key}`,
-      });
+  if (typeof value === "boolean") {
+    return value;
+  }
+  throw buildConverterError(`Expected boolean for ${key}`);
 };
 
 const isTimestamp = (value: unknown): value is Timestamp =>
@@ -78,73 +116,284 @@ const isTimestamp = (value: unknown): value is Timestamp =>
 const ensureTimestampField = (
   record: FirestoreRecord,
   key: string,
-): Result<Timestamp, FirestoreConverterError> => {
+): Timestamp => {
   const value = record[key];
-  return isTimestamp(value)
-    ? Ok(value)
-    : Err({
-        type: "invalid-record",
-        message: `Expected Timestamp for ${key}`,
-      });
+  if (isTimestamp(value)) {
+    return value;
+  }
+  throw buildConverterError(`Expected Timestamp for ${key}`);
 };
 
 const ensureOptionalTimestampField = (
   record: FirestoreRecord,
   key: string,
-): Result<Timestamp | null, FirestoreConverterError> => {
+): Timestamp | null => {
   if (!(key in record) || record[key] === null) {
-    return Ok(null);
+    return null;
   }
   return ensureTimestampField(record, key);
+};
+
+const isDate = (value: unknown): value is Date =>
+  value instanceof Date && Number.isFinite(value.getTime());
+
+const ensureDateField = (value: unknown, label: string): Date => {
+  if (isDate(value)) {
+    return value;
+  }
+  throw buildConverterError(`${label} must be a Date instance`);
+};
+
+const ensureOptionalDateField = (
+  value: unknown,
+  label: string,
+): Date | null => {
+  if (value === null) {
+    return null;
+  }
+  return ensureDateField(value, label);
+};
+
+const isVisitorSessionStatus = (
+  value: unknown,
+): value is VisitorSessionStatus =>
+  typeof value === "string" &&
+  VISITOR_STATUSES.some((status) => status === value);
+
+const ensureVisitorSessionInput = (
+  value: unknown,
+): VisitorSession => {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("VisitorSession input must be an object");
+  }
+  const id = Reflect.get(value, "id");
+  const anonymousUid = Reflect.get(value, "anonymousUid");
+  const status = Reflect.get(value, "status");
+  const themeId = Reflect.get(value, "themeId");
+  const originalImageRef = Reflect.get(value, "originalImageRef");
+  const generatedImageRef = Reflect.get(value, "generatedImageRef");
+  const publicTokenId = Reflect.get(value, "publicTokenId");
+  const aquariumEventId = Reflect.get(value, "aquariumEventId");
+  const createdAt = Reflect.get(value, "createdAt");
+  const updatedAt = Reflect.get(value, "updatedAt");
+  const expiresAt = Reflect.get(value, "expiresAt");
+  const originalImageRetentionDeadline = Reflect.get(
+    value,
+    "originalImageRetentionDeadline",
+  );
+  const statusHistoryRaw = Reflect.get(value, "statusHistory");
+  const failureReason = Reflect.get(value, "failureReason");
+
+  if (typeof id !== "string" || id.length === 0) {
+    throw new Error("VisitorSession id must be a non-empty string");
+  }
+  if (typeof anonymousUid !== "string" || anonymousUid.length === 0) {
+    throw new Error("VisitorSession anonymousUid must be a non-empty string");
+  }
+  if (!isVisitorSessionStatus(status)) {
+    throw new Error("VisitorSession status is invalid");
+  }
+  const ensureNullableString = (input: unknown, label: string) => {
+    if (input === null || typeof input === "string") {
+      return input;
+    }
+    throw new Error(`${label} must be a string or null`);
+  };
+  const normalizedThemeId = ensureNullableString(themeId, "themeId");
+  const normalizedOriginalImageRef = ensureNullableString(
+    originalImageRef,
+    "originalImageRef",
+  );
+  const normalizedGeneratedImageRef = ensureNullableString(
+    generatedImageRef,
+    "generatedImageRef",
+  );
+  const normalizedPublicTokenId = ensureNullableString(
+    publicTokenId,
+    "publicTokenId",
+  );
+  const normalizedAquariumEventId = ensureNullableString(
+    aquariumEventId,
+    "aquariumEventId",
+  );
+  const normalizedFailureReason = ensureNullableString(
+    failureReason,
+    "failureReason",
+  );
+
+  const normalizedCreatedAt = ensureDateField(createdAt, "createdAt");
+  const normalizedUpdatedAt = ensureDateField(updatedAt, "updatedAt");
+  const normalizedExpiresAt = ensureDateField(expiresAt, "expiresAt");
+  const normalizedOriginalRetention = ensureOptionalDateField(
+    originalImageRetentionDeadline,
+    "originalImageRetentionDeadline",
+  );
+
+  if (!Array.isArray(statusHistoryRaw)) {
+    throw new Error("VisitorSession statusHistory must be an array");
+  }
+  const normalizedHistory = statusHistoryRaw.map((entry, index) => {
+    if (typeof entry !== "object" || entry === null) {
+      throw new Error(
+        `VisitorSession statusHistory entry at index ${index} must be an object`,
+      );
+    }
+    const entryStatus = Reflect.get(entry, "status");
+    const entryOccurredAt = Reflect.get(entry, "occurredAt");
+    if (!isVisitorSessionStatus(entryStatus)) {
+      throw new Error(
+        `VisitorSession statusHistory entry ${index} has invalid status`,
+      );
+    }
+    const occurredAtDate = ensureDateField(
+      entryOccurredAt,
+      `statusHistory[${index}].occurredAt`,
+    );
+    const normalizedEntry: VisitorSessionStatusHistoryEntry = {
+      status: entryStatus,
+      occurredAt: occurredAtDate,
+    };
+    return normalizedEntry;
+  });
+
+  const session: VisitorSession = {
+    id,
+    anonymousUid,
+    status,
+    themeId: normalizedThemeId,
+    originalImageRef: normalizedOriginalImageRef,
+    generatedImageRef: normalizedGeneratedImageRef,
+    publicTokenId: normalizedPublicTokenId,
+    aquariumEventId: normalizedAquariumEventId,
+    createdAt: normalizedCreatedAt,
+    updatedAt: normalizedUpdatedAt,
+    expiresAt: normalizedExpiresAt,
+    originalImageRetentionDeadline: normalizedOriginalRetention,
+    statusHistory: normalizedHistory,
+    failureReason: normalizedFailureReason,
+  };
+  return session;
+};
+
+const isAquariumSyncStatus = (
+  value: unknown,
+): value is AquariumSyncStatus =>
+  typeof value === "string" &&
+  AQUARIUM_SYNC_STATUSES.some((status) => status === value);
+
+const ensureGeneratedAssetInput = (
+  value: unknown,
+): GeneratedImageAsset => {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("GeneratedImageAsset input must be an object");
+  }
+  const id = Reflect.get(value, "id");
+  const sessionId = Reflect.get(value, "sessionId");
+  const storagePath = Reflect.get(value, "storagePath");
+  const previewUrl = Reflect.get(value, "previewUrl");
+  const createdAt = Reflect.get(value, "createdAt");
+  const expiresAt = Reflect.get(value, "expiresAt");
+  const aquariumSyncStatus = Reflect.get(value, "aquariumSyncStatus");
+  const lastError = Reflect.get(value, "lastError");
+  const attempts = Reflect.get(value, "attempts");
+  const lastAttemptAt = Reflect.get(value, "lastAttemptAt");
+
+  if (typeof id !== "string" || id.length === 0) {
+    throw new Error("GeneratedImageAsset id must be a non-empty string");
+  }
+  if (typeof sessionId !== "string" || sessionId.length === 0) {
+    throw new Error("GeneratedImageAsset sessionId must be a non-empty string");
+  }
+  if (typeof storagePath !== "string" || storagePath.length === 0) {
+    throw new Error("GeneratedImageAsset storagePath must be a non-empty string");
+  }
+  if (typeof previewUrl !== "string" || previewUrl.length === 0) {
+    throw new Error("GeneratedImageAsset previewUrl must be a non-empty string");
+  }
+  if (!isAquariumSyncStatus(aquariumSyncStatus)) {
+    throw new Error("GeneratedImageAsset aquariumSyncStatus is invalid");
+  }
+  if (lastError !== null && typeof lastError !== "string") {
+    throw new Error("GeneratedImageAsset lastError must be a string or null");
+  }
+  if (typeof attempts !== "number" || Number.isNaN(attempts)) {
+    throw new Error("GeneratedImageAsset attempts must be a number");
+  }
+
+  const asset: GeneratedImageAsset = {
+    id,
+    sessionId,
+    storagePath,
+    previewUrl,
+    createdAt: ensureDateField(createdAt, "createdAt"),
+    expiresAt: ensureDateField(expiresAt, "expiresAt"),
+    aquariumSyncStatus,
+    lastError,
+    attempts,
+    lastAttemptAt: ensureOptionalDateField(lastAttemptAt, "lastAttemptAt"),
+  };
+  return asset;
+};
+
+const ensurePublicAccessTokenInput = (
+  value: unknown,
+): PublicAccessToken => {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("PublicAccessToken input must be an object");
+  }
+  const id = Reflect.get(value, "id");
+  const sessionId = Reflect.get(value, "sessionId");
+  const isConsumed = Reflect.get(value, "isConsumed");
+  const createdAt = Reflect.get(value, "createdAt");
+  const expiresAt = Reflect.get(value, "expiresAt");
+  const consumedAt = Reflect.get(value, "consumedAt");
+
+  if (typeof id !== "string" || id.length === 0) {
+    throw new Error("PublicAccessToken id must be a non-empty string");
+  }
+  if (typeof sessionId !== "string" || sessionId.length === 0) {
+    throw new Error("PublicAccessToken sessionId must be a non-empty string");
+  }
+  if (typeof isConsumed !== "boolean") {
+    throw new Error("PublicAccessToken isConsumed must be boolean");
+  }
+  const token: PublicAccessToken = {
+    id,
+    sessionId,
+    isConsumed,
+    createdAt: ensureDateField(createdAt, "createdAt"),
+    expiresAt: ensureDateField(expiresAt, "expiresAt"),
+    consumedAt: ensureOptionalDateField(consumedAt, "consumedAt"),
+  };
+  return token;
 };
 
 const ensureVisitorStatus = (
   record: FirestoreRecord,
   key: string,
-): Result<VisitorSessionStatus, FirestoreConverterError> => {
+): VisitorSessionStatus => {
   const value = record[key];
-  if (
-    typeof value === "string" &&
-    VISITOR_STATUSES.some((status) => status === value)
-  ) {
-    return Ok(value);
+  if (typeof value === "string") {
+    const matched = VISITOR_STATUSES.find((status) => status === value);
+    if (matched) {
+      return matched;
+    }
   }
-  return Err({
-    type: "invalid-record",
-    message: `Invalid visitor session status for ${key}`,
-  });
+  throw buildConverterError(`Invalid visitor session status for ${key}`);
 };
 
 const ensureAquariumStatus = (
   record: FirestoreRecord,
   key: string,
-): Result<AquariumSyncStatus, FirestoreConverterError> => {
+): AquariumSyncStatus => {
   const value = record[key];
-  if (
-    typeof value === "string" &&
-    AQUARIUM_SYNC_STATUSES.some((status) => status === value)
-  ) {
-    return Ok(value);
-  }
-  return Err({
-    type: "invalid-record",
-    message: `Invalid aquarium sync status for ${key}`,
-  });
-};
-
-const mapResultArray = <T, E>(
-  items: ReadonlyArray<T>,
-  mapper: (item: T, index: number) => Result<E, FirestoreConverterError>,
-): Result<ReadonlyArray<E>, FirestoreConverterError> => {
-  const mapped: E[] = [];
-  for (const [index, item] of items.entries()) {
-    const result = mapper(item, index);
-    if (result.isErr()) {
-      return result;
+  if (typeof value === "string") {
+    const matched = AQUARIUM_SYNC_STATUSES.find((status) => status === value);
+    if (matched) {
+      return matched;
     }
-    mapped.push(result.value);
   }
-  return Ok(mapped);
+  throw buildConverterError(`Invalid aquarium sync status for ${key}`);
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -175,115 +424,94 @@ export const serializeVisitorSession = (
 
 export const deserializeVisitorSession = (
   snapshot: SnapshotData,
-): Result<VisitorSession, FirestoreConverterError> => {
-  const anonymousUid = ensureStringField(snapshot.data, "anonymousUid");
-  if (anonymousUid.isErr()) return anonymousUid;
-
-  const status = ensureVisitorStatus(snapshot.data, "status");
-  if (status.isErr()) return status;
-
-  const themeId = ensureOptionalStringField(snapshot.data, "themeId");
-  if (themeId.isErr()) return themeId;
-
-  const originalImageRef = ensureOptionalStringField(
-    snapshot.data,
-    "originalImageRef",
-  );
-  if (originalImageRef.isErr()) return originalImageRef;
-
-  const generatedImageRef = ensureOptionalStringField(
-    snapshot.data,
-    "generatedImageRef",
-  );
-  if (generatedImageRef.isErr()) return generatedImageRef;
-
-  const publicTokenId = ensureOptionalStringField(
-    snapshot.data,
-    "publicTokenId",
-  );
-  if (publicTokenId.isErr()) return publicTokenId;
-
-  const aquariumEventId = ensureOptionalStringField(
-    snapshot.data,
-    "aquariumEventId",
-  );
-  if (aquariumEventId.isErr()) return aquariumEventId;
-
-  const createdAt = ensureTimestampField(snapshot.data, "createdAt");
-  if (createdAt.isErr()) return createdAt;
-
-  const updatedAt = ensureTimestampField(snapshot.data, "updatedAt");
-  if (updatedAt.isErr()) return updatedAt;
-
-  const expiresAt = ensureTimestampField(snapshot.data, "expiresAt");
-  if (expiresAt.isErr()) return expiresAt;
-
-  const retention = ensureOptionalTimestampField(
-    snapshot.data,
-    "originalImageRetentionDeadline",
-  );
-  if (retention.isErr()) return retention;
-
-  const failureReason = ensureOptionalStringField(
-    snapshot.data,
-    "failureReason",
-  );
-  if (failureReason.isErr()) return failureReason;
-
-  const historyRaw = snapshot.data.statusHistory;
-  if (!Array.isArray(historyRaw)) {
-    return Err({
-      type: "invalid-record",
-      message: "statusHistory must be an array",
-    });
-  }
-
-  const history = mapResultArray(historyRaw, (entry, index) => {
-    if (!isRecord(entry)) {
-      return Err({
-        type: "invalid-record",
-        message: `statusHistory entry at index ${index} must be an object`,
-      });
+): VisitorSession => {
+  try {
+    const anonymousUid = ensureStringField(snapshot.data, "anonymousUid");
+    const status = ensureVisitorStatus(snapshot.data, "status");
+    const themeId = ensureOptionalStringField(snapshot.data, "themeId");
+    const originalImageRef = ensureOptionalStringField(
+      snapshot.data,
+      "originalImageRef",
+    );
+    const generatedImageRef = ensureOptionalStringField(
+      snapshot.data,
+      "generatedImageRef",
+    );
+    const publicTokenId = ensureOptionalStringField(
+      snapshot.data,
+      "publicTokenId",
+    );
+    const aquariumEventId = ensureOptionalStringField(
+      snapshot.data,
+      "aquariumEventId",
+    );
+    const createdAt = ensureTimestampField(snapshot.data, "createdAt");
+    const updatedAt = ensureTimestampField(snapshot.data, "updatedAt");
+    const expiresAt = ensureTimestampField(snapshot.data, "expiresAt");
+    const retention = ensureOptionalTimestampField(
+      snapshot.data,
+      "originalImageRetentionDeadline",
+    );
+    const failureReason = ensureOptionalStringField(
+      snapshot.data,
+      "failureReason",
+    );
+    const historyRaw = snapshot.data.statusHistory;
+    if (!Array.isArray(historyRaw)) {
+      throw buildConverterError("statusHistory must be an array");
     }
-    const entryStatus = ensureVisitorStatus(entry, "status");
-    if (entryStatus.isErr()) return entryStatus;
-    const occurredAt = ensureTimestampField(entry, "occurredAt");
-    if (occurredAt.isErr()) return occurredAt;
-    return Ok({
-      status: entryStatus.value,
-      occurredAt: occurredAt.value.toDate(),
+    const historyEntries = historyRaw.map((entry, index) => {
+      if (!isRecord(entry)) {
+        throw buildConverterError(
+          `statusHistory entry at index ${index} must be an object`,
+        );
+      }
+      const entryStatus = ensureVisitorStatus(entry, "status");
+      const occurredAt = ensureTimestampField(entry, "occurredAt");
+      const historyEntry: VisitorSessionStatusHistoryEntry = {
+        status: entryStatus,
+        occurredAt: occurredAt.toDate(),
+      };
+      return historyEntry;
     });
-  });
-  if (history.isErr()) return history;
 
-  const createdDate = createdAt.value.toDate();
-  const expiresDate = expiresAt.value.toDate();
-  if (expiresDate.getTime() <= createdDate.getTime()) {
-    return Err({
-      type: "invalid-record",
-      message: "expiresAt must be after createdAt",
-      details: `expiresAt=${expiresDate.toISOString()}, createdAt=${createdDate.toISOString()}`,
-    });
+    const createdDate = createdAt.toDate();
+    const expiresDate = expiresAt.toDate();
+    if (expiresDate.getTime() <= createdDate.getTime()) {
+      throw buildConverterError(
+        "expiresAt must be after createdAt",
+        `expiresAt=${expiresDate.toISOString()}, createdAt=${createdDate.toISOString()}`,
+      );
+    }
+
+    const session: VisitorSession = {
+      id: snapshot.id,
+      anonymousUid,
+      status,
+      themeId,
+      originalImageRef,
+      generatedImageRef,
+      publicTokenId,
+      aquariumEventId,
+      createdAt: createdDate,
+      updatedAt: updatedAt.toDate(),
+      expiresAt: expiresDate,
+      originalImageRetentionDeadline: retention
+        ? retention.toDate()
+        : null,
+      statusHistory: historyEntries,
+      failureReason,
+    };
+    return session;
+  } catch (error) {
+    if (isFirestoreConverterError(error)) {
+      throw error;
+    }
+    throw buildConverterError(
+      "Failed to deserialize visitor session",
+      extractMessage(error),
+    );
   }
-
-  return Ok({
-    id: snapshot.id,
-    anonymousUid: anonymousUid.value,
-    status: status.value,
-    themeId: themeId.value,
-    originalImageRef: originalImageRef.value,
-    generatedImageRef: generatedImageRef.value,
-    publicTokenId: publicTokenId.value,
-    aquariumEventId: aquariumEventId.value,
-    createdAt: createdDate,
-    updatedAt: updatedAt.value.toDate(),
-    expiresAt: expiresDate,
-    originalImageRetentionDeadline: retention.value
-      ? retention.value.toDate()
-      : null,
-    statusHistory: history.value,
-    failureReason: failureReason.value,
-  });
 };
 
 export const serializeGeneratedImageAsset = (
@@ -304,76 +532,62 @@ export const serializeGeneratedImageAsset = (
 
 export const deserializeGeneratedImageAsset = (
   snapshot: SnapshotData,
-): Result<GeneratedImageAsset, FirestoreConverterError> => {
-  const sessionId = ensureStringField(snapshot.data, "sessionId");
-  if (sessionId.isErr()) return sessionId;
+): GeneratedImageAsset => {
+  try {
+    const sessionId = ensureStringField(snapshot.data, "sessionId");
+    const storagePath = ensureStringField(snapshot.data, "storagePath");
+    const previewUrl = ensureStringField(snapshot.data, "previewUrl");
+    const syncStatus = ensureAquariumStatus(
+      snapshot.data,
+      "aquariumSyncStatus",
+    );
+    const lastError = ensureOptionalStringField(snapshot.data, "lastError");
+    const attempts = snapshot.data.attempts;
+    if (typeof attempts !== "number" || Number.isNaN(attempts) || attempts < 0) {
+      throw buildConverterError("attempts must be a non-negative number");
+    }
+    const lastAttemptAt = ensureOptionalTimestampField(
+      snapshot.data,
+      "lastAttemptAt",
+    );
+    const createdAt = ensureTimestampField(snapshot.data, "createdAt");
+    const expiresAt = ensureTimestampField(snapshot.data, "expiresAt");
 
-  const storagePath = ensureStringField(snapshot.data, "storagePath");
-  if (storagePath.isErr()) return storagePath;
+    const createdDate = createdAt.toDate();
+    const expiresDate = expiresAt.toDate();
+    if (expiresDate.getTime() <= createdDate.getTime()) {
+      throw buildConverterError(
+        "expiresAt must be after createdAt",
+        `expiresAt=${expiresDate.toISOString()}, createdAt=${createdDate.toISOString()}`,
+      );
+    }
 
-  const previewUrl = ensureStringField(snapshot.data, "previewUrl");
-  if (previewUrl.isErr()) return previewUrl;
+    if (syncStatus === "failed" && !lastError) {
+      throw buildConverterError("failed status requires lastError");
+    }
 
-  const syncStatus = ensureAquariumStatus(
-    snapshot.data,
-    "aquariumSyncStatus",
-  );
-  if (syncStatus.isErr()) return syncStatus;
-
-  const lastError = ensureOptionalStringField(snapshot.data, "lastError");
-  if (lastError.isErr()) return lastError;
-
-  const attempts = snapshot.data.attempts;
-  if (typeof attempts !== "number" || Number.isNaN(attempts) || attempts < 0) {
-    return Err({
-      type: "invalid-record",
-      message: "attempts must be a non-negative number",
-    });
+    const asset: GeneratedImageAsset = {
+      id: snapshot.id,
+      sessionId,
+      storagePath,
+      previewUrl,
+      aquariumSyncStatus: syncStatus,
+      lastError,
+      attempts,
+      lastAttemptAt: lastAttemptAt ? lastAttemptAt.toDate() : null,
+      createdAt: createdDate,
+      expiresAt: expiresDate,
+    };
+    return asset;
+  } catch (error) {
+    if (isFirestoreConverterError(error)) {
+      throw error;
+    }
+    throw buildConverterError(
+      "Failed to deserialize generated image asset",
+      extractMessage(error),
+    );
   }
-
-  const lastAttemptAt = ensureOptionalTimestampField(
-    snapshot.data,
-    "lastAttemptAt",
-  );
-  if (lastAttemptAt.isErr()) return lastAttemptAt;
-
-  const createdAt = ensureTimestampField(snapshot.data, "createdAt");
-  if (createdAt.isErr()) return createdAt;
-
-  const expiresAt = ensureTimestampField(snapshot.data, "expiresAt");
-  if (expiresAt.isErr()) return expiresAt;
-
-  const createdDate = createdAt.value.toDate();
-  const expiresDate = expiresAt.value.toDate();
-  if (expiresDate.getTime() <= createdDate.getTime()) {
-    return Err({
-      type: "invalid-record",
-      message: "expiresAt must be after createdAt",
-      details: `expiresAt=${expiresDate.toISOString()}, createdAt=${createdDate.toISOString()}`,
-    });
-  }
-
-  if (syncStatus.value === "failed" && !lastError.value) {
-    return Err({
-      type: "invalid-record",
-      message: "failed status requires lastError",
-    });
-  }
-
-  return Ok({
-    id: snapshot.id,
-    sessionId: sessionId.value,
-    storagePath: storagePath.value,
-    previewUrl: previewUrl.value,
-    aquariumSyncStatus: syncStatus.value,
-    lastError: lastError.value,
-    attempts,
-    lastAttemptAt: lastAttemptAt.value
-      ? lastAttemptAt.value.toDate()
-      : null,
-    createdAt: createdDate,
-    expiresAt: expiresDate,
-  });
 };
 
 export const serializePublicAccessToken = (token: PublicAccessToken) => ({
@@ -386,96 +600,104 @@ export const serializePublicAccessToken = (token: PublicAccessToken) => ({
 
 export const deserializePublicAccessToken = (
   snapshot: SnapshotData,
-): Result<PublicAccessToken, FirestoreConverterError> => {
-  const sessionId = ensureStringField(snapshot.data, "sessionId");
-  if (sessionId.isErr()) return sessionId;
+): PublicAccessToken => {
+  try {
+    const sessionId = ensureStringField(snapshot.data, "sessionId");
+    const isConsumed = ensureBooleanField(snapshot.data, "isConsumed");
+    const createdAt = ensureTimestampField(snapshot.data, "createdAt");
+    const expiresAt = ensureTimestampField(snapshot.data, "expiresAt");
+    const consumedAt = ensureOptionalTimestampField(
+      snapshot.data,
+      "consumedAt",
+    );
 
-  const isConsumed = ensureBooleanField(snapshot.data, "isConsumed");
-  if (isConsumed.isErr()) return isConsumed;
+    const createdDate = createdAt.toDate();
+    const expiresDate = expiresAt.toDate();
+    if (expiresDate.getTime() <= createdDate.getTime()) {
+      throw buildConverterError(
+        "createdAt must be before expiresAt",
+        `expiresAt=${expiresDate.toISOString()}, createdAt=${createdDate.toISOString()}`,
+      );
+    }
 
-  const createdAt = ensureTimestampField(snapshot.data, "createdAt");
-  if (createdAt.isErr()) return createdAt;
+    const consumedDate = consumedAt ? consumedAt.toDate() : null;
+    if (isConsumed && consumedDate === null) {
+      throw buildConverterError(
+        "consumed tokens require consumedAt timestamp",
+      );
+    }
 
-  const expiresAt = ensureTimestampField(snapshot.data, "expiresAt");
-  if (expiresAt.isErr()) return expiresAt;
-
-  const consumedAt = ensureOptionalTimestampField(
-    snapshot.data,
-    "consumedAt",
-  );
-  if (consumedAt.isErr()) return consumedAt;
-
-  const createdDate = createdAt.value.toDate();
-  const expiresDate = expiresAt.value.toDate();
-  if (expiresDate.getTime() <= createdDate.getTime()) {
-    return Err({
-      type: "invalid-record",
-      message: "createdAt must be before expiresAt",
-      details: `expiresAt=${expiresDate.toISOString()}, createdAt=${createdDate.toISOString()}`,
-    });
+    const token: PublicAccessToken = {
+      id: snapshot.id,
+      sessionId,
+      isConsumed,
+      createdAt: createdDate,
+      expiresAt: expiresDate,
+      consumedAt: consumedDate,
+    };
+    return token;
+  } catch (error) {
+    if (isFirestoreConverterError(error)) {
+      throw error;
+    }
+    throw buildConverterError(
+      "Failed to deserialize public access token",
+      extractMessage(error),
+    );
   }
-
-  const consumedDate = consumedAt.value
-    ? consumedAt.value.toDate()
-    : null;
-  if (isConsumed.value && consumedDate === null) {
-    return Err({
-      type: "invalid-record",
-      message: "consumed tokens require consumedAt timestamp",
-    });
-  }
-
-  return Ok({
-    id: snapshot.id,
-    sessionId: sessionId.value,
-    isConsumed: isConsumed.value,
-    createdAt: createdDate,
-    expiresAt: expiresDate,
-    consumedAt: consumedDate,
-  });
 };
 
-const convertOrThrow = <T>(
-  result: Result<T, FirestoreConverterError>,
-  context: string,
-) => {
-  if (result.isErr()) {
-    throw new Error(`${context}: ${result.error.message}`);
+const wrapFirestoreConversion = <T>(convert: () => T, context: string): T => {
+  try {
+    return convert();
+  } catch (error) {
+    const normalized = isFirestoreConverterError(error)
+      ? error
+      : buildConverterError(extractMessage(error));
+    const message =
+      normalized.details && normalized.details.length > 0
+        ? `${normalized.message} (${normalized.details})`
+        : normalized.message;
+    throw new Error(`${context}: ${message}`);
   }
-  return result.value;
 };
 
 export const visitorSessionConverter: FirestoreDataConverter<VisitorSession> = {
-  toFirestore: (session) => serializeVisitorSession(session),
+  toFirestore: (session) =>
+    serializeVisitorSession(ensureVisitorSessionInput(session)),
   fromFirestore: (snapshot) =>
-    convertOrThrow(
-      deserializeVisitorSession({ id: snapshot.id, data: snapshot.data() }),
+    wrapFirestoreConversion(
+      () => deserializeVisitorSession({ id: snapshot.id, data: snapshot.data() }),
       "visitorSessionConverter",
     ),
 };
 
 export const generatedImageAssetConverter: FirestoreDataConverter<GeneratedImageAsset> =
   {
-    toFirestore: (asset) => serializeGeneratedImageAsset(asset),
+    toFirestore: (asset) =>
+      serializeGeneratedImageAsset(ensureGeneratedAssetInput(asset)),
     fromFirestore: (snapshot) =>
-      convertOrThrow(
-        deserializeGeneratedImageAsset({
-          id: snapshot.id,
-          data: snapshot.data(),
-        }),
+      wrapFirestoreConversion(
+        () =>
+          deserializeGeneratedImageAsset({
+            id: snapshot.id,
+            data: snapshot.data(),
+          }),
         "generatedImageAssetConverter",
       ),
   };
 
 export const publicAccessTokenConverter: FirestoreDataConverter<PublicAccessToken> =
   {
-    toFirestore: (token) => serializePublicAccessToken(token),
+    toFirestore: (token) =>
+      serializePublicAccessToken(ensurePublicAccessTokenInput(token)),
     fromFirestore: (snapshot) =>
-      convertOrThrow(
-        deserializePublicAccessToken({
-          id: snapshot.id,
-          data: snapshot.data(),
-        }),
+      wrapFirestoreConversion(
+        () =>
+          deserializePublicAccessToken({
+            id: snapshot.id,
+            data: snapshot.data(),
+          }),
         "publicAccessTokenConverter",
       ),
   };

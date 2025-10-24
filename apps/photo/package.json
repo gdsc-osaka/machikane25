@@ -8,8 +8,9 @@
 		"start": "next start --port 4000",
 		"lint": "pnpm exec biome check src test biome.json components.json firebase.json firestore.indexes.json package.json tsconfig.json tsconfig.test.json",
 		"lint:fix": "pnpm exec biome check --write src test biome.json components.json firebase.json firestore.indexes.json package.json tsconfig.json tsconfig.test.json",
-		"test": "vitest --config ../../vitest.config.ts",
-		"coverage": "vitest --config ../../vitest.config.ts --coverage",
+		"test": "vitest --config ./vitest.config.ts",
+		"coverage": "vitest --config ./vitest.config.ts --coverage",
+		"test:e2e": "playwright test --config ./playwright.config.ts",
 		"deploy:fire": "pnpm exec firebase deploy",
 		"deploy:fire:check": "pnpm exec firebase deploy --dry-run"
 	},
@@ -44,10 +45,12 @@
 		"swr": "^2.3.6",
 		"tailwind-merge": "^3.3.1",
 		"zod": "^4.1.12"
-	},
-	"devDependencies": {
-		"@tailwindcss/postcss": "^4",
-		"@testing-library/jest-dom": "^6.9.1",
+ },
+ "devDependencies": {
+		"@firebase/rules-unit-testing": "^3.0.2",
+		"@playwright/test": "^1.49.0",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.0",
 		"@types/node": "^24",
 		"@types/react": "^19",

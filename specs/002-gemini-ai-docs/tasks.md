@@ -14,9 +14,9 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T101 [P] [SETUP] Register `apps/photo` in `turbo.json`, `pnpm-workspace.yaml`, and root `package.json` scripts (`dev:photo`, `build:photo`, `test:stamp --filter photoh`).
-- [ ] T102 [SETUP] Scaffold `apps/photo/` baseline (Next.js app router folders, `next.config.ts`, `tsconfig.json`, `biome.json`, Tailwind/PostCSS config, README) mirroring `docs/DDD.md` structure.
-- [ ] T103 [P] [SETUP] Add per-app configs (`firebase.json`, `firestore.rules`, `firestore.indexes.json`, `tsconfig.test.json`, Vitest + Playwright setup) under `apps/photo/`.
+- [X] T101 [P] [SETUP] Register `apps/photo` in `turbo.json`, `pnpm-workspace.yaml`, and root `package.json` scripts (`dev:photo`, `build:photo`, `test:stamp --filter photo`).
+- [X] T102 [SETUP] Scaffold `apps/photo/` baseline (Next.js app router folders, `next.config.ts`, `tsconfig.json`, `biome.json`, Tailwind/PostCSS config, README) mirroring `docs/DDD.md` structure.
+- [X] T103 [P] [SETUP] Add per-app configs (`firebase.json`, `firestore.rules`, `firestore.indexes.json`, `tsconfig.test.json`, Vitest + Playwright setup) under `apps/photo/`.
 
 ---
 

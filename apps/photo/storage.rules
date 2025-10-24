@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function sessionDoc(sessionId) {
+      return firestore.get(
+        /databases/(default)/documents/visitorSessions/$(sessionId)
+      );
+    }
+
+    function isSessionOwner(sessionId) {
+      return isSignedIn()
+        && sessionDoc(sessionId).exists()
+        && sessionDoc(sessionId).data.anonymousUid == request.auth.uid;
+    }
+
+    match /originals/{sessionId}/{fileName} {
+      allow read: if false;
+      allow write: if isSessionOwner(sessionId);
+    }
+
+    match /generated/{sessionId}/{fileName} {
+      allow read: if isSessionOwner(sessionId);
+      allow write: if false;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

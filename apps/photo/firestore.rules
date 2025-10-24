@@ -2,18 +2,72 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
+    function isOwner(data) {
+      return isSignedIn() && data.anonymousUid == request.auth.uid;
+    }
+
+    function allowedStatus(status) {
+      return status in [
+        "capturing",
+        "selecting-theme",
+        "generating",
+        "completed",
+        "failed",
+        "expired"
+      ];
+    }
+
+    function hasSessionTimestamps(data) {
+      return data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.expiresAt is timestamp;
+    }
+
+    function getSession(sessionId) {
+      return get(/databases/$(database)/documents/visitorSessions/$(sessionId));
+    }
+
+    match /visitorSessions/{sessionId} {
+      allow get: if isOwner(resource.data);
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && request.resource.data.anonymousUid == request.auth.uid
+        && allowedStatus(request.resource.data.status)
+        && hasSessionTimestamps(request.resource.data);
+
+      allow update: if isOwner(resource.data)
+        && request.resource.data.anonymousUid == resource.data.anonymousUid
+        && allowedStatus(request.resource.data.status)
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.expiresAt is timestamp;
+
+      allow delete: if false;
+    }
+
+    function canAccessToken(data) {
+      return isSignedIn()
+        && data.sessionId is string
+        && getSession(data.sessionId).exists()
+        && isOwner(getSession(data.sessionId).data);
+    }
+
+    match /publicAccessTokens/{tokenId} {
+      allow get: if canAccessToken(resource.data);
+      allow list: if false;
+      allow create: if canAccessToken(request.resource.data);
+      allow update: if canAccessToken(resource.data)
+        && canAccessToken(request.resource.data)
+        && request.resource.data.sessionId == resource.data.sessionId;
+      allow delete: if false;
+    }
+
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2025, 11, 14);
+      allow read, write: if false;
     }
   }
 }

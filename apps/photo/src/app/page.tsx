@@ -31,10 +31,10 @@ const sections = [
 const Home = () => (
   <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-8 py-16">
     <header className="space-y-4">
-      <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">
+      <p className="text-sm uppercase tracking-[0.3em] text-neutral-800">
         AI Photo Booth
       </p>
-      <h1 className="text-4xl font-semibold tracking-tight text-neutral-50">
+      <h1 className="text-4xl font-semibold tracking-tight text-black dark:text-white">
         Photo
       </h1>
       <p className="text-xl font-medium tracking-tight text-neutral-200">

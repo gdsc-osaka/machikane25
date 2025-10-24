@@ -13,6 +13,7 @@ import {
   expect,
   it,
 } from "vitest";
+import { resolveEmulatorSettings } from "../helpers/emulatorSettings";
 
 const shouldRunEmulatorTests =
   process.env.FIREBASE_EMULATORS === "true";
@@ -31,10 +32,14 @@ if (!shouldRunEmulatorTests) {
 
   const loadRules = () => readFileSync(rulesPath, "utf8");
 
+  const { host, firestorePort } = resolveEmulatorSettings();
+
   beforeAll(async () => {
     testEnv = await initializeTestEnvironment({
       projectId,
       firestore: {
+        host,
+        port: firestorePort,
         rules: loadRules(),
       },
     });

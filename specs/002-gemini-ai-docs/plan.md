@@ -57,11 +57,13 @@ apps/
 ├── photo/
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── (booth)/page.tsx        # 撮影・テーマ選択端末
-│   │   │   ├── (display)/page.tsx      # スクリーン表示端末
-│   │   │   ├── (upload)/page.tsx       # 来場者アップロード
-│   │   │   ├── (download)/[token]/page.tsx
-│   │   │   └── (admin)/page.tsx
+│   │   │   ├── (surfaces)/
+│   │   │   │   ├── booth/page.tsx        # 撮影・テーマ選択端末
+│   │   │   │   ├── display/page.tsx      # スクリーン表示端末
+│   │   │   │   ├── upload/page.tsx       # 来場者アップロード
+│   │   │   │   ├── download/page.tsx
+│   │   │   │   ├── download/[token]/page.tsx
+│   │   │   │   └── admin/page.tsx
 │   │   ├── components/
 │   │   ├── domain/
 │   │   ├── application/

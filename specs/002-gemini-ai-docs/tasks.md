@@ -58,7 +58,7 @@
 - [ ] T304 [US1] Add API route handlers under `src/app/api/photo/sessions/**` and `.../generate/route.ts` returning OpenAPI-compliant responses and Retry-After hints.
 - [ ] T305 [P] [US1] Implement Storage upload helper (`src/infra/storage/captureUpload.ts`) with MIME/size validation and deletion fallback, referenced by T303 and booth UI.
 - [ ] T306 [P] [US1] Add SWR hooks (`src/hooks/useVisitorSession.ts`, `src/hooks/useGenerationProgress.ts`) encapsulating polling logic and error retry policy.
-- [ ] T307 [US1] Implement kiosk page `src/app/(booth)/page.tsx` composing hooks, countdown timer, theme gallery, and localized copy.
+- [ ] T307 [US1] Implement kiosk page `src/app/(surfaces)/booth/page.tsx` composing hooks, countdown timer, theme gallery, and localized copy.
 - [ ] T308 [US1] Wire msw handlers and request fixtures in `test/mocks/generationApi.ts` + `test/mocks/firebase.ts` to support T301/T302 emulator scenarios.
 
 **Checkpoint**: Booth flow works end-to-end in emulator with 100% coverage for touched modules.
@@ -80,7 +80,7 @@
 - [ ] T403 [US2] Implement token and asset services (`src/application/publicAccess/issueToken.ts`, `consumeToken.ts`, `getGeneratedAsset.ts`) referencing domain invariants.
 - [ ] T404 [US2] Implement API routes `src/app/api/photo/result/route.ts` and `src/app/api/photo/uploads/route.ts` enforcing validation, rate limits, and Storage writes.
 - [ ] T405 [US2] Create Dynamic Link + QR generation utilities in `src/infra/dynamicLinks.ts` and integrate with token issuance use case.
-- [ ] T406 [US2] Build attendee surfaces `src/app/(upload)/page.tsx` and `src/app/(download)/[token]/page.tsx` with SWR hooks, error toasts, and accessibility messaging.
+- [ ] T406 [US2] Build attendee surfaces `src/app/(surfaces)/upload/page.tsx` and `src/app/(surfaces)/download/[token]/page.tsx` with SWR hooks, error toasts, and accessibility messaging.
 - [ ] T407 [P] [US2] Add hooks/tests `src/hooks/usePublicToken.ts` ensuring single-use enforcement and refetch after consumption.
 
 **Checkpoint**: Smartphone upload and download experiences verified independently.
@@ -101,7 +101,7 @@
 
 - [ ] T503 [US3] Implement aquarium repositories (`src/infra/aquarium/eventsRepository.ts`) and SWR data sources for real-time sync stats.
 - [ ] T504 [US3] Implement application service `src/application/aquarium/retryEvent.ts` to push retries through generation queue with exponential backoff metadata.
-- [ ] T505 [US3] Build admin page `src/app/(admin)/page.tsx` with bilingual UI, status table, retry controls, and audit log export.
+- [ ] T505 [US3] Build admin page `src/app/(surfaces)/admin/page.tsx` with bilingual UI, status table, retry controls, and audit log export.
 - [ ] T506 [US3] Implement API route `src/app/api/photo/aquarium/events/route.ts` and server actions logging retry outcomes to Firestore.
 - [ ] T507 [P] [US3] Extend msw mocks `test/mocks/aquariumServer.ts` supporting success/failure permutations for dashboard tests.
 

@@ -2,27 +2,27 @@ import Link from "next/link";
 
 const sections = [
   {
-    href: "/(booth)",
+    href: "/booth",
     label: "Kiosk Capture",
     description: "Start anonymous sessions and capture photos on the booth device.",
   },
   {
-    href: "/(display)",
+    href: "/display",
     label: "Live Display",
     description: "Showcase generated portraits on the attraction monitor.",
   },
   {
-    href: "/(upload)",
+    href: "/upload",
     label: "Mobile Uploader",
     description: "Allow guests to upload selfies for AI generation.",
   },
   {
-    href: "/(download)",
+    href: "/download",
     label: "Guest Download",
     description: "Provide personal QR access to generated portraits.",
   },
   {
-    href: "/(admin)",
+    href: "/admin",
     label: "Staff Console",
     description: "Monitor queue health, remote config, and incident status.",
   },
@@ -42,7 +42,7 @@ const Home = () => (
       </p>
       <p className="max-w-2xl text-neutral-400">
         Explore the kiosk, guest, and staff surfaces that power the Gemini-backed
-        photo experience. Each route is implemented as a dedicated App Router group.
+        photo experience. Each route lives under the shared (surfaces) App Router group.
       </p>
     </header>
     <section className="grid gap-4 md:grid-cols-2">

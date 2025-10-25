@@ -17,7 +17,7 @@
   - `completed` → `idle` (タイムアウトまたはリセット)
 
 ## GeneratedPhoto
-- **Purpose**: 生成済み画像のメタデータとダウンロード期限を管理。
+- **Purpose**: 生成済み画像のメタデータを管理。
 - **Key Fields**:
   - `photoId` (string, Firestore doc id)
   - `boothId` (string, FK: Booth)

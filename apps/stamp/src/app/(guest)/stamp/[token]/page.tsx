@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useMemo } from "react";
+import { useMemo, use } from "react";
 import useSWR from "swr";
 import type {
 	ClaimStampError,
@@ -156,11 +156,11 @@ type StampTokenPageProps = {
 };
 
 export default function StampTokenPage(props: StampTokenPageProps) {
-	const params = use(props.params);
-	const { token } = params;
-	const { data: claimResult, error: claimError } = useClaimStamp(token);
+    const params = use(props.params);
+    const { token } = params;
+    const { data: claimResult, error: claimError } = useClaimStamp(token);
 
-	const claimState: ClaimUiState = (() => {
+    const claimState: ClaimUiState = (() => {
 		if (claimResult !== undefined) {
 			return {
 				status: "success",
@@ -179,10 +179,10 @@ export default function StampTokenPage(props: StampTokenPageProps) {
 		return { status: "loading" };
 	})();
 
-	const outcome = resolveOutcome(claimState);
-	const outcomeCopy = outcome === null ? null : getOutcomeCopy(outcome);
+    const outcome = resolveOutcome(claimState);
+    const outcomeCopy = outcome === null ? null : getOutcomeCopy(outcome);
 
-	return (
+    return (
 		<main className="bg-background text-foreground mx-auto flex min-h-screen max-w-3xl flex-col items-center gap-8 px-6 py-12">
 			<section className="flex w-full flex-col items-center gap-6 text-center">
 				<h1 className="text-2xl font-semibold tracking-tight">

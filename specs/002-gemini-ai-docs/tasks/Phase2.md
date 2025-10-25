@@ -65,15 +65,6 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
   * match /generatedPhotos/{photoId}: allow read: if true; allow create, delete: if isAdmin(); (US1/T305のGenerationServiceはAdmin権限で動作)  
   * match /options/{optionId}: allow read: if true; allow write: if isAdmin();  
   * match /photoCleanerAudit/{auditId}: allow write: if isAdmin();  
-* \[ \] T209 \[FOUND\] **Infrastructure: Firebase Functions (Photo Cleaner)**: apps/photo/functions/src/index.ts  
-  * firebase-functions (v2), firebase-adminを使用。  
-  * onSchedule (Pub/Sub) または onCall (HTTP) で定期実行される関数（例: every 5 minutes）を定義。  
-  * admin.firestore().collection('uploadedPhotos')をクエリ。  
-  * where('createdAt', '\<', 15分前のTimestamp)で期限切れドキュメントを取得 (FR-006)。  
-  * （TBD: spec.mdのFR-006には「使用されなかった」という条件があるが、data-model.mdには使用フラグがない。ここでは「15分経過したuploadedPhotosは全て削除」として実装し、US1/T305で「使用されたuploadedPhotosは即時削除」として実装することで要件を満たす。）  
-  * 取得したドキュメントをループし、doc.data().imagePathからStorageファイルパスを取得しstorage().file(path).delete()を実行。  
-  * batch.delete(doc.ref)でFirestoreドキュメントをバッチ削除。  
-  * 実行結果をphotoCleanerAudit Cに記録 (T205)。  
 * \[ \] T210 \[FOUND\] **Application: GenerationService (Options)**: src/application/generationService.ts  
   * getOptions(): admin.firestore().collection('options').get()を呼び出す（Server ActionまたはAPI Route経由でのみ使用）。  
   * 取得したQuerySnapshotをGenerationOption\[\]型にマップ。  

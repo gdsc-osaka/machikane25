@@ -49,22 +49,12 @@ service cloud.firestore {
         );
     }
 
-    function staffGiftRedemptionAllowed(previousGiftReceivedAt, nextGiftReceivedAt) {
-      return (previousGiftReceivedAt == null
-        && nextGiftReceivedAt is timestamp)
-        || nextGiftReceivedAt == previousGiftReceivedAt;
-    }
-
     function staffUpdateAllowed() {
       return isStaff()
         && allowedUserFields(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.lastCollectedAt == resource.data.lastCollectedAt
-        && request.resource.data.stamps == resource.data.stamps
-        && staffGiftRedemptionAllowed(
-          resource.data.giftReceivedAt,
-          request.resource.data.giftReceivedAt
-        );
+        && request.resource.data.stamps == resource.data.stamps;
     }
 
     match /users/{userId} {

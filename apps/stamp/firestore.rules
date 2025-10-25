@@ -16,12 +16,9 @@ service cloud.firestore {
 
     function allowedUserFields(data) {
       return data.keys().hasOnly([
-        'stamps',
-        'lastSignedInAt',
-        'giftReceivedAt',
         'createdAt',
-        'language',
-        'rewardQr'
+        'lastCollectedAt',
+        'stamps'
       ]);
     }
 
@@ -36,24 +33,8 @@ service cloud.firestore {
       ]);
     }
 
-    function stampValuesAreTimestamps(stamps) {
-      return stamps != null
-        && stamps.values().all(value, value is timestamp);
-    }
-
-    function stampsOnlyAccumulate(stamps, previousStamps) {
-      return stamps != null
-        && (previousStamps == null
-        || previousStamps.keys().all(key,
-          stamps[key] == previousStamps[key]
-        ));
-    }
-
     function attendeeStampUpdateValid(stamps, previousStamps) {
-      return stamps != null
-        && validStampKeys(stamps)
-        && stampValuesAreTimestamps(stamps)
-        && stampsOnlyAccumulate(stamps, previousStamps);
+      return stamps != null && validStampKeys(stamps);
     }
 
     function attendeeUpdateAllowed(userId) {
@@ -77,11 +58,9 @@ service cloud.firestore {
     function staffUpdateAllowed() {
       return isStaff()
         && allowedUserFields(request.resource.data)
-        && request.resource.data.stamps == resource.data.stamps
-        && request.resource.data.lastSignedInAt == resource.data.lastSignedInAt
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.language == resource.data.language
-        && request.resource.data.rewardQr == resource.data.rewardQr
+        && request.resource.data.lastCollectedAt == resource.data.lastCollectedAt
+        && request.resource.data.stamps == resource.data.stamps
         && staffGiftRedemptionAllowed(
           resource.data.giftReceivedAt,
           request.resource.data.giftReceivedAt
@@ -92,9 +71,7 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && allowedUserFields(request.resource.data)
         && request.resource.data.createdAt is timestamp
-        && request.resource.data.lastSignedInAt is timestamp
-        && request.resource.data.giftReceivedAt == null
-        && request.resource.data.rewardQr == null
+        && request.resource.data.lastCollectedAt is timestamp
         && attendeeStampUpdateValid(request.resource.data.stamps, null);
 
       allow read: if isOwner(userId) || isStaff();

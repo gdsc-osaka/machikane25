@@ -40,9 +40,12 @@ export default defineConfig({
       exclude: [
         "test/fixtures/**",
         "test/helpers/**",
+        "test/mocks/**",
         "src/components/ui/**",
         "src/packages/**",
+        ".next/**",
         "**/*.d.ts",
+        "**/*.config.*",
       ],
     },
   },

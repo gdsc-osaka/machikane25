@@ -57,7 +57,7 @@ describe("stampLedgerConverter.toFirestore", () => {
 		expect(record.createdAt).toBeInstanceOf(MockTimestamp);
 		expect(record.lastCollectedAt).toBeInstanceOf(MockTimestamp);
 		for (const stamp of Object.values(record.stamps)) {
-			const isValidInstance = (stamp == null) || (stamp instanceof MockTimestamp);
+			const isValidInstance = stamp == null || stamp instanceof MockTimestamp;
 			expect(isValidInstance).toBe(true);
 		}
 	});

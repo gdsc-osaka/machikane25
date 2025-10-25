@@ -114,10 +114,10 @@ describe("HomePage", () => {
 	it("enables the survey CTA after four exhibit stamps are collected", async () => {
 		useStampProgressMock.mockReturnValue({
 			data: createSnapshot({
-				reception: collectedAt(1),
-				photobooth: collectedAt(2),
-				art: collectedAt(3),
-				robot: collectedAt(4),
+				reception: 1,
+				photobooth: 2,
+				art: 3,
+				robot: 4,
 			}),
 		});
 
@@ -137,11 +137,10 @@ describe("HomePage", () => {
 	it("unlocks the reward CTA when the survey stamp is present", async () => {
 		useStampProgressMock.mockReturnValue({
 			data: createSnapshot({
-				reception: collectedAt(1),
-				photobooth: collectedAt(2),
-				art: collectedAt(3),
-				robot: collectedAt(4),
-				survey: collectedAt(5),
+				reception: 1,
+				photobooth: 2,
+				art: 3,
+				robot: 4,
 			}),
 		});
 

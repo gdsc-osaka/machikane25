@@ -47,7 +47,7 @@
 **Goal**: Anonymous visitor can start session, capture/upload photo, pick theme, queue Gemini generation, and view result within the booth.
 **Independent Test**: Firebase Emulator + msw scenario covering capture ‚ÜÅEgenerate ‚ÜÅEresult render on kiosk device.
 
-### Tests for User Story 1 ‚ö†ÅEÅE
+### Tests for User Story 1 ‚ö†ÔøΩEÔøΩE
 
 - [ ] T301 [P] [US1] Build failing integration test `apps/photo/test/integration/boothSessionFlow.test.ts` simulating Auth bootstrap, capture upload, generation queue, and polling until result.
 - [ ] T302 [P] [US1] Create failing RTL spec `apps/photo/test/unit/presentation/BoothPage.test.tsx` asserting countdown, theme selection, consent gating, success/timeout states.
@@ -70,7 +70,7 @@
 **Goal**: Visitor uses QR/URL token within 48h to upload from smartphone and download generated asset after completion.
 **Independent Test**: Token issuance, Dynamic Link redirect, asset retrieval, and expiry handling validated via Vitest integration.
 
-### Tests for User Story 2 ‚ö†ÅEÅE
+### Tests for User Story 2 ‚ö†ÔøΩEÔøΩE
 
 - [ ] T401 [P] [US2] Add failing integration test `apps/photo/test/integration/downloadTokenFlow.test.ts` covering token issuance, Dynamic Link redirect, asset fetch, and expiry error.
 - [ ] T402 [P] [US2] Add failing RTL spec `apps/photo/test/unit/presentation/DownloadPage.test.tsx` verifying QR instructions, localisation, and 48h countdown.
@@ -92,7 +92,7 @@
 **Goal**: Staff dashboard visualises aquarium sync status, exposes retry controls, and reflects Remote Config toggles.
 **Independent Test**: Emulator-driven scenario injecting failed events and confirming retry success + status updates.
 
-### Tests for User Story 3 ‚ö†ÅEÅE
+### Tests for User Story 3 ‚ö†ÔøΩEÔøΩE
 
 - [ ] T501 [P] [US3] Add failing integration test `apps/photo/test/integration/adminAquariumFlow.test.ts` covering failed event ingestion, manual retry, and status transitions.
 - [ ] T502 [P] [US3] Add failing RTL spec `apps/photo/test/unit/presentation/AdminPage.test.tsx` validating cards, filters, retry button, and Remote Config banner.
@@ -122,5 +122,5 @@
 ## Dependencies & Execution Order
 
 - **Phase Dependencies**: Setup ‚ÜÅEFoundational ‚ÜÅEUser Stories (US1 can start only after Foundational). US2 and US3 depend on US1 data contracts but can proceed in parallel once US1 API surfaces stabilise.
-- **Within Stories**: Tests (‚ö†ÅEÅE precede implementation; maintain SWR hooks/interfaces to avoid UI coupling. Ensure Storage/Sentry instrumentation tasks align with generated IDs before later phases.
+- **Within Stories**: Tests (‚ö†ÔøΩEÔøΩE precede implementation; maintain SWR hooks/interfaces to avoid UI coupling. Ensure Storage/Sentry instrumentation tasks align with generated IDs before later phases.
 - **Parallel Opportunities**: Tasks marked [P] can proceed concurrently. US2 and US3 UI workstreams can run in parallel after their respective API services are stubbed.

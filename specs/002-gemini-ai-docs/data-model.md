@@ -1,78 +1,60 @@
 # Data Model — AI Photo Booth Experience
 
-## VisitorSession
-- **Purpose**: トラッキングする各来場者の体験フロー。
-- **Key Fields**:
-  - `id` (string, Firestore doc id)
-  - `anonymousUid` (string, Firebase Auth UID)
-  - `status` (enum: `capturing`, `selecting-theme`, `generating`, `completed`, `failed`, `expired`)
-  - `themeId` (string | null)
-  - `originalImageRef` (string Storage path | null)
-  - `generatedImageRef` (string Storage path | null)
-  - `publicTokenId` (string | null)
-  - `aquariumEventId` (string | null)
-  - `createdAt` / `updatedAt` (Timestamp)
-  - `expiresAt` (Timestamp; 48時間後)
+## Booth
+- **Purpose**: 各フォトブース端末の状態と最新情報を管理する。
+- **Key Fields:**
+  - `boothId` (string, Firestore doc id)
+  - `state` (enum: `idle`, `menu`, `capturing`, `generating`, `completed`)
+  - `latestPhotoId` (string, FK: GeneratedPhoto | null)
+  - `lastTakePhotoAt` (Timestamp | null)
+  - `createdAt` (Timestamp)
 - **State Transitions**:
-  - `capturing` → `selecting-theme` → `generating` → `completed`
-  - 失敗時は `generating` → `failed`
-  - タイムアウトで `capturing`/`selecting-theme` → `expired`
+  - `idle` → `menu` (Control Pageで開始)
+  - `menu` → `capturing` (撮影開始)
+  - `capturing` → `menu` (撮影完了・プレビュー)
+  - `menu` → `generating` (オプション決定・生成開始)
+  - `generating` → `completed` (生成完了)
+  - `completed` → `idle` (タイムアウトまたはリセット)
 
-## GeneratedImageAsset
-- **Purpose**: 生成済み画像のメタデータと配布状態を管理。
+## GeneratedPhoto
+- **Purpose**: 生成済み画像のメタデータを管理。
 - **Key Fields**:
-  - `id` (string)
-  - `sessionId` (string, FK: VisitorSession)
-  - `storagePath` (string)
-  - `previewUrl` (string)
+  - `photoId` (string, Firestore doc id)
+  - `boothId` (string, FK: Booth)
+  - `imageUrl` (string, Storage URL)
+  - `imagePath` (string, Storage path)
   - `createdAt` (Timestamp)
-  - `expiresAt` (Timestamp; download有効期限)
-  - `aquariumSyncStatus` (enum: `pending`, `sent`, `failed`)
-  - `lastError` (string | null)
 
-## PublicAccessToken
-- **Purpose**: QR/URLアクセスを制御するワンタイムトークン。
+## UploadedPhoto
+- **Purpose**: 来場者がスマートフォンからアップロードした一時的な写真。
 - **Key Fields**:
-  - `id` (string; token)
-  - `sessionId` (string, FK)
-  - `isConsumed` (boolean)
-  - `expiresAt` (Timestamp)
-  - `createdAt` (Timestamp)
-- **Rules**:
-  - `isConsumed` true でも `expiresAt` まではダウンロード履歴表示に利用する。
+  - `photoId` (string, Firestore doc id)
+  - `boothId` (string, FK: Booth)
+  - `imageUrl` (string, Storage URL)
+  - `imagePath` (string, Storage path)
 
 ## GenerationOption
 - **Purpose**: テンプレートの選択肢（Location/Outfit/Person/Style/Pose）。
 - **Key Fields**:
-  - `id` (string)
-  - `type` (enum: `location`, `outfit`, `person`, `style`, `pose`)
-  - `displayNameJa` / `displayNameEn` (string)
-  - `imagePath` (string | null)
-  - `createdAt` / `updatedAt` (Timestamp)
-  - `isActive` (boolean; Remote Config連携で切替)
+  - `id` (string, Firestore doc id)
+  - `typeId` (string; `location`, `outfit`, `person`, `style`, `pose`)
+  - `value` (string; プロンプト用の値)
+  - `displayName` (string; 表示名)
+  - `imageUrl?` (string | null)
+  - `imagePath?` (string | null)
+  - `createdAt` (Timestamp)
+  - `updatedAt` (Timestamp)
 
-## AquariumSyncEvent
-- **Purpose**: 水族館展示との連携状況ログ。
-- **Key Fields**:
-  - `id` (string)
-  - `sessionId` (string, FK)
-  - `status` (enum: `pending`, `sent`, `failed`, `retrying`)
-  - `attempts` (number)
-  - `lastAttemptAt` (Timestamp | null)
-  - `errorMessage` (string | null)
 
-## CleanupJobAudit
-- **Purpose**: 原本削除バッチの実行証跡。
+## PhotoCleanerAudit
+- **Purpose**: UploadedPhoto の自動削除バッチ（15分タイマー）の実行証跡。
 - **Key Fields**:
   - `id` (string; job timestamp)
-  - `deletedOriginalCount` (number)
-  - `skippedCount` (number)
+  - `deletedCount` (number; expiredステータスで削除した数)
+  - `skippedCount` (number; pendingまたはusedでスキップした数)
   - `runAt` (Timestamp)
-  - `notes` (string | null)
+  - `error` (string | null)
 
 ## Validation Rules
-- すべての `sessionId` は `VisitorSession` に存在しなければならない。
-- `PublicAccessToken.expiresAt` ≤ `VisitorSession.expiresAt`。
-- `GeneratedImageAsset.expiresAt` = `VisitorSession.createdAt + 48h` を基準に計算。
-- `VisitorSession.originalImageRef` は `status` が `capturing`/`selecting-theme` 以外なら null。
-- `AquariumSyncEvent.attempts` は整数かつ `status` が `failed` のときのみ `errorMessage` 必須。
+- `GeneratedPhoto.boothId` および `UploadedPhoto.boothId` は Booth コレクションに存在する id でなければならない。
+- `Booth.latestPhotoId` は `GeneratedPhoto` コレクションに存在する id でなければならない（nullを除く）。

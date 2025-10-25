@@ -8,7 +8,7 @@
 
 ## 1. Emulators & Services
 ```bash
-pnpm dev:photobooth          # TurbopackでNext.jsアプリを起動 (port 4002想定)
+pnpm dev:photo         # TurbopackでNext.jsアプリを起動 (port 4002想定)
 pnpm firebase:emulators      # Auth / Firestore / Functions / Storage を起動
 ```
 - `apps/photobooth/src/firebase.ts` が Emulator Suite を自動認識する設定になっていることを確認する。
@@ -16,16 +16,16 @@ pnpm firebase:emulators      # Auth / Firestore / Functions / Storage を起動
 
 ## 2. Testing
 ```bash
-pnpm test:stamp --filter photobooth   # Vitest + Testing Library
-pnpm coverage --filter photobooth     # 100% statement/branch を確認
-pnpm test:e2e:photobooth              # Playwrightで撮影→生成→QRダウンロードを再現
+pnpm test:stamp --filter photo   # Vitest + Testing Library
+pnpm coverage --filter photo     # 100% statement/branch を確認
+pnpm test:e2e:photo              # Playwrightで撮影→生成→QRダウンロードを再現
 ```
-- Gemini APIはmswでスタブ。水族館Webhookは`apps/photobooth/test/mocks/webhookServer.ts`でローカルHTTPサーバーを起動。
+- Gemini APIはmswでスタブ。水族館Webhookは`apps/photo/test/mocks/webhookServer.ts`でローカルHTTPサーバーを起動。
 
 ## 3. Lint & Formatting
 ```bash
 pnpm lint:fix
-pnpm format:photobooth
+pnpm format:photo
 ```
 - shadcnコンポーネント追加時は `pnpm shadcn:add` を使用し、スタイルはTailwind 4 tokensに揃える。
 - 実装中は `docs/TDD.md` のRed-Green-Refactor-Commitを順守し、各サイクル完了ごとにテスト結果を記録する。
@@ -38,7 +38,7 @@ pnpm format:photobooth
 4. デプロイ後にSentryリリースを発行し、管理UIの計測パネルでsync状態を確認。
 
 ## 5. Operations Checklist
-- 会場セットアップ時に撮影端末A/表示端末B/スタッフ端末Cをサインイン。
+- 会場セットアップ時に表示端末A/操作端末B/スタッフ端末Cをサインイン。
 - Remote Configで営業時間に合わせてメンテモード解除。
 - 水族館連携のWebhook疎通を管理UIからテスト発火。
 - 1日終了時にCleanupジョブの監査ログをダウンロードし、`docs/spec/change-log.md`へ記録。

@@ -49,8 +49,8 @@
 
 ### Tests for User Story 1 ⚠�E�E
 
-- [ ] T301 [P] [US1] Build failing integration test `apps/photo/test/integration/boothSessionFlow.test.ts` simulating Auth bootstrap, capture upload, generation queue, and polling until result.
-- [ ] T302 [P] [US1] Create failing RTL spec `apps/photo/test/unit/presentation/BoothPage.test.tsx` asserting countdown, theme selection, consent gating, success/timeout states.
+- [X] T301 [P] [US1] Build failing integration test `apps/photo/test/integration/boothSessionFlow.test.ts` simulating Auth bootstrap, capture upload, generation queue, and polling until result.
+- [X] T302 [P] [US1] Create failing RTL spec `apps/photo/test/unit/presentation/BoothPage.test.tsx` asserting countdown, theme selection, consent gating, success/timeout states.
 
 ### Implementation for User Story 1
 

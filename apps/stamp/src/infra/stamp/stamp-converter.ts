@@ -59,13 +59,11 @@ const stampLedgerConverter: FirestoreDataConverter<StampLedgerRecord> = {
 			convertedStamps[checkpoint] = timestampUtils.fromMaybeMillis(millis);
 		}
 
-		const tete = {
+		return {
 			createdAt: timestampUtils.fromMaybeMillis(data.createdAt),
 			lastCollectedAt: timestampUtils.fromMaybeMillis(data.lastCollectedAt),
 			stamps: convertedStamps,
 		};
-
-		return tete;
 	},
 	fromFirestore(
 		snapshot: QueryDocumentSnapshot<Record<string, unknown>>,

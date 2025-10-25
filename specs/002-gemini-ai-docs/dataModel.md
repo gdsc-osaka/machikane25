@@ -8,7 +8,7 @@
   - `latestPhotoId` (string, FK: GeneratedPhoto | null)
   - `lastTakePhotoAt` (Timestamp | null)
   - `createdAt` (Timestamp)
- - **State Transitions**:
+- **State Transitions**:
   - `idle` → `menu` (Control Pageで開始)
   - `menu` → `capturing` (撮影開始)
   - `capturing` → `menu` (撮影完了・プレビュー)

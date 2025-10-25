@@ -141,6 +141,7 @@ describe("HomePage", () => {
 				photobooth: 2,
 				art: 3,
 				robot: 4,
+				survey: 5,
 			}),
 		});
 

@@ -30,31 +30,31 @@ const toMillis = (value: unknown): number | null =>
 
 const toLedger = (raw: unknown): StampLedger =>
 	STAMP_SEQUENCE.reduce<StampLedger>((ledger, checkpoint) => {
-		if (!isRecord(raw)) {
-			return ledger;
-		}
-		const candidate = raw[checkpoint];
-		if (candidate === null) {
-			return ledger;
-		}
-		if (!isTimestamp(candidate)) {
-			return ledger;
-		}
-		return markStampCollected({
-			ledger,
-			checkpoint,
-			collectedAt: candidate.toMillis(),
-		});
+		const collectedAt =
+			isRecord(raw) && isTimestamp(raw[checkpoint])
+				? raw[checkpoint].toMillis()
+				: null;
+		return collectedAt
+			? markStampCollected({ ledger, checkpoint, collectedAt })
+			: ledger;
 	}, createEmptyLedger());
 
 const stampLedgerConverter: FirestoreDataConverter<StampLedgerRecord> = {
 	toFirestore(
 		data: WithFieldValue<StampLedgerRecord>,
 	): Record<string, unknown> {
+		const convertedStamps: Record<string, unknown> = {};
+
+		for (const checkpoint of STAMP_SEQUENCE) {
+			const ledger = data.ledger as Record<string, number | null>;
+			const millis = ledger[checkpoint];
+			convertedStamps[checkpoint] = timestampUtils.fromMaybeMillis(millis);
+		}
+
 		return {
 			createdAt: timestampUtils.fromMaybeMillis(data.createdAt),
 			lastCollectedAt: timestampUtils.fromMaybeMillis(data.lastCollectedAt),
-			stamps: data.ledger,
+			stamps: convertedStamps,
 		};
 	},
 	fromFirestore(

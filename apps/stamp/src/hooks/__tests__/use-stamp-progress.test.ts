@@ -4,6 +4,18 @@ import type {
 	StampProgressSnapshot,
 } from "@/hooks/use-stamp-progress";
 
+const fetchStampProgressForCurrentUserMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/application/stamps/fetch-stamp-progress.client", () => ({
+	fetchStampProgressForCurrentUser: fetchStampProgressForCurrentUserMock,
+}));
+
+vi.mock("@/firebase", () => ({
+	getFirebaseAuth: () => ({
+		currentUser: { uid: "attendee-123" },
+	}),
+}));
+
 type SwrInvocation = {
 	config:
 		| {
@@ -40,6 +52,7 @@ const importHookModule = async () => {
 
 beforeEach(() => {
 	swrInvocations.splice(0);
+	fetchStampProgressForCurrentUserMock.mockReset();
 });
 
 describe("useStampProgress", () => {

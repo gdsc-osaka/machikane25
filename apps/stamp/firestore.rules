@@ -33,7 +33,7 @@ service cloud.firestore {
       ]);
     }
 
-    function attendeeStampUpdateValid(stamps, previousStamps) {
+    function attendeeStampUpdateValid(stamps) {
       return stamps != null && validStampKeys(stamps);
     }
 
@@ -41,19 +41,15 @@ service cloud.firestore {
       return isOwner(userId)
         && allowedUserFields(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.giftReceivedAt == resource.data.giftReceivedAt
-        && request.resource.data.rewardQr == resource.data.rewardQr
-        && attendeeStampUpdateValid(
-          request.resource.data.stamps,
-          resource.data.stamps
-        );
+        && request.resource.data.lastCollectedAt > resource.data.lastCollectedAt
+        && attendeeStampUpdateValid(request.resource.data.stamps);
     }
 
     function staffUpdateAllowed() {
       return isStaff()
         && allowedUserFields(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.lastCollectedAt == resource.data.lastCollectedAt
+        && request.resource.data.lastCollectedAt > resource.data.lastCollectedAt
         && request.resource.data.stamps == resource.data.stamps;
     }
 
@@ -62,7 +58,7 @@ service cloud.firestore {
         && allowedUserFields(request.resource.data)
         && request.resource.data.createdAt is timestamp
         && request.resource.data.lastCollectedAt is timestamp
-        && attendeeStampUpdateValid(request.resource.data.stamps, null);
+        && attendeeStampUpdateValid(request.resource.data.stamps);
 
       allow read: if isOwner(userId) || isStaff();
       allow list: if isStaff();

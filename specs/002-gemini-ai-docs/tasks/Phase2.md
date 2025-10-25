@@ -1,0 +1,88 @@
+# **Tasks: AI Photo Booth Experience (Phase 2 Foundational Detailed)**
+
+Input: Design docs from /specs/002-gemini-ai-docs/  
+Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md  
+**Organization**: Tasks follow TDD and DDD layering.
+
+## **Format: \[ID\] \[P?\] \[Story\] Description**
+
+* **\[P\]**: Can progress in parallel  
+* **\[Story\]**: FOUND (Foundational)
+
+## **Phase 2: Foundational (Blocking Prerequisites)**
+
+**Goal**: ユーザーストーリー（US1-US3）の実装に必要な、Firebase接続、匿名認証、セキュリティルール、およびDDDレイヤーの基盤を構築する。
+
+### **Tests for Foundational (Detailed) ⚠EE**
+
+* \[ \] T201 \[P\] \[FOUND\] **Integration Test (Firebase Client Init)**: apps/photo/test/integration/firebaseClient.test.ts  
+  * Firebase Emulator Suite（Auth, Firestore, Storage）が動作していることを前提とする。  
+  * initializeFirebaseClient() (T205) を呼び出す。  
+  * getAuth() がEmulator（http://localhost:9099）を向いていることをアサート。  
+  * getFirestore() がEmulator（http://localhost:8080）を向いていることをアサート。  
+  * getStorage() がEmulator（http://localhost:9199）を向いていることをアサート。  
+* \[ \] T202 \[P\] \[FOUND\] **Integration Test (Anonymous Auth)**: apps/photo/test/integration/authClient.test.ts  
+  * ensureAnonymousSignIn() (T205) を呼び出す。  
+  * onAuthStateChangedが発火し、user.isAnonymousがtrueのユーザーオブジェクトが取得できることをwaitForで検証 (FR-001)。  
+  * 2回呼び出しても、サインインは1回しか実行されないこと（既存ユーザーが返る）を検証。  
+* \[ \] T203 \[P\] \[FOUND\] **Integration Test (Security Rules)**: apps/photo/test/integration/firestoreRules.test.ts  
+  * Firebase Test SDK（@firebase/rules-unit-testing）を使用。  
+  * **Setup**: EmulatorのFirestoreをクリアし、options Cにマスターデータを投入。  
+  * **options C**: 匿名ユーザー（auth \= { uid: 'anon-user' }）でoptions Cのget()が成功することをアサート。  
+  * **booths C**: 匿名ユーザーでbooths Cのget()が成功。update()（state変更など）も成功することをアサート。  
+  * **uploadedPhotos C**: 匿名ユーザーでuploadedPhotos Cへのadd()が成功。  
+  * **generatedPhotos C**: 匿名ユーザー（未認証でも可）でgeneratedPhotos Cのget()が成功。  
+  * **Admin (US3)**: 管理者ユーザー（auth \= { uid: 'admin-user', token: { role: 'admin' } }）で全コレクションへのread/writeが成功することをアサート (Design Doc)。  
+* \[ \] T204 \[P\] \[FOUND\] **Unit Test (Generation Options)**: apps/photo/test/unit/application/generationService.test.ts  
+  * GenerationServiceのテスト。Firestoreリポジトリをモック。  
+  * generationService.getOptions() (T207) を呼び出す。  
+  * モックが返したGenerationOptionの配列が、typeId（location, outfit...）ごとにグループ化されたオブジェクトとして返ることをアサート。  
+* \[ \] T205 \[P\] \[FOUND\] **Integration Test (Photo Cleaner)**: apps/photo/test/integration/photoCleaner.test.ts  
+  * **Setup**: EmulatorのFirestore/Storageを使用。  
+  * uploadedPhotos Cに2件のドキュメントを追加: photo\_old（createdAtが20分前）、photo\_new（createdAtが5分前）。対応するダミーファイルをStorageにアップロード。  
+  * photoCleaner Function (T209) を（HTTPトリガーなどで）実行。  
+  * photo\_oldのドキュメントとStorageファイルが**削除**されていることをアサート (FR-006)。  
+  * photo\_newのドキュメントとStorageファイルが**残存**していることをアサート。  
+  * photoCleanerAudit Cに実行結果（deletedCount: 1, skippedCount: 1）が記録されていることをアサート (data-model.md)。
+
+### **Implementation for Foundational (Detailed)**
+
+* \[ \] T206 \[FOUND\] **Infrastructure: Firebase Client Setup**: apps/photo/src/lib/firebase/client.ts  
+  * firebase/app, firebase/auth, firebase/firestore, firebase/storageをインポート。  
+  * firebaseConfigを環境変数（NEXT\_PUBLIC\_FIREBASE\_CONFIG）から読み込む。  
+  * initializeFirebaseClient(): getApps().length \=== 0の場合のみinitializeAppを実行。connectAuthEmulator等をprocess.env.NODE\_ENV \=== 'development'の場合に呼び出す。  
+  * ensureAnonymousSignIn(): getAuth()を使い、onAuthStateChangedでuserがいない場合のみsignInAnonymously()を呼び出すPromiseベースのラッパー (FR-001)。  
+* \[ \] T207 \[FOUND\] **Infrastructure: Firebase Admin Setup**: apps/photo/src/lib/firebase/admin.ts  
+  * firebase-adminをインポート。  
+  * serviceAccountを環境変数（FIREBASE\_SERVICE\_ACCOUNT\_JSON）から読み込み、admin.initializeAppを実行（シングルトン化）。  
+  * admin.auth(), admin.firestore(), admin.storage()をエクスポート。  
+* \[ \] T208 \[FOUND\] **Infrastructure: Firestore Security Rules**: apps/photo/firestore.rules  
+  * data-model.mdに基づきルールを記述。  
+  * request.auth \!= null（匿名認証含む）を基本ルールとする。  
+  * function isAdmin(): request.auth.token.role \== 'admin' (Design Doc) を定義。  
+  * match /booths/{boothId}: allow read, update: if request.auth \!= null; allow create: if isAdmin();  
+  * match /uploadedPhotos/{photoId}: allow read, create: if request.auth \!= null; allow delete: if isAdmin(); (Cleaner FunctionはAdmin権限で動作)  
+  * match /generatedPhotos/{photoId}: allow read: if true; allow create, delete: if isAdmin(); (US1/T305のGenerationServiceはAdmin権限で動作)  
+  * match /options/{optionId}: allow read: if true; allow write: if isAdmin();  
+  * match /photoCleanerAudit/{auditId}: allow write: if isAdmin();  
+* \[ \] T209 \[FOUND\] **Infrastructure: Firebase Functions (Photo Cleaner)**: apps/photo/functions/src/index.ts  
+  * firebase-functions (v2), firebase-adminを使用。  
+  * onSchedule (Pub/Sub) または onCall (HTTP) で定期実行される関数（例: every 5 minutes）を定義。  
+  * admin.firestore().collection('uploadedPhotos')をクエリ。  
+  * where('createdAt', '\<', 15分前のTimestamp)で期限切れドキュメントを取得 (FR-006)。  
+  * （TBD: spec.mdのFR-006には「使用されなかった」という条件があるが、data-model.mdには使用フラグがない。ここでは「15分経過したuploadedPhotosは全て削除」として実装し、US1/T305で「使用されたuploadedPhotosは即時削除」として実装することで要件を満たす。）  
+  * 取得したドキュメントをループし、doc.data().imagePathからStorageファイルパスを取得しstorage().file(path).delete()を実行。  
+  * batch.delete(doc.ref)でFirestoreドキュメントをバッチ削除。  
+  * 実行結果をphotoCleanerAudit Cに記録 (T205)。  
+* \[ \] T210 \[FOUND\] **Application: GenerationService (Options)**: src/application/generationService.ts  
+  * getOptions(): admin.firestore().collection('options').get()を呼び出す（Server ActionまたはAPI Route経由でのみ使用）。  
+  * 取得したQuerySnapshotをGenerationOption\[\]型にマップ。  
+  * plan.md (T207) に従い、typeIdでグループ化（reduceを使用）したオブジェクト（{ location: \[...\], outfit: \[...\] }）を返す。  
+* \[ \] T211 \[P\] \[FOUND\] **Presentation: Shared UI Setup**: apps/photo/src/components/ui/  
+  * plan.mdのshadcn/uiに基づき、pnpm dlx shadcn-ui@latest initを実行。  
+  * Button, Card, Tabs, Dialog, Toastをaddコマンドでインストール。  
+  * アプリ全体のレイアウトコンポーネント（src/app/layout.tsx）でTailwind CSSとフォントをセットアップ。  
+* \[ \] T212 \[FOUND\] **Application: Service Interfaces**: src/application/interfaces.ts  
+  * Design Doc.mdのC4図に基づき、各サービスのTypeScriptインターフェース（IAuthService, IPhotoService, IBoothService, IGenerationService）を定義し、DI（依存性逆転）の基盤を準備。
+
+**Checkpoint**: Foundational (Firebase/Auth/Rules/Cleaner) complete.

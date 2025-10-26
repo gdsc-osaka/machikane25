@@ -75,7 +75,7 @@ QRコード発行後に有効期限（24時間）を過ぎてアクセスされ�
 * **FR-003**: System MUST Control Page からの生成リクエストに基づき、選択されたテーマと UploadedPhoto を使用して、平均60秒以内に生成結果を提示する。  
 * **FR-004**: System MUST 生成結果とメタデータを GeneratedPhoto として保存し、24時間有効なQRコードを Control Page に即時に発行する。  
 * **FR-005**: System MUST 生成結果を水族館展示バックエンドへイベント連携し、成功/失敗ステータスを管理UIで確認できるよう記録する。  
-* **FR-006**: System MUST UploadedPhoto データについて、生成に使用された場合は生成完了後速やかに削除し（Firestoreドキュメントと photos/{photoId}/photo.png の両方）、使用されなかった場合は createdAt から15分後に自動削除する（PhotoCleaner Firebase Functionによる）。  
+* **FR-006**: System MUST UploadedPhoto データについて、生成に使用された場合は生成完了後速やかに削除し（Firestoreドキュメントと photos/{photoId}/photo.png の両方）、使用されなかった場合は createdAt から15分後に自動削除する（PhotoCleaner Firebase Functionによる）。**[NOTE: Implemented in `apps/photo-cleaner` (separate app), NOT in `apps/photo` - See exclusions.md]**  
 * **FR-007**: System MUST 管理UI (Admin Page または Photos Page) でAI生成APIエラー・Webhook失敗・待機中件数をリアルタイム表示し、運営者が手動再送とメンテナンス切替を行えるようにする。  
 * **FR-008**: System MUST 設計・実装ともに docs/DDD.md のレイヤリング規約（Presentation→Application→Domain→Infrastructure）を遵守する。  
 * **FR-009**: System MUST 運営スタッフが管理UI (Photos Page) にて、全ブースの generatedPhotos サブコレクションを横断検索（Collection Group Query）し、ブースごとに最新の生成画像一覧を閲覧・ダウンロードし、チェキプリンターへの手動印刷操作を行えるようにする。  
@@ -128,7 +128,7 @@ QRコード発行後に有効期限（24時間）を過ぎてアクセスされ�
   * imagePath: (string | null)  
   * createdAt: (Timestamp)  
   * updatedAt: (Timestamp)  
-* **PhotoCleanerAudit**: （*変更なし。ただし、UploadedPhoto がサブコレクションであるため、Functionは collectionGroup('uploadedPhotos') を監視する*）
+* **PhotoCleanerAudit**: （*変更なし。ただし、UploadedPhoto がサブコレクションであるため、Functionは collectionGroup('uploadedPhotos') を監視する*）**[NOTE: Used by `apps/photo-cleaner` (separate app), NOT directly used by `apps/photo`]**
 
 ### **Dependencies & Assumptions**
 

@@ -104,7 +104,7 @@ Implementation for User Story 3
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T601 [P] [POLISH] Implement PhotoCleaner (Firebase Function) (TDD) to delete uploadedPhotos (unused: 15min / used: immediate) (FR-006) and log to photoCleanerAudit (data-model.md).
+- [ ] ~~T601 [P] [POLISH] Implement PhotoCleaner (Firebase Function) (TDD) to delete uploadedPhotos (unused: 15min / used: immediate) (FR-006) and log to photoCleanerAudit (data-model.md).~~ **[EXCLUDED from apps/photo - Implemented separately in apps/photo-cleaner. See exclusions.md]**
 - [ ] T602 [P] [POLISH] Author Playwright E2E `apps/photo/test/e2e/photo.spec.ts` spanning US1 (capture) ↁEUS2 (download) ↁEUS3 (login/photos), wired to Firebase Emulator.
 - [ ] T603 [POLISH] Integrate logging/Sentry (`apps/photo/sentry.server.config.ts`, `src/infra/logger.ts`) ensuring errors include boothId and photoId.
 - [ ] T604 [P] [POLISH] Expand i18n dictionaries `src/libs/i18n/photo.{ja,en}.ts` for all UI pages.

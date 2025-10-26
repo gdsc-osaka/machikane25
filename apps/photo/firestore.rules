@@ -68,12 +68,5 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * PhotoCleanerAudit Collection
-     * - Write: Admin only (PhotoCleaner Function uses Admin SDK)
-     */
-    match /photoCleanerAudit/{auditId} {
-      allow write: if isAdmin();
-    }
   }
 }

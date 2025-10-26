@@ -37,13 +37,7 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
   * GenerationServiceのテスト。Firestoreリポジトリをモック。  
   * generationService.getOptions() (T207) を呼び出す。  
   * モックが返したGenerationOptionの配列が、typeId（location, outfit...）ごとにグループ化されたオブジェクトとして返ることをアサート。  
-* \[x\] T205 \[P\] \[FOUND\] **Integration Test (Photo Cleaner)**: apps/photo/test/integration/photoCleaner.test.ts  
-  * **Setup**: EmulatorのFirestore/Storageを使用。  
-  * uploadedPhotos Cに2件のドキュメントを追加: photo\_old（createdAtが20分前）、photo\_new（createdAtが5分前）。対応するダミーファイルをStorageにアップロード。  
-  * photoCleaner Function (T209) を（HTTPトリガーなどで）実行。  
-  * photo\_oldのドキュメントとStorageファイルが**削除**されていることをアサート (FR-006)。  
-  * photo\_newのドキュメントとStorageファイルが**残存**していることをアサート。  
-  * photoCleanerAudit Cに実行結果（deletedCount: 1, skippedCount: 1）が記録されていることをアサート (data-model.md)。
+* \[x\] ~~T205 \[P\] \[FOUND\] **Integration Test (Photo Cleaner)**: apps/photo/test/integration/photoCleaner.test.ts~~ **[EXCLUDED from apps/photo - PhotoCleaner is separate app (apps/photo-cleaner). See exclusions.md]**
 
 ### **Implementation for Foundational (Detailed)**
 
@@ -61,10 +55,9 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
   * request.auth \!= null（匿名認証含む）を基本ルールとする。  
   * function isAdmin(): request.auth.token.role \== 'admin' (Design Doc) を定義。  
   * match /booths/{boothId}: allow read, update: if request.auth \!= null; allow create: if isAdmin();  
-  * match /uploadedPhotos/{photoId}: allow read, create: if request.auth \!= null; allow delete: if isAdmin(); (Cleaner FunctionはAdmin権限で動作)  
-  * match /generatedPhotos/{photoId}: allow read: if true; allow create, delete: if isAdmin(); (US1/T305のGenerationServiceはAdmin権限で動作)  
+  * match /uploadedPhotos/{photoId}: allow read, create: if request.auth \!= null; allow delete: if isAdmin();
+  * match /generatedPhotos/{photoId}: allow read: if true; allow create, delete: if isAdmin(); (US1/T305のGenerationServiceはAdmin権限で動作)
   * match /options/{optionId}: allow read: if true; allow write: if isAdmin();  
-  * match /photoCleanerAudit/{auditId}: allow write: if isAdmin();  
 * \[x\] T210 \[FOUND\] **Application: GenerationService (Options)**: src/application/generationService.ts  
   * getOptions(): admin.firestore().collection('options').get()を呼び出す（Server ActionまたはAPI Route経由でのみ使用）。  
   * 取得したQuerySnapshotをGenerationOption\[\]型にマップ。  

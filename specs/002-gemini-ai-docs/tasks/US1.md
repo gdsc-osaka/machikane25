@@ -11,18 +11,18 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
 
 ## **Phase 3: User Story 1 ↁEVisitor Generates AI Portrait (Priority: P1) 🎯 MVP**
 
-Goal: Anonymous visitor can use Control Page and Display Page, capture via Webcam OR upload via Image Upload Page, pick theme, and view result.
+Goal: Token-authenticated Staff operates the Control Page and Display Page. Anonymous visitors capture photos via Webcam (triggered by Control Page, shown on Display Page) OR upload via Image Upload Page (accessed via QR on Display Page), select themes (on Control Page), and view the result (on Display Page).  
 Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering Booth state sync, Capture/Upload ↁEGenerate ↁEResult render.
 
 ### **Tests for User Story 1 (Detailed) ⚠EE**
 
 * \[ \] T301 \[P\] \[US1\] **Integration Test (boothSessionFlow)**: apps/photo/test/integration/boothSessionFlow.test.ts  
-  * **Setup**: msw (Gemini API mock) と Firebase Emulator (Auth, Firestore, Storage) を起動。匿名認証でサインイン。  
-  * **Upload Flow**: 1\. Image Upload Page (/upload/\[boothId\]) からテスト画像をアップロードするServer Actionをコール。 2\. EmulatorのStorageにファイルが保存され、uploadedPhotos Cにドキュメントが追加されることをアサート。  
-  * **Capture Flow**: 1\. Control Page から startCapture (Server Action) をコール。 2\. booths/\[boothId\] の state が capturing に、lastTakePhotoAt が更新されることをアサート。 3\. Display Page 側のロジック（uploadCapturedPhoto Action）をコール。 4\. uploadedPhotos Cに撮影画像が追加され、booths/\[boothId\] の state が menu に戻ることをアサート。  
-  * **Generation Flow**: 1\. Control Page から startGeneration (Server Action) を（uploadedPhotoIdとoptionsを引数に）コール。 2\. booths/\[boothId\] の state が generating になることをアサート。 3\. mswがGemini APIコールをインターセプト。 4\. GenerationServiceが（コールバック/Webhook経由で）completeGenerationをコール。 5\. generatedPhotos Cにドキュメントが作成され、booths/\[boothId\] の state が completed に、latestPhotoId がセットされることをアサート。  
+  * **Setup**: msw (Gemini API mock) と Firebase Emulator (Auth, Firestore, Storage) を起動。**Test 1 (Upload Flow) では匿名認証でサインイン。Test 2-3 (Capture/Generation Flow) では管理者認証（トークン認証）でサインインする (spec.md FR-011, FR-012)。** \* **Upload Flow**: 1\. Image Upload Page (/upload/\[boothId\]) からテスト画像をアップロードするServer Actionをコール。 2\. EmulatorのStorageにファイルが保存され、uploadedPhotos Cにドキュメントが追加されることをアサート。  
+  * **Capture Flow**: 1\. **(管理者認証で)** Control Page から startCapture (Server Action) をコール。 2\. booths/\[boothId\] の state が capturing に、lastTakePhotoAt が更新されることをアサート。 3\. Display Page 側のロジック（uploadCapturedPhoto Action）をコール。 4\. uploadedPhotos Cに撮影画像が追加され、booths/\[boothId\] の state が menu に戻ることをアサート。  
+  * **Generation Flow**: 1\. **(管理者認証で)** Control Page から startGeneration (Server Action) を（uploadedPhotoIdとoptionsを引数に）コール。 2\. booths/\[boothId\] の state が generating になることをアサート。 3\. mswがGemini APIコールをインターセプト。 4\. GenerationServiceが（コールバック/Webhook経由で）completeGenerationをコール。 5\. generatedPhotos Cにドキュメントが作成され、booths/\[boothId\] の state が completed に、latestPhotoId がセットされることをアサート。  
   * **Cleanup**: 6\. startGenerationで使用された uploadedPhotos のドキュメントとStorageファイルが削除されていることをアサート (FR-006)。  
 * \[ \] T302 \[P\] \[US1\] **RTL Spec (Control Page)**: apps/photo/test/unit/app/control/\[boothId\]/page.test.tsx  
+  * **前提**: **管理者認証（トークン認証）済みでページにアクセスする (spec.md FR-011, FR-012)。**  
   * useBoothState (T307) フックをモックし、指定したBooth状態（idle, menu, capturing, generating, completed）を返すよう設定。  
   * useUploadedPhotos (T307) と useGenerationOptions (T307) も同様にモックデータを返す。  
   * state='idle': 「フォトブースを始める」ボタン表示。クリックでstartSession (Server Action) がコールされることを検証。  
@@ -31,6 +31,7 @@ Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering B
   * state='generating': 「AIが写真を生成中...」メッセージ表示。  
   * state='completed': latestPhotoId に基づくDownload Page (US2) へのQRコードが表示される (Design Doc)。  
 * \[ \] T303 \[P\] \[US1\] **RTL Spec (Display Page)**: apps/photo/test/unit/app/display/\[boothId\]/page.test.tsx  
+  * **前提**: **管理者認証（トークン認証）済みでページにアクセスする (spec.md FR-011, FR-012)。**  
   * useBoothState (T307) フックをモックし、状態を注入。  
   * state='idle': 「タッチパネルをタップしてね」メッセージ表示。  
   * state='menu': Image Upload Page (/upload/\[boothId\]) へのQRコードコンポーネントが表示される (Design Doc)。  
@@ -38,6 +39,7 @@ Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering B
   * state='generating': 「AIが写真を生成中...」メッセージ表示。  
   * state='completed': Booth.latestPhotoId のIDを持つ生成画像 (\<img\>) が表示される。  
 * \[ \] T304 \[P\] \[US1\] **RTL Spec (Image Upload Page)**: apps/photo/test/unit/app/upload/\[boothId\]/page.test.tsx  
+  * **前提**: **匿名認証（signInAnonymously）済みでページにアクセスする (spec.md FR-001, Security 3)。**  
   * Fileオブジェクトをモックし、ファイル入力（input\[type=file\]）にセット。  
   * 許可されないMIMEタイプやサイズ（FR-002: 20MB超）の場合にエラーメッセージが表示されることを検証。  
   * 「アップロード」ボタン押下で uploadUserPhoto (Server Action) がコールされることを検証。  
@@ -59,10 +61,11 @@ Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering B
   * deleteUsedPhoto(photoId): uploadedPhotos ドキュメントと関連Storageファイル (imagePathから参照) を削除する (FR-006)。  
 * \[ \] T307 \[P\] \[US1\] **Hooks (Data Fetching)**: src/hooks/  
   * useBoothState(boothId): firebase/firestoreのonSnapshotをラップし、booths/\[boothId\]ドキュメントをリアルタイムで購読・React Stateにセットするフック (useSWRやjotaiは使わず、useEffect内でonSnapshotをセットアップ)。  
-  * useGenerationOptions(): options Cをフェッチするフック (クライアントから直接Firestoreを購読、またはServer Action経由)。  
+  * useGenerationOptions(): options Cをフェッチするフック (クライアントから直接Firestoreを購読、またはServer Action経S)。  
   * useUploadedPhotos(boothId): booths/${boothId}/uploadedPhotos CをonSnapshotでリアルタイム購読するフック。  
 * \[ \] T308 \[US1\] **Presentation: Display Page (Detailed)**: src/app/display/\[boothId\]/page.tsx  
   * **Hooks**: boothId を useParams で取得。useBoothState(boothId) (T307) でリアルタイムな Booth 状態（booth.state, booth.lastTakePhotoAt, booth.latestPhotoId）を取得。  
+  * **Auth**: **このページは管理者認証（トークン認証）が必要 (spec.md FR-011)。**  
   * **Animation**: 状態遷移は framer-motion の AnimatePresence を使用し、各状態のコンテナ（motion.div）をフェードイン/フェードアウト（opacity: 0 から opacity: 1）で切り替える。  
   * **Webcam**: WebcamCapture コンポーネント (Internal) を作成。react-webcam をラップし、useRef で webcamRef を保持。  
   * **State Logic (switch/case on booth.state)**:  
@@ -85,6 +88,7 @@ Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering B
       * **Logic**: latestPhotoId が変更された場合、\<img\> の onLoad イベントを利用して画像プリロードを行い、ロード完了後にフェードインさせる。  
 * \[ \] T309 \[US1\] **Presentation: Control Page (Detailed)**: src/app/control/\[boothId\]/page.tsx  
   * **Hooks**: boothId を useParams で取得。useBoothState (T307), useGenerationOptions (T307), useUploadedPhotos (T307) フックを使用。  
+  * **Auth**: **このページは管理者認証（トークン認証）が必要 (spec.md FR-011)。**  
   * **Local State**: useState で selectedPhotoId: string | null と selectedOptions: object を管理 (T309)。  
   * **Animation**: 状態遷移は framer-motion の AnimatePresence を使用し、各状態のコンテナ（motion.div）をフェードイン/フェードアウト（opacity）で切り替える。  
   * **State Logic (switch/case on booth.state)**:  
@@ -111,10 +115,10 @@ Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering B
         2. react-qr-code を使用し、booth.latestPhotoId に基づく Download Page (US2) へのQRコード (/download?boothId=\[boothId\]\&photoId=\[booth.latestPhotoId\]) を表示 (T309, Design Doc)。  
       * **Logic**: 一定時間経過（例: 3分）またはユーザー操作（例: QR読み取り完了後のボタン）で startSession (T311) を呼び出し menu に戻す（spec.md Edge Cases のタイムアウト考慮）。  
 * \[ \] T310 \[US1\] **Presentation: Image Upload Page**: src/app/upload/\[boothId\]/page.tsx  
+  * **Auth**: **このページは匿名認証（signInAnonymously）が必要 (spec.md FR-001)。**  
   * boothId を useParams で取得。  
   * ファイル入力とアップロードロジックを実装。uploadUserPhoto (Server Action T311) を呼び出す。useFormState (React 19\) や react-hook-form でローディングとエラー状態を管理。  
 * \[ \] T311 \[US1\] **Infrastructure: Server Actions**: src/app/actions/  
-  * apps/photo/src/app/actions/boothActions.ts: startSession, startCapture, completeCapture, startGeneration (T305) をラップするServer Actionsを作成。boothId や options のバリデーションに zod を使用。  
-  * apps/photo/src/app/actions/photoActions.ts: uploadUserPhoto, uploadCapturedPhoto (T306) をラップするServer Actionsを作成。ファイルサイズやMIMEタイプのバリデーション (FR-002) を zod または手動で実装。
+  * apps/photo/src/app/actions/boothActions.ts: startSession, startCapture, completeCapture, startGeneration (T305) をラップするServer Actionsを作成。boothId や options のバリデーションに zod を使用。**これらは管理者認証（FR-011のMiddleware）で保護される。** \* apps/photo/src/app/actions/photoActions.ts: uploadUserPhoto, uploadCapturedPhoto (T306) をラップするServer Actionsを作成。ファイルサイズやMIMEタイプのバリデーション (FR-002) を zod または手動で実装。**uploadUserPhoto は匿名認証ユーザーに許可される必要がある (Security 3)。uploadCapturedPhoto は管理者認証で保護される (T308から呼び出されるため)。**
 
 **Checkpoint**: US1 flow (Capture/Upload, Generate, View) complete.

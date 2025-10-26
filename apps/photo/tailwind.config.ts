@@ -6,7 +6,7 @@ const config: Config = {
     "./src/components/**/*.{ts,tsx}",
     "./src/libs/i18n/**/*.{ts,tsx}",
   ],
-  darkMode: ["class"],
+  darkMode: "class",
   theme: {
     extend: {},
   },

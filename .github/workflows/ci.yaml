@@ -119,15 +119,15 @@ jobs:
           chmod +x lint.sh
           ./lint.sh
         working-directory: ./apps/art
-      # FIXME: Not working due to Unity License issue
-      - name: Run Unity Tests for art
-        uses: game-ci/unity-test-runner@v4
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-        with:
-          projectPath: apps/art
+      # TODO: Unity test は時間がかかる & 現在はテストを書いていない & docker image が巨大で runner の容量が不足するのでスキップ
+#      - name: Run Unity Tests for art
+#        uses: game-ci/unity-test-runner@v4
+#        env:
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#        with:
+#          projectPath: apps/art
       - name: Build Unity Project for art
         id: builder
         uses: game-ci/unity-builder@v4

@@ -45,16 +45,6 @@
   - `createdAt` (Timestamp)
   - `updatedAt` (Timestamp)
 
-
-## PhotoCleanerAudit
-- **Purpose**: UploadedPhoto の自動削除バッチ（15分タイマー）の実行証跡。
-- **Key Fields**:
-  - `id` (string; job timestamp)
-  - `deletedCount` (number; expiredステータスで削除した数)
-  - `skippedCount` (number; pendingまたはusedでスキップした数)
-  - `runAt` (Timestamp)
-  - `error` (string | null)
-
 ## Validation Rules
 - `GeneratedPhoto.boothId` および `UploadedPhoto.boothId` は Booth コレクションに存在する id でなければならない。
 - `Booth.latestPhotoId` は `GeneratedPhoto` コレクションに存在する id でなければならない（nullを除く）。

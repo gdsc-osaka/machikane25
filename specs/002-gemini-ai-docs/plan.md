@@ -18,7 +18,6 @@ AIフォトブースでは、匿名認証で撮影からテーマ選択・AI生�
 **Project Type**: Multi-surface web workspace under `apps/photo` (Next.js app)  
 **Performance Goals**: 90秒以内に生成結果表示、UI応答2秒以内、Webhook99%成功、管理ダッシュボード10秒内更新  
 **Constraints**: 匿名認証のみ、Gemini互換APIレート制限1req/秒/端末、48時間URL有効期限、撮影原本5分以内削除  
-**Scale/Scope**: 1ブース3日間で最大1500セッション（ピーク時同時利用3端末）、生成画像保存最大500件/日
 
 ## Constitution Check
 

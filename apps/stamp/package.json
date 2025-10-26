@@ -10,6 +10,8 @@
 		"lint:fix": "pnpm exec biome check --write src test *.json",
 		"test": "vitest --config ../../vitest.config.ts",
 		"coverage": "vitest --config ../../vitest.config.ts --coverage",
+		"emulator": "firebase emulators:start",
+		"emulator:bg": "firebase emulators:start &",
 		"deploy:fire": "pnpm exec firebase deploy",
 		"deploy:fire:check": "pnpm exec firebase deploy --dry-run"
 	},

@@ -1,4 +1,4 @@
-# Repository Guidelines
+﻿# Repository Guidelines
 Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Domain-Driven Development and Test-Driven Development practices.
 
 ## Project Structure & Module Organization
@@ -22,7 +22,6 @@ Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Dom
 - In DDD, never use classes; prefer plain objects and functions. Use interfaces for abstractions, union types and discriminated unions for variants, and higher-order functions for composition. Read docs/DDD.md for details.
 - Format using `pnpm lint:fix` and confirm no Biome or ESLint diagnostics remain.
 - Use FirestoreDataConverter for Firestore data mapping.
-
 ## Testing Guidelines
 - Use Vitest with `@testing-library/react` + `@testing-library/jest-dom`. Name specs `*.test.ts` or `*.test.tsx`.
 - Hit 100% statement and branch coverage for non-trivial files; validate with `pnpm coverage --filter stamp`.
@@ -38,3 +37,7 @@ Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Dom
 - Enforce anonymous auth for attendees and email/password auth for staff; reflect rule changes in `apps/stamp/firestore.rules`.
 - Never commit secrets. Extend `.env.example` when adding environment variables and distribute real values via 1Password.
 - Record Remote Config or incident-response updates in `docs/spec/change-log.md` so on-site operators stay informed.
+
+## Specification & Task Management
+- Always check and strictly follow the specification documents in `specs/002-gemini-ai-docs/` when executing tasks.
+- Mark completed tasks with checkmarks in `tasks.md` or files in `tasks/` directory as you finish each task.

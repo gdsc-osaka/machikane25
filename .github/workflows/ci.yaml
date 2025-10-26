@@ -32,6 +32,15 @@ jobs:
         with:
           version: 9
           run_install: true
+      - name: Install Firebase emulator
+        run: |
+          npm install -g firebase-tools
+          echo "FIREBASE_VIRSION=$(firebase --version)" >> $GITHUB_ENV
+      - name: Cache firebase emulators
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ env.FIREBASE_VIRSION }}
       - name: Create .env.local file for ${{ matrix.app }}
         shell: bash
         env:
@@ -56,6 +65,10 @@ jobs:
             echo "Writing to apps/${{ matrix.app }}/.env"
             echo "${!SECRET_ENV_VAR}" > apps/${{ matrix.app }}/.env
           fi
+      - name: Start Firebase emulators
+        run: |
+          pnpm --filter ${{ matrix.app }} run emulator &
+          sleep 10
       - name: Run linting for ${{ matrix.app }}
         run: pnpm --filter ${{ matrix.app }} lint
       - name: Run tests and generate coverage for ${{ matrix.app }}

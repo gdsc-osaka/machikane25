@@ -67,16 +67,41 @@ QRコード発行後に有効期限（24時間）を過ぎてアクセスされ�
 ## **Functional Requirements**
 
 * **FR-001**: System MUST 来場者（Download Page, Image Upload Page 利用者）に対して、Firebase 匿名認証を自動で実施する。  
-* FR-002: System MUST 来場者に対して、Control Page でのWebカメラによる撮影、または Display Page に表示されるQRコード経由での Image Upload Page (/upload?boothId=...) で  
-  の画像アップロードを提供し、JPEG/PNGかつ20MB以下のみ受け付ける。  
+* FR-002: System MUST 来場者に対して、Control Page でのWebカメラによる撮影、または Display Page に表示されるQRコード経由での Image Upload Page (/upload?boothId=...) での画像アップロードを提供し、JPEG/PNGかつ20MB以下のみ受け付ける。  
+  いずれの場合も、(Design Doc.md 準拠):  
+  1\. 新しい photoId を発行する。  
+  2\. 画像データを Storage (photos/{photoId}/photo.png) にアップロードする。  
+  3\. 取得した imageUrl と imagePath (photos/{photoId}/photo.png) を含むドキュメントを、Firestore の booths/{boothId}/uploadedPhotos/{photoId} サブコレクションに保存する。  
 * **FR-003**: System MUST Control Page からの生成リクエストに基づき、選択されたテーマと UploadedPhoto を使用して、平均60秒以内に生成結果を提示する。  
 * **FR-004**: System MUST 生成結果とメタデータを GeneratedPhoto として保存し、24時間有効なQRコードを Control Page に即時に発行する。  
 * **FR-005**: System MUST 生成結果を水族館展示バックエンドへイベント連携し、成功/失敗ステータスを管理UIで確認できるよう記録する。  
-* **FR-006**: System MUST UploadedPhoto データについて、生成に使用された場合は生成完了後速やかに削除し、使用されなかった場合は createdAt から15分後に自動削除する（PhotoCleaner Firebase Functionによる）。  
+* **FR-006**: System MUST UploadedPhoto データについて、生成に使用された場合は生成完了後速やかに削除し（Firestoreドキュメントと photos/{photoId}/photo.png の両方）、使用されなかった場合は createdAt から15分後に自動削除する（PhotoCleaner Firebase Functionによる）。  
 * **FR-007**: System MUST 管理UI (Admin Page または Photos Page) でAI生成APIエラー・Webhook失敗・待機中件数をリアルタイム表示し、運営者が手動再送とメンテナンス切替を行えるようにする。  
 * **FR-008**: System MUST 設計・実装ともに docs/DDD.md のレイヤリング規約（Presentation→Application→Domain→Infrastructure）を遵守する。  
 * **FR-009**: System MUST 運営スタッフが管理UI (Photos Page) にて、全ブースの generatedPhotos サブコレクションを横断検索（Collection Group Query）し、ブースごとに最新の生成画像一覧を閲覧・ダウンロードし、チェキプリンターへの手動印刷操作を行えるようにする。  
-* **FR-010**: (Gemini API Call) System MUST AI画像生成（Gemini API呼び出し）を、管理者認証（FR-011）で保護された Control Page からトリガーされる Next.js Server Action 内でのみ実行する。APIキーやリクエストロジックはクライアントサイド（ブラウザ）に一切公開しない。  
+* **FR-010**: (Gemini API Call Logic) System MUST AI画像生成（Gemini API呼び出し）を、管理者認証（FR-011）で保護された Control Page からトリガーされる Next.js Server Action ('use server') 内でのみ実行する。  
+  * **1\. トリガー**: Control Page が、クライアントサイドで選択された入力（boothId, **sourcePhotoId** (uploadedPhotos サブコレクション内のドキュメントID), generationOptionIds）を引数として Server Action を呼び出す。(※ sourcePhotoId は、FR-002 に基づき uploadedPhotos に保存された写真のIDを指す)  
+  * **2\. サーバーサイド認証**: Server Action は、Firebase Admin SDK を使用して呼び出し元の認証状態（Custom Claim）を検証し、管理者であることを確認する。  
+  * **3\. データ取得**:  
+    * a. **sourcePhotoId** を使用し、booths/{boothId}/uploadedPhotos/{sourcePhotoId} から imagePath（**photos/{sourcePhotoId}/photo.png**）を取得する。  
+    * b. generationOptionIds を使用し、options コレクションから各 value（プロンプトの一部）を取得する。  
+    * c. (3a) の imagePath を使用し、Firebase Storage から対象の画像ファイル（Buffer）をダウンロードする。  
+  * **4\. プロンプト構築**: 取得した value とベースプロンプトを結合し、Gemini API に送信するテキストプロンプトを構築する。  
+  * **5\. Gemini API 実行**:  
+    * a. 環境変数 (GEMINI\_API\_KEY) を使用して Gemini API クライアントを初期化する。  
+    * b. 使用モデル（例: gemini-2.5-flash-image-preview）に対し、(4) のテキストプロンプトと、(3-c) の画像Buffer（Base64エンコード）をペイロードとして送信する。  
+  * **6\. 成功時 (Response Handling)**:  
+    * a. APIから返却された画像データ（Base64）をデコードし、Buffer（generatedImageBuffer）に変換する。  
+    * b. 新しい photoId（generatedPhotoId）を生成する。  
+    * c. generatedImageBuffer を Storage (Design Doc.md 準拠: **generated\_photos/{generatedPhotoId}/photo.png**) にアップロードする。  
+    * d. Storage から (6c) の imageUrl と imagePath を取得する。  
+    * e. Firestore (booths/{boothId}/generatedPhotos/{generatedPhotoId}) にメタデータ（imageUrl, imagePath (generated\_photos/...), createdAt）を保存する。  
+    * f. Firestore (booths/{boothId}) の latestPhotoId を (6-b) の generatedPhotoId に更新する。  
+    * g. FR-005（水族館連携）および FR-006（**sourcePhotoId に該当する**元画像削除）のロジックを非同期でトリガーする。  
+    * h. クライアントに対し、生成された generatedPhotoId および imageUrl を返す。  
+  * **7\. 失敗時 (Error Handling)**:  
+    * a. Gemini API または Firebase のエラーをキャッチし、Sentry等にログを送信する。  
+    * b. クライアントに対し、エラーメッセージを含む失敗レスポンスを返す。  
 * **FR-011**: (Middleware Access Control) System MUST Next.js Middleware を使用し、管理者用ページ（/admin, /control, /display, /photos）へのアクセスを制限する。リクエストCookie内の管理者トークンのハッシュ値が環境変数のハッシュ値と一致しない場合、/login ページへリダイレクトする。  
 * **FR-012**: (Admin Authentication) System MUST Login Page (/login) にて、運営スタッフが入力したトークン（平文）を Server Action で検証（ソルトを使用したハッシュ化と比較）する。検証成功時、Firebase Admin SDK を用いて Custom Token を発行し、クライアントは signInWithCustomToken でFirebase認証を行う。
 
@@ -89,11 +114,11 @@ QRコード発行後に有効期限（24時間）を過ぎてアクセスされ�
   * createdAt: (Timestamp)  
 * **GeneratedPhoto**: (Sub-collection: booths/{boothId}/generatedPhotos) 生成済み画像のメタデータ。  
   * imageUrl: (string) Storage URL  
-  * imagePath: (string) Storage path  
+  * imagePath: (string) Storage path (e.g., **generated\_photos/{photoId}/photo.png**)  
   * createdAt: (Timestamp)  
 * **UploadedPhoto**: (Sub-collection: booths/{boothId}/uploadedPhotos) 来場者がアップロードした一時的な写真。  
   * imageUrl: (string) Storage URL  
-  * imagePath: (string) Storage path  
+  * imagePath: (string) Storage path (e.g., **photos/{photoId}/photo.png**)  
   * createdAt: (Timestamp)  
 * **GenerationOption**: (Collection: options) AI生成に使用する選択肢のマスターデータ。  
   * typeId: (string) location, outfit, person, style, pose  
@@ -139,7 +164,7 @@ QRコード発行後に有効期限（24時間）を過ぎてアクセスされ�
      5. 一致した場合、リクエストの続行を許可する。  
 3. **来場者認証 (Anonymous)**  
    * Download Page (/download) および Image Upload Page (/upload) にアクセスする来場者は、クライアントサイドで Firebase signInAnonymously を実行し、匿名認証セッションを確立する。  
-   * Storage Rulesにより、匿名認証ユーザーは UploadedPhoto の書き込み（アップロード）のみ許可され、他人の GeneratedPhoto へのアクセスは（Security Rulesで）拒否される（Download Page はサーバー側で署名付きURL等を介して画像アクセスを仲介することを推奨）。
+   * Storage Rulesにより、匿名認証ユーザーは UploadedPhoto の書き込み（アップロード）のみ許可され（photos/{photoId}/photo.png）、他人の GeneratedPhoto へのアクセスは（Security Rulesで）拒否される（Download Page はサーバー側で署名付きURL等を介して画像アクセスを仲介することを推奨）。
 
 ## **Success Criteria *(mandatory)***
 

@@ -8,8 +8,8 @@
 		"start": "npm run shell",
 		"deploy": "firebase deploy --only functions",
 		"logs": "firebase functions:log",
-		"lint": "pnpm exec biome check src test biome.json package.json tsconfig.dev.json tsconfig.json",
-		"lint:fix": "pnpm exec biome check --write src test biome.json package.json tsconfig.dev.json tsconfig.json",
+		"lint": "pnpm exec biome check src test *.json",
+		"lint:fix": "pnpm exec biome check --write src test *.json",
 		"test": "vitest --config ../../vitest.config.ts",
 		"coverage": "vitest --config ../../vitest.config.ts --coverage"
 	},

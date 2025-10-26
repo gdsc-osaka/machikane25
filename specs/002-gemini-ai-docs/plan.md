@@ -56,14 +56,18 @@ apps/
 ├── photo/
 │   ├── src/
 │   │   ├── app/
+│   │   │   ├── (booth)/
+│   │   │   │   ├── control/[boothId]/
+│   │   │   │   ├── display/[boothId]/
+│   │   │   │   └── layout.tsx
+│   │   │   ├── (user)/
+│   │   │   │   ├── download/[boothId]/[photoId]/
+│   │   │   │   ├── upload/[boothId]/
+│   │   │   │   └── layout.tsx
 │   │   │   ├── 404/
-│   │   │   ├── admin/                 
-│   │   │   ├── control/[boothId]/    
-│   │   │   ├── display/[boothId]/    
-│   │   │   ├── download/[boothId]/[photoId]/ # (旧 download)
+│   │   │   ├── admin/
 │   │   │   ├── login/
 │   │   │   ├── photos/
-│   │   │   ├── upload/[boothId]/     
 │   │   │   ├── favicon.ico
 │   │   │   ├── global-error.tsx
 │   │   │   ├── globals.css
@@ -80,9 +84,9 @@ apps/
 │       ├── unit/
 │       └── integration/
 packages/
-├── logger/                  # 既存ロガー
-├── shared-types/            # 型共有（既存活用）
-└── i18n/                    # 既存辞書拡張
+├── logger/
+├── shared-types/
+└── i18n/
 ```
 
 **Structure Decision**: Next.jsベースの`apps/photo`を基盤に、DDD層 (`domain`/`application`/`infra`) とApp Router配下の各体験ページを分離する。テストは `apps/photo/test` に集約し、既存`packages/logger`・`packages/i18n`を再利用する。

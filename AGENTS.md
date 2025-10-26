@@ -37,3 +37,7 @@ Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Dom
 - Enforce anonymous auth for attendees and email/password auth for staff; reflect rule changes in `apps/stamp/firestore.rules`.
 - Never commit secrets. Extend `.env.example` when adding environment variables and distribute real values via 1Password.
 - Record Remote Config or incident-response updates in `docs/spec/change-log.md` so on-site operators stay informed.
+
+## Specification & Task Management
+- Always check and strictly follow the specification documents in `specs/002-gemini-ai-docs/` when executing tasks.
+- Mark completed tasks with checkmarks in `tasks.md` or files in `tasks/` directory as you finish each task.

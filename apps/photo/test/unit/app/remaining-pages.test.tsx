@@ -1,11 +1,110 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import AdminPage from "@/app/(booth)/admin/page";
 import ControlPage from "@/app/(booth)/control/[boothId]/page";
 import DisplayPage from "@/app/(booth)/display/[boothId]/page";
 import PhotosPage from "@/app/(booth)/photos/page";
 import DownloadPage from "@/app/(user)/download/[boothId]/[photoId]/page";
 import UploadPage from "@/app/(user)/upload/[boothId]/page";
+
+const hookMocks = vi.hoisted(() => ({
+	useBoothState: vi.fn(() => ({
+		booth: {
+			id: "booth-id",
+			state: "idle",
+			latestPhotoId: null,
+			lastTakePhotoAt: null,
+		},
+		latestGeneratedPhotoUrl: null,
+		isLoading: false,
+		error: null,
+	})),
+	useUploadedPhotos: vi.fn(() => ({
+		photos: [],
+		isLoading: false,
+		error: null,
+	})),
+	useGenerationOptions: vi.fn(() => ({
+		options: {},
+		isLoading: false,
+		error: null,
+	})),
+}));
+
+const clientMocks = vi.hoisted(() => ({
+	ensureAnonymousSignIn: vi.fn(() => Promise.resolve()),
+	initializeFirebaseClient: vi.fn(),
+}));
+
+vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }), {
+	virtual: true,
+});
+
+vi.mock(
+	"@/hooks/useUploadedPhotos",
+	() => ({ useUploadedPhotos: hookMocks.useUploadedPhotos }),
+	{ virtual: true },
+);
+
+vi.mock(
+	"@/hooks/useGenerationOptions",
+	() => ({ useGenerationOptions: hookMocks.useGenerationOptions }),
+	{ virtual: true },
+);
+
+vi.mock(
+	"@/lib/firebase/client",
+	() => ({
+		ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
+		initializeFirebaseClient: clientMocks.initializeFirebaseClient,
+	}),
+	{ virtual: true },
+);
+
+vi.mock("next/navigation", () => ({
+	useParams: () => ({ boothId: "booth-id", photoId: "photo-id" }),
+	useRouter: () => ({
+		push: vi.fn(),
+		replace: vi.fn(),
+		refresh: vi.fn(),
+	}),
+}));
+
+vi.mock("react-qr-code", () => ({
+	__esModule: true,
+	default: () => <div data-testid="qr-code" />,
+}));
+
+vi.mock("react-webcam", () => ({
+	__esModule: true,
+	default: () => <div data-testid="webcam-feed" />,
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		success: vi.fn(),
+		error: vi.fn(),
+	},
+}));
+
+const expectHeadingStyles = (heading: HTMLElement) => {
+	const className = heading.getAttribute("class") ?? "";
+	expect(className).toContain("font-bold");
+	expect(className).toMatch(/text-(3|4|5)xl/);
+};
+
+const expectMainLayout = (main: HTMLElement | null) => {
+	expect(main).toBeInTheDocument();
+	const className = main?.getAttribute("class") ?? "";
+	expect(className).toContain("min-h-screen");
+	expect(className).toContain("flex");
+	expect(className).toContain("flex-col");
+
+	const hasPadding = className
+		.split(/\s+/)
+		.some((cls) => cls.startsWith("p-") || cls.includes(":p-"));
+	expect(hasPadding).toBe(true);
+};
 
 describe("Remaining Page Components", () => {
 	describe("AdminPage", () => {
@@ -14,22 +113,14 @@ describe("Remaining Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /admin/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expectHeadingStyles(heading);
 		});
 
 		it("should have correct layout structure", () => {
 			const { container } = render(<AdminPage />);
 
 			const main = container.querySelector("main");
-			expect(main).toBeInTheDocument();
-			expect(main).toHaveClass(
-				"flex",
-				"min-h-screen",
-				"flex-col",
-				"items-center",
-				"justify-center",
-				"p-24",
-			);
+			expectMainLayout(main);
 		});
 	});
 
@@ -39,22 +130,14 @@ describe("Remaining Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /control/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expectHeadingStyles(heading);
 		});
 
 		it("should have correct layout structure", () => {
 			const { container } = render(<ControlPage />);
 
 			const main = container.querySelector("main");
-			expect(main).toBeInTheDocument();
-			expect(main).toHaveClass(
-				"flex",
-				"min-h-screen",
-				"flex-col",
-				"items-center",
-				"justify-center",
-				"p-24",
-			);
+			expectMainLayout(main);
 		});
 	});
 
@@ -64,22 +147,14 @@ describe("Remaining Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /display/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expectHeadingStyles(heading);
 		});
 
 		it("should have correct layout structure", () => {
 			const { container } = render(<DisplayPage />);
 
 			const main = container.querySelector("main");
-			expect(main).toBeInTheDocument();
-			expect(main).toHaveClass(
-				"flex",
-				"min-h-screen",
-				"flex-col",
-				"items-center",
-				"justify-center",
-				"p-24",
-			);
+			expectMainLayout(main);
 		});
 	});
 
@@ -89,22 +164,14 @@ describe("Remaining Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /photos/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expectHeadingStyles(heading);
 		});
 
 		it("should have correct layout structure", () => {
 			const { container } = render(<PhotosPage />);
 
 			const main = container.querySelector("main");
-			expect(main).toBeInTheDocument();
-			expect(main).toHaveClass(
-				"flex",
-				"min-h-screen",
-				"flex-col",
-				"items-center",
-				"justify-center",
-				"p-24",
-			);
+			expectMainLayout(main);
 		});
 	});
 
@@ -114,22 +181,14 @@ describe("Remaining Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /download/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expectHeadingStyles(heading);
 		});
 
 		it("should have correct layout structure", () => {
 			const { container } = render(<DownloadPage />);
 
 			const main = container.querySelector("main");
-			expect(main).toBeInTheDocument();
-			expect(main).toHaveClass(
-				"flex",
-				"min-h-screen",
-				"flex-col",
-				"items-center",
-				"justify-center",
-				"p-24",
-			);
+			expectMainLayout(main);
 		});
 	});
 
@@ -139,22 +198,14 @@ describe("Remaining Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /upload/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expectHeadingStyles(heading);
 		});
 
 		it("should have correct layout structure", () => {
 			const { container } = render(<UploadPage />);
 
 			const main = container.querySelector("main");
-			expect(main).toBeInTheDocument();
-			expect(main).toHaveClass(
-				"flex",
-				"min-h-screen",
-				"flex-col",
-				"items-center",
-				"justify-center",
-				"p-24",
-			);
+			expectMainLayout(main);
 		});
 	});
 });

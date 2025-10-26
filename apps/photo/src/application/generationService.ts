@@ -5,10 +5,7 @@
  * Server-side only (uses Admin SDK)
  */
 
-import type {
-	GenerationOption,
-	GroupedGenerationOptions,
-} from "@/domain/generationOption";
+import type { GroupedGenerationOptions } from "@/domain/generationOption";
 import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 
 /**
@@ -35,4 +32,30 @@ export const getOptions = async (): Promise<GroupedGenerationOptions> => {
 	);
 
 	return grouped;
+};
+
+/**
+ * Placeholder for Gemini generation (implemented in later tasks).
+ */
+export const generateImage = async (
+	boothId: string,
+	uploadedPhotoId: string,
+	options: Record<string, string>,
+): Promise<void> => {
+	const apiKey = process.env.GEMINI_API_KEY ?? "";
+	const endpoint =
+		"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+
+	await fetch(endpoint, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"X-Goog-Api-Key": apiKey,
+		},
+		body: JSON.stringify({
+			boothId,
+			uploadedPhotoId,
+			options,
+		}),
+	});
 };

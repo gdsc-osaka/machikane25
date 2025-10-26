@@ -6,7 +6,7 @@
  */
 
 import * as admin from "firebase-admin";
-import type { App } from "firebase-admin/app";
+import type { App, AppOptions } from "firebase-admin/app";
 import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import type { Storage } from "firebase-admin/storage";
@@ -36,9 +36,14 @@ const initializeAdminApp = (): App => {
 	// Check if already initialized by checking apps length
 	if (admin.apps.length === 0) {
 		const serviceAccount = getServiceAccount();
-		adminApp = admin.initializeApp({
+		const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+		const appOptions: admin.AppOptions = {
 			credential: admin.credential.cert(serviceAccount),
-		});
+		};
+		if (storageBucket) {
+			appOptions.storageBucket = storageBucket;
+		}
+		adminApp = admin.initializeApp(appOptions);
 	} else {
 		adminApp = admin.apps[0] as App;
 	}

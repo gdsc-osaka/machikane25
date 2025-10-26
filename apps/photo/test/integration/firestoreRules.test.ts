@@ -37,7 +37,7 @@ let testEnv: RulesTestEnvironment;
 
 // Note: These tests require Firebase Emulator to be running
 // Skip if emulator is not running to avoid connection errors
-describe.skip("Firestore Security Rules", () => {
+describe("Firestore Security Rules", () => {
   beforeAll(async () => {
     // Load firestore rules
     const rulesContent = readFileSync(FIRESTORE_RULES_PATH, "utf8");
@@ -48,7 +48,7 @@ describe.skip("Firestore Security Rules", () => {
       firestore: {
         rules: rulesContent,
         host: "localhost",
-        port: 8080,
+        port: 11002,
       },
     });
   });
@@ -363,33 +363,4 @@ describe.skip("Firestore Security Rules", () => {
     });
   });
 
-  describe("PhotoCleanerAudit Collection", () => {
-    it("should allow admin user to write audit logs", async () => {
-      const adminContext = testEnv.authenticatedContext("admin-user", {
-        role: "admin",
-      });
-      const adminDb = adminContext.firestore();
-
-      await assertSucceeds(
-        setDoc(doc(adminDb, "photoCleanerAudit", "audit-1"), {
-          deletedCount: 5,
-          skippedCount: 2,
-          executedAt: serverTimestamp(),
-        })
-      );
-    });
-
-    it("should deny anonymous user to write audit logs", async () => {
-      const anonContext = testEnv.authenticatedContext("anon-user");
-      const anonDb = anonContext.firestore();
-
-      await assertFails(
-        setDoc(doc(anonDb, "photoCleanerAudit", "audit-1"), {
-          deletedCount: 5,
-          skippedCount: 2,
-          executedAt: serverTimestamp(),
-        })
-      );
-    });
-  });
 });

@@ -50,7 +50,7 @@ service cloud.firestore {
        * UploadedPhotos Sub-collection
        * - Read: Authenticated users (including anonymous)
        * - Create: Authenticated users (including anonymous)
-       * - Delete: Admin only (for PhotoCleaner Function)
+       * - Delete: Admin only
        */
       match /uploadedPhotos/{photoId} {
         allow read, create: if isAuthenticated();

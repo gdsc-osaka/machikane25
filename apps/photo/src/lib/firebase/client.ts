@@ -40,35 +40,48 @@ let firebaseApp: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let firestore: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
+let isConnectedToEmulator = false;
 
 /**
  * Initialize Firebase Client SDK
  * Only initializes once (singleton pattern)
- * Connects to Firebase Emulator in development mode
+ * Connects to Firebase Emulator in non-production environments (development and test)
  */
 export const initializeFirebaseClient = (): void => {
-  // Only initialize if not already initialized
+  // Only initialize app if not already initialized
   if (getApps().length === 0) {
     const config = getFirebaseConfig();
     firebaseApp = initializeApp(config);
+  } else if (!firebaseApp) {
+    // Get existing app if we don't have a reference
+    firebaseApp = getApps()[0];
+  }
 
-    // Connect to emulators in development mode
-    if (process.env.NODE_ENV === "development") {
-      auth = getAuth(firebaseApp);
-      firestore = getFirestore(firebaseApp);
-      storage = getStorage(firebaseApp);
+  // Initialize auth, firestore, and storage if not already initialized
+  if (!auth) {
+    auth = getAuth(firebaseApp);
+  }
+  if (!firestore) {
+    firestore = getFirestore(firebaseApp);
+  }
+  if (!storage) {
+    storage = getStorage(firebaseApp);
+  }
 
-      // Connect to Auth Emulator
-      connectAuthEmulator(auth, "http://localhost:9099", {
-        disableWarnings: true,
-      });
+  // Connect to emulators in development and test modes (only once)
+  if (process.env.NODE_ENV !== "production" && !isConnectedToEmulator) {
+    // Connect to Auth Emulator (port from firebase.json)
+    connectAuthEmulator(auth, "http://localhost:11000", {
+      disableWarnings: true,
+    });
 
-      // Connect to Firestore Emulator
-      connectFirestoreEmulator(firestore, "localhost", 8080);
+    // Connect to Firestore Emulator (port from firebase.json)
+    connectFirestoreEmulator(firestore, "localhost", 11002);
 
-      // Connect to Storage Emulator
-      connectStorageEmulator(storage, "localhost", 9199);
-    }
+    // Connect to Storage Emulator (port from firebase.json)
+    connectStorageEmulator(storage, "localhost", 11004);
+
+    isConnectedToEmulator = true;
   }
 };
 
@@ -76,9 +89,11 @@ export const initializeFirebaseClient = (): void => {
  * Get Firebase Auth instance
  */
 export const getFirebaseAuth = (): Auth => {
+  initializeFirebaseClient();
   if (!auth) {
-    initializeFirebaseClient();
-    auth = getAuth();
+    throw new Error(
+      "Firebase Auth is not initialized. Call initializeFirebaseClient() first."
+    );
   }
   return auth;
 };
@@ -87,9 +102,11 @@ export const getFirebaseAuth = (): Auth => {
  * Get Firestore instance
  */
 export const getFirebaseFirestore = (): Firestore => {
+  initializeFirebaseClient();
   if (!firestore) {
-    initializeFirebaseClient();
-    firestore = getFirestore();
+    throw new Error(
+      "Firestore is not initialized. Call initializeFirebaseClient() first."
+    );
   }
   return firestore;
 };
@@ -98,9 +115,11 @@ export const getFirebaseFirestore = (): Firestore => {
  * Get Firebase Storage instance
  */
 export const getFirebaseStorage = (): FirebaseStorage => {
+  initializeFirebaseClient();
   if (!storage) {
-    initializeFirebaseClient();
-    storage = getStorage();
+    throw new Error(
+      "Firebase Storage is not initialized. Call initializeFirebaseClient() first."
+    );
   }
   return storage;
 };

@@ -30,12 +30,20 @@ service firebase.storage {
      * UploadedPhotos Storage Path: photos/{photoId}/photo.png
      * - Create: Authenticated users (including anonymous) - FR-002
      * - Read: Authenticated users (including anonymous)
-     * - Delete: Admin only (for PhotoCleaner Function)
+     * - Delete: Admin only
      */
     match /photos/{photoId}/{fileName} {
       allow create: if isAuthenticated();
       allow read: if isAuthenticated();
       allow delete: if isAdmin();
+    }
+
+    /**
+     * Photos directory access for listing
+     * - List/Read: Authenticated users (including anonymous)
+     */
+    match /photos/{allPaths=**} {
+      allow read, list: if isAuthenticated();
     }
 
     /**

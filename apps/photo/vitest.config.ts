@@ -8,7 +8,8 @@ const envFiles = [".env.test.local", ".env.local", ".env"] as const;
 const env = envFiles.reduce<Record<string, string>>((accumulator, file) => {
   const result = dotenv.config({ path: file });
   if (result.parsed) {
-    return { ...accumulator, ...result.parsed };
+    // Later files should not override earlier files (test.local should have highest priority)
+    return { ...result.parsed, ...accumulator };
   }
   return accumulator;
 }, {});

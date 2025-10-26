@@ -122,13 +122,12 @@ QRコード発行後に有効期限（24時間）を過ぎてアクセスされ�
   * createdAt: (Timestamp)  
 * **GenerationOption**: (Collection: options) AI生成に使用する選択肢のマスターデータ。  
   * typeId: (string) location, outfit, person, style, pose  
-  * value: (string) プロンプト用の値  
-  * displayName: (string) 表示名  
-  * imageUrl: (string | null)  
-  * imagePath: (string | null)  
-  * createdAt: (Timestamp)  
-  * updatedAt: (Timestamp)  
-* **PhotoCleanerAudit**: （*変更なし。ただし、UploadedPhoto がサブコレクションであるため、Functionは collectionGroup('uploadedPhotos') を監視する*）**[NOTE: Used by `apps/photo-cleaner` (separate app), NOT directly used by `apps/photo`]**
+  * value: (string) プロンプト用の値
+  * displayName: (string) 表示名
+  * imageUrl: (string | null)
+  * imagePath: (string | null)
+  * createdAt: (Timestamp)
+  * updatedAt: (Timestamp)
 
 ### **Dependencies & Assumptions**
 

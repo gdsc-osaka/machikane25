@@ -11,7 +11,6 @@ This document lists features and components that are explicitly excluded from im
 **Impact**:
 - `apps/photo` does NOT implement PhotoCleaner logic
 - `apps/photo` does NOT include PhotoCleaner integration tests
-- `apps/photo` does NOT directly interact with `photoCleanerAudit` collection
 - PhotoCleaner functionality is delegated to the separate `apps/photo-cleaner` Firebase Function
 
 **Manual Cleanup**:
@@ -26,7 +25,6 @@ This document lists features and components that are explicitly excluded from im
 **Excluded from `apps/photo` scope**:
 - PhotoCleaner integration in `apps/photo` application
 - PhotoCleaner integration tests in `apps/photo/test`
-- Direct `photoCleanerAudit` collection interaction from `apps/photo`
 
 **Note**: `apps/photo-cleaner` is a separate Firebase Function application that handles photo cleanup independently.
 

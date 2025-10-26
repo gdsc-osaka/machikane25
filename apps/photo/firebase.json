@@ -4,5 +4,23 @@
 		"location": "asia-northeast2",
 		"rules": "firestore.rules",
 		"indexes": "firestore.indexes.json"
+	},
+	"storage": {
+		"rules": "storage.rules"
+	},
+	"emulators": {
+		"auth": {
+			"port": 11000
+		},
+		"firestore": {
+			"port": 11002
+		},
+		"storage": {
+			"port": 11004
+		},
+		"ui": {
+			"enabled": true,
+			"port": 11005
+		}
 	}
 }

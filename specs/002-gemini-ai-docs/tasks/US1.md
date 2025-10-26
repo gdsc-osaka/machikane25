@@ -11,7 +11,7 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
 
 ## **Phase 3: User Story 1 ↁEVisitor Generates AI Portrait (Priority: P1) 🎯 MVP**
 
-Goal: Anonymous visitor can use Control Page and Display Page, capture via Webcam OR upload via Image Upload Page, pick theme, and view result.  
+Goal: Anonymous visitor can use Control Page and Display Page, capture via Webcam OR upload via Image Upload Page, pick theme, and view result.
 Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering Booth state sync, Capture/Upload ↁEGenerate ↁEResult render.
 
 ### **Tests for User Story 1 (Detailed) ⚠EE**
@@ -53,33 +53,63 @@ Independent Test: Firebase Emulator \+ msw (Gemini API mock) scenario covering B
   * startGeneration(boothId, uploadedPhotoId, options): 1\. updateBoothState(boothId, { state: 'generating' }) をコール。 2\. *非同期で* GenerationService.generateImage(boothId, uploadedPhotoId, options) を呼び出す (クライアントは待たない)。  
   * completeGeneration(boothId, generatedPhotoId, usedUploadedPhotoId): 1\. updateBoothState(boothId, { state: 'completed', latestPhotoId: generatedPhotoId }) をコール。 2\. *非同期で* PhotoService.deleteUsedPhoto(usedUploadedPhotoId) をコール (FR-006)。  
 * \[ \] T306 \[US1\] **Application: PhotoService**: src/application/photoService.ts (TDD)  
-  * uploadUserPhoto(boothId, file): Image Upload Page 用。storage().ref(photos/${boothId}/${ulid()}).put(file) でStorageに保存。addDoc(collection(db, 'uploadedPhotos'), { boothId, imagePath, imageUrl, createdAt: serverTimestamp() }) でFirestoreにメタデータを追加。  
-  * uploadCapturedPhoto(boothId, file): Display Page (Webcam) 用。uploadUserPhoto と同じロジックで uploadedPhotos に追加。  
-  * getUploadedPhotos(boothId): query(collection(db, 'uploadedPhotos'), where('boothId', '==', boothId)) でFirestoreから取得。  
+  * uploadUserPhoto(boothId, file): Image Upload Page 用。storage().ref(photos/${ulid()}/photo.png).put(file) でStorageに保存。addDoc(collection(db, booths/${boothId}/uploadedPhotos), { imagePath: photos/${photoId}/photo.png, imageUrl, createdAt: serverTimestamp() }) でFirestoreにメタデータを追加。(Design Doc, FR-002準拠)  
+  * uploadCapturedPhoto(boothId, file): Display Page (Webcam) 用。uploadUserPhoto と同じロジックで booths/${boothId}/uploadedPhotos に追加。(Design Doc, FR-002準拠)  
+  * getUploadedPhotos(boothId): query(collection(db, booths/${boothId}/uploadedPhotos)) でFirestoreから取得。  
   * deleteUsedPhoto(photoId): uploadedPhotos ドキュメントと関連Storageファイル (imagePathから参照) を削除する (FR-006)。  
 * \[ \] T307 \[P\] \[US1\] **Hooks (Data Fetching)**: src/hooks/  
   * useBoothState(boothId): firebase/firestoreのonSnapshotをラップし、booths/\[boothId\]ドキュメントをリアルタイムで購読・React Stateにセットするフック (useSWRやjotaiは使わず、useEffect内でonSnapshotをセットアップ)。  
-  * useGenerationOptions(): options Cをフェッチするフック (Phase 2 (T208) GenerationService をクライアントから呼び出す)。  
-  * useUploadedPhotos(boothId): uploadedPhotos Cを where('boothId', '==', boothId) でクエリし、onSnapshotでリアルタイム購読するフック。  
-* \[ \] T308 \[US1\] **Presentation: Display Page**: src/app/display/\[boothId\]/page.tsx  
-  * boothId を useParams で取得。useBoothState(boothId) でリアルタイムな Booth 状態を取得。  
-  * WebcamCapture コンポーネント (Internal): react-webcam をラップ。useRef で webcamRef を保持。onCapture (撮影実行) propを受け取る。  
-  * DisplayPage (Main): useBoothState の state に応じてUIを切り替え (switch/case)。  
-  * state='capturing'のロジック:  
-    * WebcamCapture コンポーネントを表示。  
-    * useEffect で \[booth.state, booth.lastTakePhotoAt\] を監視。  
-    * state \=== 'capturing' に変化した瞬間に webcamRef.current.getScreenshot() を呼び出し、base64画像を取得。  
-    * base64をBlobに変換し、uploadCapturedPhoto (Server Action T311) に渡す。  
-    * 成功後、completeCapture (Server Action T311) を呼び出す。  
-* \[ \] T309 \[US1\] **Presentation: Control Page**: src/app/control/\[boothId\]/page.tsx  
-  * boothId を useParams で取得。useBoothState, useGenerationOptions, useUploadedPhotos フックを使用。  
-  * useState で selectedPhotoId: string | null と selectedOptions: object を管理。  
-  * state='menu'の時:  
-    * useUploadedPhotos の結果を shadcn/ui の Card グリッドで表示。クリックで setSelectedPhotoId。  
-    * useGenerationOptions の結果を shadcn/ui の Tabs（Location, Outfit等）で表示。選択で setSelectedOptions。  
-* 「撮影開始」ボタン: onClick で startCapture (Server Action T311) を呼び出す。  
-* 「生成開始」ボタン: disabled={\!selectedPhotoId || \!selectedOptions}。onClick で startGeneration (Server Action T311) を呼び出す。  
-  * state='completed'の時: react-qr-code を使い /download/\[boothId\]/\[booth.latestPhotoId\] へのQRを表示 (Design Doc)。  
+  * useGenerationOptions(): options Cをフェッチするフック (クライアントから直接Firestoreを購読、またはServer Action経由)。  
+  * useUploadedPhotos(boothId): booths/${boothId}/uploadedPhotos CをonSnapshotでリアルタイム購読するフック。  
+* \[ \] T308 \[US1\] **Presentation: Display Page (Detailed)**: src/app/display/\[boothId\]/page.tsx  
+  * **Hooks**: boothId を useParams で取得。useBoothState(boothId) (T307) でリアルタイムな Booth 状態（booth.state, booth.lastTakePhotoAt, booth.latestPhotoId）を取得。  
+  * **Animation**: 状態遷移は framer-motion の AnimatePresence を使用し、各状態のコンテナ（motion.div）をフェードイン/フェードアウト（opacity: 0 から opacity: 1）で切り替える。  
+  * **Webcam**: WebcamCapture コンポーネント (Internal) を作成。react-webcam をラップし、useRef で webcamRef を保持。  
+  * **State Logic (switch/case on booth.state)**:  
+    * **state='idle'**: (Design Doc)  
+      * **UI**: 「タッチパネルをタップしてね」のメッセージを画面中央にフェードイン表示。  
+    * **state='menu'**: (Design Doc)  
+      * **UI**: idle からフェードアウト。「Control Page の操作ガイド」（例: 「隣のタブレットで操作してください」）と、Image Upload Page (/upload?boothId=\[boothId\]) への react-qr-code コンポーネントをフェードイン表示 (T303)。  
+    * **state='capturing'**: (Design Doc)  
+      * **UI**: menu からフェードアウトし、WebcamCapture コンポーネントの映像を全画面表示。画面オーバーレイでカウントダウン（例: 「5... 4... 3...」）を大きくフェードイン表示。  
+      * **Logic (T308)**:  
+        1. useEffect で \[booth.state, booth.lastTakePhotoAt\] を監視。  
+        2. state \=== 'capturing' に変化した瞬間にカウントダウン（例: 5秒）を開始 (spec.md US1 AC1)。  
+        3. カウントダウン終了時に webcamRef.current.getScreenshot() を呼び出し、base64画像を取得。  
+        4. base64をBlobに変換し、uploadCapturedPhoto (Server Action T311) を呼び出す。  
+        5. uploadCapturedPhoto 成功後、completeCapture (Server Action T311) を呼び出す。（これによりFirestoreの state が menu に戻る）。  
+    * **state='generating'**: (Design Doc)  
+      * **UI**: menu または capturing からフェードアウト。「AIが写真を生成中...」のメッセージとローディングアニメーション（例: shadcn/ui の Spinner）をフェードイン表示。  
+    * **state='completed'**: (Design Doc, spec.md US1 AC2)  
+      * **UI**: generating からフェードアウト。booth.latestPhotoId に基づき、GeneratedPhoto.imageUrl をソースとする \<img /\> タグで生成画像をフェードイン表示 (T303)。  
+      * **Logic**: latestPhotoId が変更された場合、\<img\> の onLoad イベントを利用して画像プリロードを行い、ロード完了後にフェードインさせる。  
+* \[ \] T309 \[US1\] **Presentation: Control Page (Detailed)**: src/app/control/\[boothId\]/page.tsx  
+  * **Hooks**: boothId を useParams で取得。useBoothState (T307), useGenerationOptions (T307), useUploadedPhotos (T307) フックを使用。  
+  * **Local State**: useState で selectedPhotoId: string | null と selectedOptions: object を管理 (T309)。  
+  * **Animation**: 状態遷移は framer-motion の AnimatePresence を使用し、各状態のコンテナ（motion.div）をフェードイン/フェードアウト（opacity）で切り替える。  
+  * **State Logic (switch/case on booth.state)**:  
+    * **state='idle'**: (Design Doc)  
+      * **UI**: 「フォトブースを始める」ボタンを画面中央にフェードイン表示。  
+      * **Logic**: onClick で startSession (Server Action T311) を呼び出す。  
+    * **state='menu'**: (Design Doc)  
+      * **UI**: idle または capturing からフェードアウトし、操作UI（shadcn/ui の Tabs, Card, Button）をフェードイン表示。  
+        1. **写真撮影**: 「撮影開始」ボタン。  
+        2. **画像選択**: useUploadedPhotos の結果を shadcn/ui の Card グリッドで表示 (T309)。クリックで setSelectedPhotoId。選択された Card はハイライト（例: border-primary）。  
+        3. **選択肢**: useGenerationOptions の結果を shadcn/ui の Tabs（Location, Outfit等）で表示 (T309)。選択で setSelectedOptions。  
+        4. **生成実行**: 「生成開始」ボタン。  
+      * **Logic**:  
+        * 「撮影開始」ボタン: onClick で startCapture (Server Action T311) を呼び出す (T309)。  
+        * 「生成開始」ボタン: disabled={\!selectedPhotoId || \!selectedOptions} (T309)。onClick で startGeneration (Server Action T311) を呼び出す。  
+    * **state='capturing'**: (Design Doc)  
+      * **UI**: menu からフェードアウト。「ディスプレイ（大画面）を見てください」という案内と、Display Page (T308) と同期したカウントダウン（例: 「5... 4... 3...」）をフェードイン表示。  
+      * **Logic**: この状態は Display Page 側 (T308) の処理が完了し、state が menu に戻るまで維持される。  
+    * **state='generating'**: (Design Doc, spec.md SC-001)  
+      * **UI**: menu からフェードアウト。「AIが写真を生成中...」（平均60秒）のメッセージと、shadcn/ui の Progress バーまたはスピナーをフェードイン表示。(Design Docの「QRコードを表示」は completed の誤りと判断し、ここでは表示しない。Open Issues にて「QRはタブレットにしましょう」とあり、completed での表示が適切)  
+    * **state='completed'**: (Design Doc, spec.md US1 AC2)  
+      * **UI**: generating からフェードアウトし、以下の要素をフェードイン表示。  
+        1. 「生成が完了しました！」メッセージ。  
+        2. react-qr-code を使用し、booth.latestPhotoId に基づく Download Page (US2) へのQRコード (/download?boothId=\[boothId\]\&photoId=\[booth.latestPhotoId\]) を表示 (T309, Design Doc)。  
+      * **Logic**: 一定時間経過（例: 3分）またはユーザー操作（例: QR読み取り完了後のボタン）で startSession (T311) を呼び出し menu に戻す（spec.md Edge Cases のタイムアウト考慮）。  
 * \[ \] T310 \[US1\] **Presentation: Image Upload Page**: src/app/upload/\[boothId\]/page.tsx  
   * boothId を useParams で取得。  
   * ファイル入力とアップロードロジックを実装。uploadUserPhoto (Server Action T311) を呼び出す。useFormState (React 19\) や react-hook-form でローディングとエラー状態を管理。  

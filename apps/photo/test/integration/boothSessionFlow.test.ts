@@ -88,7 +88,7 @@ const ensureAdminEnvironment = (): void => {
 	const adminConfig = {
 		project_id: "photo-test",
 		client_email: "integration-tests@photo-test.firebaseapp.com",
-		private_key:
+		private_key:   //これはテスト用のダミーキーです。
 			"-----BEGIN PRIVATE KEY-----\n" +
 			"MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC2M51f5zqQuXrt\n" +
 			"ZomCkx0+ovL+yRtfFmbD/fka4Phjb512GK6Hyd348nh9gUWcniyCuVcQ7KWYn56C\n" +

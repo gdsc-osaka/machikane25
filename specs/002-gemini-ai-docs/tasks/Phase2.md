@@ -47,16 +47,16 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
 
 ### **Implementation for Foundational (Detailed)**
 
-* \[ \] T206 \[FOUND\] **Infrastructure: Firebase Client Setup**: apps/photo/src/lib/firebase/client.ts  
+* \[x\] T206 \[FOUND\] **Infrastructure: Firebase Client Setup**: apps/photo/src/lib/firebase/client.ts  
   * firebase/app, firebase/auth, firebase/firestore, firebase/storageをインポート。  
   * firebaseConfigを環境変数（NEXT\_PUBLIC\_FIREBASE\_CONFIG）から読み込む。  
   * initializeFirebaseClient(): getApps().length \=== 0の場合のみinitializeAppを実行。connectAuthEmulator等をprocess.env.NODE\_ENV \=== 'development'の場合に呼び出す。  
   * ensureAnonymousSignIn(): getAuth()を使い、onAuthStateChangedでuserがいない場合のみsignInAnonymously()を呼び出すPromiseベースのラッパー (FR-001)。  
-* \[ \] T207 \[FOUND\] **Infrastructure: Firebase Admin Setup**: apps/photo/src/lib/firebase/admin.ts  
+* \[x\] T207 \[FOUND\] **Infrastructure: Firebase Admin Setup**: apps/photo/src/lib/firebase/admin.ts  
   * firebase-adminをインポート。  
   * serviceAccountを環境変数（FIREBASE\_SERVICE\_ACCOUNT\_JSON）から読み込み、admin.initializeAppを実行（シングルトン化）。  
   * admin.auth(), admin.firestore(), admin.storage()をエクスポート。  
-* \[ \] T208 \[FOUND\] **Infrastructure: Firestore Security Rules**: apps/photo/firestore.rules  
+* \[x\] T208 \[FOUND\] **Infrastructure: Firestore Security Rules**: apps/photo/firestore.rules  
   * data-model.mdに基づきルールを記述。  
   * request.auth \!= null（匿名認証含む）を基本ルールとする。  
   * function isAdmin(): request.auth.token.role \== 'admin' (Design Doc) を定義。  
@@ -65,15 +65,15 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
   * match /generatedPhotos/{photoId}: allow read: if true; allow create, delete: if isAdmin(); (US1/T305のGenerationServiceはAdmin権限で動作)  
   * match /options/{optionId}: allow read: if true; allow write: if isAdmin();  
   * match /photoCleanerAudit/{auditId}: allow write: if isAdmin();  
-* \[ \] T210 \[FOUND\] **Application: GenerationService (Options)**: src/application/generationService.ts  
+* \[x\] T210 \[FOUND\] **Application: GenerationService (Options)**: src/application/generationService.ts  
   * getOptions(): admin.firestore().collection('options').get()を呼び出す（Server ActionまたはAPI Route経由でのみ使用）。  
   * 取得したQuerySnapshotをGenerationOption\[\]型にマップ。  
   * plan.md (T207) に従い、typeIdでグループ化（reduceを使用）したオブジェクト（{ location: \[...\], outfit: \[...\] }）を返す。  
-* \[ \] T211 \[P\] \[FOUND\] **Presentation: Shared UI Setup**: apps/photo/src/components/ui/  
+* \[x\] T211 \[P\] \[FOUND\] **Presentation: Shared UI Setup**: apps/photo/src/components/ui/  
   * plan.mdのshadcn/uiに基づき、pnpm dlx shadcn-ui@latest initを実行。  
   * Button, Card, Tabs, Dialog, Toastをaddコマンドでインストール。  
   * アプリ全体のレイアウトコンポーネント（src/app/layout.tsx）でTailwind CSSとフォントをセットアップ。  
-* \[ \] T212 \[FOUND\] **Application: Service Interfaces**: src/application/interfaces.ts  
+* \[x\] T212 \[FOUND\] **Application: Service Interfaces**: src/application/interfaces.ts  
   * Design Doc.mdのC4図に基づき、各サービスのTypeScriptインターフェース（IAuthService, IPhotoService, IBoothService, IGenerationService）を定義し、DI（依存性逆転）の基盤を準備。
 
 **Checkpoint**: Foundational (Firebase/Auth/Rules/Cleaner) complete.

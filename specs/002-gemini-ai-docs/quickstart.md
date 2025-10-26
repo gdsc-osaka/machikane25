@@ -33,8 +33,8 @@ pnpm format:photo
 
 ## 4. Deploy (dress rehearsal / production)
 1. Remote Configにフォトブース設定（メンテモード、プロンプトテンプレート）を同期。
-2. `pnpm build:photobooth && pnpm test:stamp --filter photobooth` を実行し成果物を検証。
-3. `firebase deploy --only hosting:photobooth,functions:photoCleanup,generationQueue` を実行。
+2. `pnpm build:photo && pnpm test:stamp --filter photo` を実行し成果物を検証。
+3. `firebase deploy --only hosting:photo,functions:photoCleanup,generationQueue` を実行。
 4. デプロイ後にSentryリリースを発行し、管理UIの計測パネルでsync状態を確認。
 
 ## 5. Operations Checklist

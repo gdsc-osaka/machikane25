@@ -68,6 +68,7 @@ jobs:
       - name: Start Firebase emulators
         run: |
           pnpm --filter ${{ matrix.app }} run emulator &
+          sleep 10
       - name: Run linting for ${{ matrix.app }}
         run: pnpm --filter ${{ matrix.app }} lint
       - name: Run tests and generate coverage for ${{ matrix.app }}

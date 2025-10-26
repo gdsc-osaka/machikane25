@@ -9,30 +9,27 @@
  * Type IDs for generation options
  */
 export type GenerationOptionTypeId =
-  | "location"
-  | "outfit"
-  | "person"
-  | "style"
-  | "pose";
+	| "location"
+	| "outfit"
+	| "person"
+	| "style"
+	| "pose";
 
 /**
  * GenerationOption entity
  */
 export interface GenerationOption {
-  id: string;
-  typeId: GenerationOptionTypeId;
-  value: string;
-  displayName: string;
-  imageUrl: string | null;
-  imagePath: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+	id: string;
+	typeId: GenerationOptionTypeId;
+	value: string;
+	displayName: string;
+	imageUrl: string | null;
+	imagePath: string | null;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 /**
  * Grouped generation options by typeId
  */
-export type GroupedGenerationOptions = Record<
-  string,
-  GenerationOption[]
->;
+export type GroupedGenerationOptions = Record<string, GenerationOption[]>;

@@ -5,11 +5,11 @@
  * Server-side only (uses Admin SDK)
  */
 
-import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 import type {
-  GenerationOption,
-  GroupedGenerationOptions,
+	GenerationOption,
+	GroupedGenerationOptions,
 } from "@/domain/generationOption";
+import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 
 /**
  * Get all generation options grouped by typeId
@@ -19,20 +19,20 @@ import type {
  *          Example: { location: [...], outfit: [...], style: [...] }
  */
 export const getOptions = async (): Promise<GroupedGenerationOptions> => {
-  const options = await fetchAllOptions();
+	const options = await fetchAllOptions();
 
-  // Group options by typeId using reduce (AGENTS.md: prefer functional programming)
-  const grouped = options.reduce<GroupedGenerationOptions>(
-    (accumulator, option) => {
-      const typeId = option.typeId;
-      const existingGroup = accumulator[typeId] ?? [];
-      return {
-        ...accumulator,
-        [typeId]: [...existingGroup, option],
-      };
-    },
-    {}
-  );
+	// Group options by typeId using reduce (AGENTS.md: prefer functional programming)
+	const grouped = options.reduce<GroupedGenerationOptions>(
+		(accumulator, option) => {
+			const typeId = option.typeId;
+			const existingGroup = accumulator[typeId] ?? [];
+			return {
+				...accumulator,
+				[typeId]: [...existingGroup, option],
+			};
+		},
+		{},
+	);
 
-  return grouped;
+	return grouped;
 };

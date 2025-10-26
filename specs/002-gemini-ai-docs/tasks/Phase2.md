@@ -15,17 +15,17 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
 
 ### **Tests for Foundational (Detailed) ⚠EE**
 
-* \[ \] T201 \[P\] \[FOUND\] **Integration Test (Firebase Client Init)**: apps/photo/test/integration/firebaseClient.test.ts  
+* \[x\] T201 \[P\] \[FOUND\] **Integration Test (Firebase Client Init)**: apps/photo/test/integration/firebaseClient.test.ts  
   * Firebase Emulator Suite（Auth, Firestore, Storage）が動作していることを前提とする。  
   * initializeFirebaseClient() (T205) を呼び出す。  
   * getAuth() がEmulator（http://localhost:9099）を向いていることをアサート。  
   * getFirestore() がEmulator（http://localhost:8080）を向いていることをアサート。  
   * getStorage() がEmulator（http://localhost:9199）を向いていることをアサート。  
-* \[ \] T202 \[P\] \[FOUND\] **Integration Test (Anonymous Auth)**: apps/photo/test/integration/authClient.test.ts  
+* \[x\] T202 \[P\] \[FOUND\] **Integration Test (Anonymous Auth)**: apps/photo/test/integration/authClient.test.ts  
   * ensureAnonymousSignIn() (T205) を呼び出す。  
   * onAuthStateChangedが発火し、user.isAnonymousがtrueのユーザーオブジェクトが取得できることをwaitForで検証 (FR-001)。  
   * 2回呼び出しても、サインインは1回しか実行されないこと（既存ユーザーが返る）を検証。  
-* \[ \] T203 \[P\] \[FOUND\] **Integration Test (Security Rules)**: apps/photo/test/integration/firestoreRules.test.ts  
+* \[x\] T203 \[P\] \[FOUND\] **Integration Test (Security Rules)**: apps/photo/test/integration/firestoreRules.test.ts  
   * Firebase Test SDK（@firebase/rules-unit-testing）を使用。  
   * **Setup**: EmulatorのFirestoreをクリアし、options Cにマスターデータを投入。  
   * **options C**: 匿名ユーザー（auth \= { uid: 'anon-user' }）でoptions Cのget()が成功することをアサート。  
@@ -33,11 +33,11 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
   * **uploadedPhotos C**: 匿名ユーザーでuploadedPhotos Cへのadd()が成功。  
   * **generatedPhotos C**: 匿名ユーザー（未認証でも可）でgeneratedPhotos Cのget()が成功。  
   * **Admin (US3)**: 管理者ユーザー（auth \= { uid: 'admin-user', token: { role: 'admin' } }）で全コレクションへのread/writeが成功することをアサート (Design Doc)。  
-* \[ \] T204 \[P\] \[FOUND\] **Unit Test (Generation Options)**: apps/photo/test/unit/application/generationService.test.ts  
+* \[x\] T204 \[P\] \[FOUND\] **Unit Test (Generation Options)**: apps/photo/test/unit/application/generationService.test.ts  
   * GenerationServiceのテスト。Firestoreリポジトリをモック。  
   * generationService.getOptions() (T207) を呼び出す。  
   * モックが返したGenerationOptionの配列が、typeId（location, outfit...）ごとにグループ化されたオブジェクトとして返ることをアサート。  
-* \[ \] T205 \[P\] \[FOUND\] **Integration Test (Photo Cleaner)**: apps/photo/test/integration/photoCleaner.test.ts  
+* \[x\] T205 \[P\] \[FOUND\] **Integration Test (Photo Cleaner)**: apps/photo/test/integration/photoCleaner.test.ts  
   * **Setup**: EmulatorのFirestore/Storageを使用。  
   * uploadedPhotos Cに2件のドキュメントを追加: photo\_old（createdAtが20分前）、photo\_new（createdAtが5分前）。対応するダミーファイルをStorageにアップロード。  
   * photoCleaner Function (T209) を（HTTPトリガーなどで）実行。  

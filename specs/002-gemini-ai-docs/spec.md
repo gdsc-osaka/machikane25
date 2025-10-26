@@ -26,7 +26,7 @@
 
 **Why this priority**: 体験の余韻と共有価値を高め、後日でも満足度を維持するための重要機能だが、当日体験より優先度は下がる。
 
-**Independent Test**: QRコード生成→Dynamic Link経由アクセス→匿名トークン検証→画像表示の流れを単独の統合テストで検証できる。
+**Independent Test**: QRコード生成→QRコード経由でDownloadページにアクセス ( /download?boothId=(boothId)&photoId=(photoId) ) → 画像とダウンロードボタンを表示の流れを単独の統合テストで検証できる。
 
 **Acceptance Scenarios**:
 

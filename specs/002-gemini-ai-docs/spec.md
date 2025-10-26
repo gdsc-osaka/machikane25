@@ -1,15 +1,17 @@
-# Feature Specification: AI Photo Booth Experience
+# **Feature Specification: AI Photo Booth Experience**
 
-**Feature Branch**: [002-gemini-ai-docs]
-**Created**: 2025-10-21
-**Status**: Draft
-**Input**: User description: "geminiの画像生成機能を用いた大学祭用のAIフォトブースの機能を作成したい。詳細はdocs/spec/Photo_PRD.mdを参照してください。"
+Feature Branch: \[002-gemini-ai-docs\]  
+Created: 2025-10-21  
+Last Updated: 2025-10-26  
+Status: Revised  
+Input: User description: "geminiの画像生成機能を用いた大学祭用のAIフォトブースの機能を作成したい。詳細はdocs/spec/Photo\_PRD.mdを参照してください。"  
+Source Docs: data-model.md, Design Doc.md, spec.md
 
-## User Scenarios & Testing *(mandatory)*
+## **User Scenarios & Testing *(mandatory)***
 
-### User Story 1 - Festival Visitor Generates AI Portrait (Priority: P1)
+### **User Story 1 \- Festival Visitor Generates AI Portrait (Priority: P1)**
 
-来場者として、ブース端末の案内に従い、匿名認証されたうえでブースのWebカメラで写真を撮るか、または指定されたQRコード経由でスマートフォンから写真をアップロードし、好みのテーマを選んでAI生成画像をその場で確認したい。
+来場者として、ブース端末の案内に従い、匿名認証されたうえでブースのWebカメラで写真を撮るか、または指定されたQRコード(Display Page に表示)経由でスマートフォンから写真をアップロードし、好みのテーマを選んでAI生成画像をその場で確認したい。
 
 **Why this priority**: 生成体験の提供が企画の核となるため、これが成立しなければブース価値が失われる。
 
@@ -17,92 +19,131 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** 匿名認証済みの来場者が撮影・選択画面にいる, **When** カウントダウン後に撮影を確定するか、またはアップロード画像を選択すると, **Then** 写真が保存されテーマ選択画面へ遷移する。
-2. **Given** 来場者がテーマを選び規約に同意した, **When** 生成リクエストを送信すると, **Then** 60秒以内に生成画像が表示され成功メッセージが示される。
+1. **Given** 匿名認証済みの来場者が撮影・選択画面(Control Page)にいる, **When** カウントダウン後に撮影を確定するか、またはアップロード画像を選択すると, **Then** 写真が UploadedPhoto として保存されテーマ選択画面へ遷移する。  
+2. **Given** 来場者がテーマを選び規約に同意した, **When** 生成リクエストを送信すると, **Then** 60秒以内に生成画像が Display Page に表示され、Control Page にダウンロード用QRコードが表示される。
 
-### User Story 2 - Visitor Retrieves Image Later (Priority: P2)
+### **User Story 2 \- Visitor Retrieves Image Later (Priority: P2)**
 
-来場者として、生成が終わったあとに提示されたQRコードやURLから自分の画像に24時間以内でアクセスし、データをダウンロードしたい。
+来場者として、生成が終わったあとに Control Page に提示されたQRコードやURLから自分の画像に24時間以内でアクセスし、データをダウンロードしたい。
 
 **Why this priority**: 体験の余韻と共有価値を高め、後日でも満足度を維持するための重要機能だが、当日体験より優先度は下がる。
 
-**Independent Test**: QRコード生成→QRコード経由でDownloadページにアクセス ( /download?boothId=(boothId)&photoId=(photoId) ) → 画像とダウンロードボタンを表示の流れを単独の統合テストで検証できる。
+**Independent Test**: QRコード生成→QRコード経由でDownloadページにアクセス ( /download?boothId=(boothId)\&photoId=(photoId) ) → 画像とダウンロードボタンを表示の流れを単独の統合テストで検証できる。
 
 **Acceptance Scenarios**:
 
-1. **Given** 来場者が結果画面でQRコードを受け取った, **When** 別端末で24時間以内にアクセスすると, **Then** 一回限りの匿名トークン検証後に生成画像が閲覧・保存できる。
+1. **Given** 来場者が結果画面でQRコードを受け取った, **When** 別端末で24時間以内にアクセスすると, **Then** 生成画像が閲覧・保存できる (Download Page は匿名アクセス可)。
 
-### User Story 3 - Staff Monitors Sync to Aquarium Display (Priority: P3)
+### **User Story 3 \- Staff Monitors and Prints (Priority: P3)**
 
-運営スタッフとして、生成結果がインタラクティブアート水族館に正しく送られているかをダッシュボードで把握し、失敗時はリトライ操作をしたい。
+運営スタッフとして、管理者認証を経て Photos Page にアクセスし、各ブースで最新の生成結果が正しく生成されているかを確認したい。また、来場者の希望に応じて、画像をダウンロードし、フォトフレームを追加してチェキプリンターで手動印刷したい。
 
-**Why this priority**: 展示間連携で全体演出を支える要素であり、来場者体験を間接的に守るために必要。
+**Why this priority**: 来場者への付加価値（チェキ印刷）を提供し、システムの状態を監視するために必要。
 
-**Independent Test**: 管理UIモックを使い、生成済みセッションに対する成功/失敗イベントを注入し、可視化とリトライが動作することを確認可能。
+**Independent Test**: 管理UI (Photos Page) にて、複数ブースの generatedPhotos サブコレクションから最新の画像が正しく表示されることを確認する。
 
 **Acceptance Scenarios**:
 
-1. **Give** 管理者がUUIDトークンでダッシュボードに入った, **When** 水族館連携失敗イベントが発生すると, **Then** 対象セッションに失敗ステータスと再送ボタンが表示され再送信できる。
+1. **Given** 管理者が認証済みで Photos Page を開いた, **When** いずれかのブースで新しい画像が生成されると, **Then** 該当ブースの最新画像が Photos Page にリアルタイムで反映され、ダウンロード操作が可能である。
 
-### Edge Cases
+### **Edge Cases**
 
-撮影または選択後に来場者が端末操作を放置した場合、一定時間後にセッションをタイムアウトさせ初期画面（idle）へ戻す。
+撮影または選択後に来場者が端末操作を放置した場合、一定時間（例: 3分）後にセッションをタイムアウトさせ初期画面（idle）へ戻す。
 
-AI生成APIがタイムアウトまたはレート制限になった場合、来場者にリトライ案内を表示し、管理UIで失敗理由を記録する。
+AI生成APIがタイムアウトまたはエラーになった場合、来場者にリトライ案内を表示し、管理UIで失敗理由を記録する。
 
-QRコード発行後に有効期限（24時間）を過ぎてアクセスされた場合、失効メッセージを提示する。
+QRコード発行後に有効期限（24時間）を過ぎてアクセスされた場合、Download Page にて失効メッセージを提示する。
 
-## Quality & Coverage Plan *(mandatory)*
+## **Quality & Coverage Plan *(mandatory)***
 
-- **Suites**: `pnpm test:photo` でユースケース・ドメイン層のユニットテスト (Vitest) とReactコンポーネントの統合テスト (@testing-library/react) を実行し、必要に応じてPlaywrightベースのE2Eテストを追加する。
+* **Suites**: pnpm test:photo でユースケース・ドメイン層のユニットテスト (Vitest) とReactコンポーネントの統合テスト (@testing-library/react) を実行する。  
+* **Coverage Strategy**: 生成フロー、認証Middleware、Server Action（Gemini API呼び出し含む）関連のロジックを網羅し、非同期分岐（成功・失敗・タイムアウト）をVitestで明示的に検証する。  
+* **Environments**: Firebase Emulator Suite (Auth, Firestore, Storage, Functions) でバックエンドを再現し、AI生成APIおよび水族館連携WebhookはHTTPモックサーバー (msw) で疑似レスポンスを返す。  
+* **Process Reference**: 開発フェーズは docs/TDD.md のRed-Green-Refactor-Commitサイクルに従う。  
+* **Type Safety**: TypeScriptの any 型を禁止し、strict オプションを有効にする。
 
-- **Coverage Strategy**: 生成フロー関連のアプリケーション層／UIコンポーネント／Firebase連携のスタブを網羅し、非同期分岐（成功・失敗・タイムアウト）をVitestで明示的に検証して100%ステートメント・分岐カバレッジを確保する。
+## **Requirements (mandatory)**
 
-- **Environments**: Firebase Emulator SuiteでAuth・Firestore・Functions・Storageを再現し、AI生成APIおよび水族館連携WebhookはHTTPモックサーバー (msw) で疑似レスポンスを返す。
+## **Functional Requirements**
 
-- **Process Reference**: 開発フェーズは docs/TDD.md のRed-Green-Refactor-Commitサイクルに厳密に従い、実装前に必ず失敗するテストを用意する。レビューチェックリストにもTDD順守を含める。
+* **FR-001**: System MUST 来場者（Download Page, Image Upload Page 利用者）に対して、Firebase 匿名認証を自動で実施する。  
+* FR-002: System MUST 来場者に対して、Control Page でのWebカメラによる撮影、または Display Page に表示されるQRコード経由での Image Upload Page (/upload?boothId=...) で  
+  の画像アップロードを提供し、JPEG/PNGかつ20MB以下のみ受け付ける。  
+* **FR-003**: System MUST Control Page からの生成リクエストに基づき、選択されたテーマと UploadedPhoto を使用して、平均60秒以内に生成結果を提示する。  
+* **FR-004**: System MUST 生成結果とメタデータを GeneratedPhoto として保存し、24時間有効なQRコードを Control Page に即時に発行する。  
+* **FR-005**: System MUST 生成結果を水族館展示バックエンドへイベント連携し、成功/失敗ステータスを管理UIで確認できるよう記録する。  
+* **FR-006**: System MUST UploadedPhoto データについて、生成に使用された場合は生成完了後速やかに削除し、使用されなかった場合は createdAt から15分後に自動削除する（PhotoCleaner Firebase Functionによる）。  
+* **FR-007**: System MUST 管理UI (Admin Page または Photos Page) でAI生成APIエラー・Webhook失敗・待機中件数をリアルタイム表示し、運営者が手動再送とメンテナンス切替を行えるようにする。  
+* **FR-008**: System MUST 設計・実装ともに docs/DDD.md のレイヤリング規約（Presentation→Application→Domain→Infrastructure）を遵守する。  
+* **FR-009**: System MUST 運営スタッフが管理UI (Photos Page) にて、全ブースの generatedPhotos サブコレクションを横断検索（Collection Group Query）し、ブースごとに最新の生成画像一覧を閲覧・ダウンロードし、チェキプリンターへの手動印刷操作を行えるようにする。  
+* **FR-010**: (Gemini API Call) System MUST AI画像生成（Gemini API呼び出し）を、管理者認証（FR-011）で保護された Control Page からトリガーされる Next.js Server Action 内でのみ実行する。APIキーやリクエストロジックはクライアントサイド（ブラウザ）に一切公開しない。  
+* **FR-011**: (Middleware Access Control) System MUST Next.js Middleware を使用し、管理者用ページ（/admin, /control, /display, /photos）へのアクセスを制限する。リクエストCookie内の管理者トークンのハッシュ値が環境変数のハッシュ値と一致しない場合、/login ページへリダイレクトする。  
+* **FR-012**: (Admin Authentication) System MUST Login Page (/login) にて、運営スタッフが入力したトークン（平文）を Server Action で検証（ソルトを使用したハッシュ化と比較）する。検証成功時、Firebase Admin SDK を用いて Custom Token を発行し、クライアントは signInWithCustomToken でFirebase認証を行う。
 
-- **Type Safety**: TypeScriptの実装ではany型の宣言やアサーションを禁止し、ドメイン型・ジェネリクス・型ガードで表現力を維持してCIの型検証をパスする。
+### **Key Entities *(data-model.md, Design Doc.md 準拠)***
 
-## Requirements (mandatory)
+* **Booth**: (Collection: booths) 各フォトブース端末の状態とメタデータ。  
+  * state: (string) idle, menu, capturing, generating, completed  
+  * latestPhotoId: (string | null) generatedPhotos サブコレクションの最新ドキュメントID  
+  * lastTakePhotoAt: (Timestamp | null)  
+  * createdAt: (Timestamp)  
+* **GeneratedPhoto**: (Sub-collection: booths/{boothId}/generatedPhotos) 生成済み画像のメタデータ。  
+  * imageUrl: (string) Storage URL  
+  * imagePath: (string) Storage path  
+  * createdAt: (Timestamp)  
+* **UploadedPhoto**: (Sub-collection: booths/{boothId}/uploadedPhotos) 来場者がアップロードした一時的な写真。  
+  * imageUrl: (string) Storage URL  
+  * imagePath: (string) Storage path  
+  * createdAt: (Timestamp)  
+* **GenerationOption**: (Collection: options) AI生成に使用する選択肢のマスターデータ。  
+  * typeId: (string) location, outfit, person, style, pose  
+  * value: (string) プロンプト用の値  
+  * displayName: (string) 表示名  
+  * imageUrl: (string | null)  
+  * imagePath: (string | null)  
+  * createdAt: (Timestamp)  
+  * updatedAt: (Timestamp)  
+* **PhotoCleanerAudit**: （*変更なし。ただし、UploadedPhoto がサブコレクションであるため、Functionは collectionGroup('uploadedPhotos') を監視する*）
 
-## Functional Requirements
+### **Dependencies & Assumptions**
 
-- **FR-001**: System MUST 匿名認証を自動で実施し、来場者が追加入力なしで撮影フローに入れるようにする。
-- **FR-002**: System MUST 来場者に対して、ブース端末のWebカメラによる撮影、またはDisplay Pageに表示されるQRコード経由での画像アップロードを提供し、JPEG/PNGかつ20MB以下のみ受け付ける。
-- **FR-003**: System MUST 来場者が選んだテーマと撮影・アップロード画像をAI生成サービスへ送信し、平均60秒以内に生成結果を提示する。
-- **FR-004**: System MUST 生成結果とメタデータを来場者用ストレージ領域に保存し、24時間有効なQRコードとURLを即時に発行する。
-- **FR-005**: System MUST 生成結果を水族館展示バックエンドへイベント連携し、成功/失敗ステータスを管理UIで確認できるよう記録する。
-- **FR-006**: System MUST 使用されなかった元画像データ（アップロード分）を15分後に自動削除し、使用された元画像データ（撮影・アップロード分）は生成完了後速やかに削除する。生成画像はアクセス制御された状態で保持する。
-- **FR-007**: System MUST 管理UIでAI生成APIエラー・Webhook失敗・待機中件数をリアルタイム表示し、運営者が手動再送とメンテナンス切替を行えるようにする。
-- **FR-008**: System MUST 設計・実装ともに docs/DDD.md のレイヤリング規約（Presentation→Application→Domain→Infrastructure）を遵守し、層を跨ぐ直接依存やクラス利用を禁止する。
-- **FR-009**: System MUST 運営スタッフが管理UI (Photos Page) にて、ブースごとに最新の生成画像一覧を閲覧し、チェキプリンターへの手動印刷操作を行えるようにする。
+* **ネットワーク前提**: 祭り会場の有線または専用Wi-Fiが安定しており、FirebaseとGemini APIエンドポイントに常時接続できる。  
+* **サービス依存**: AI生成API（Gemini）は Next.js サーバー（Server Action）からのみ呼び出され、クライアントからは直接アクセスされない。Firebaseサービスの利用枠が祭り期間中のピーク需要を満たすよう事前に割り当て済みである。  
+* **運用前提**: ブースには常時スタッフが配置され、管理者認証済みのPC（Control Page 用）と、チェキ印刷用のPC（Photos Page 用）を操作できる。  
+* **プライバシー前提**: 事前掲示物と口頭案内により、来場者が撮影・生成・データ保持ポリシーへ同意したうえで参加する。  
+* **開発プロセス前提**: 実装チームは機能追加毎に docs/DDD.md と docs/TDD.md を参照する。
 
-### Key Entities *(include if feature involves data)*
+## **Security *(Design Doc.md 準拠)***
 
-- **Booth**: 各フォトブース端末の状態（idle, menu, capturing, generating, completed）、最新の生成写真ID（latestPhotoId）を管理する。
-- **GeneratedPhoto**: 生成済み画像のメタデータ（boothId, Storage imageUrl, Storage imagePath）を管理する。
-- **UploadedPhoto**: 来場者がスマートフォンからアップロードした一時的な写真（boothId, Storage imageUrl, Storage imagePath）を管理する。
-- **GenerationOption**: AI生成に使用する選択肢（typeId として location, outfit, person, style, pose）のマスターデータ。
-- **PhotoCleanerAudit**: UploadedPhoto の自動削除バッチ（15分タイマー）の実行証跡。
+### **Authentication & Authorization**
 
-### Dependencies & Assumptions
+1. **管理者認証 (Token-based)**  
+   * **トークン発行**: 運営者向けに事前に安全な方法でUUID等のトークン（平文）を共有する。  
+   * **トークン検証**: 環境変数にソルト (ADMIN\_TOKEN\_SALT) と、トークン（平文）＋ソルトでSHA256ハッシュ化した値 (ADMIN\_TOKEN\_HASH) を保持する。  
+   * **ログインフロー (/login)**:  
+     1. 運営者が Login Page でトークン（平文）を入力。  
+     2. Server Action がリクエストを受け取り、(1) のトークンと環境変数の ADMIN\_TOKEN\_SALT を用いてハッシュ値を計算。  
+     3. 計算したハッシュ値と環境変数の ADMIN\_TOKEN\_HASH を厳密に比較。  
+     4. 一致した場合: Firebase Admin SDK で createCustomToken を実行し、クライアント（ブラウザ）にCustom Tokenを返す。  
+     5. クライアントは signInWithCustomToken を実行し、Firebase認証セッションを確立する。同時に、後続のMiddleware検証のため、トークン（平文）を HttpOnly かつ Secure なCookieに保存する。  
+     6. Admin Page (/admin) へリダイレクトする。  
+   * **Firebase Rules**: FirestoreおよびStorageのSecurity Rulesでは、request.auth.token.admin \=== true のようなCustom Claim（Custom Token発行時に付与）を検証し、管理者のみが booths コレクション等に書き込めるよう制御する。  
+2. **Middlewareによるアクセス制限 (Route Protection)**  
+   * **対象パス**: /admin, /control, /display, /photos およびそれ以下の全パス。  
+   * **除外パス**: /login, /download, /upload, /404, /api/ (public API), /\_next/。  
+   * **ロジック (middleware.ts)**:  
+     1. リクエストされたパスが対象パスか判定する。  
+     2. 対象パスの場合、リクエストCookieからトークン（平文）を読み取る。  
+     3. Server Actionと同様に、環境変数のソルトを用いてハッシュ値を計算し、ADMIN\_TOKEN\_HASH と比較する。  
+     4. 一致しない（またはCookieが存在しない）場合、/login ページへリダイレクトする。  
+     5. 一致した場合、リクエストの続行を許可する。  
+3. **来場者認証 (Anonymous)**  
+   * Download Page (/download) および Image Upload Page (/upload) にアクセスする来場者は、クライアントサイドで Firebase signInAnonymously を実行し、匿名認証セッションを確立する。  
+   * Storage Rulesにより、匿名認証ユーザーは UploadedPhoto の書き込み（アップロード）のみ許可され、他人の GeneratedPhoto へのアクセスは（Security Rulesで）拒否される（Download Page はサーバー側で署名付きURL等を介して画像アクセスを仲介することを推奨）。
 
-- **ネットワーク前提**: 祭り会場の有線または専用Wi-Fiが安定しており、AI生成APIとFirebaseに常時接続できる。
+## **Success Criteria *(mandatory)***
 
-- **サービス依存**: AI生成API（Gemini互換）とFirebaseサービスの利用枠が祭り期間中のピーク需要（1req/秒/端末）を満たすよう事前に割り当て済みである。
-
-- **運用前提**: ブースには常時スタッフが配置され、端末リセットやメンテナンスモード切替、チェキ印刷対応を実施できる。
-
-- **プライバシー前提**: 事前掲示物と口頭案内により、来場者が撮影・生成・データ保持ポリシーへ同意したうえで参加する。
-
-- **開発プロセス前提**: 実装チームは機能追加毎に docs/DDD.md と docs/TDD.md を参照し、コードレビューで遵守事項を確認する。
-
-## Success Criteria *(mandatory)*
-
-### Measurable Outcomes
-
-- **SC-001**: 来場者体験の90%が撮影開始から生成結果表示までを平均60秒以内で完了できる。
-- **SC-002**: 生成リクエストの95%以上が初回実行で成功し、残りはリトライ後に成功率98%以上を維持する。
-- **SC-003**: QR/URLアクセスの85%以上が24時間以内に生成画像の閲覧またはダウンロード完了まで到達する。
-- **SC-004**: 水族館展示への連携イベント成功率が98%以上を維持し、障害発生時は15分以内に運営者がステータスを確認できる。
+* **SC-001**: 来場者体験の90%が Control Page での操作開始から Display Page での生成結果表示までを平均60秒以内で完了できる。  
+* **SC-002**: Server Action経由でのGemini APIリクエストの95%以上が初回実行で成功する。  
+* **SC-003**: Download Page へのアクセスの85%以上が24時間以内に生成画像の閲覧またはダウンロード完了まで到達する。  
+* **SC-004**: Photos Page がブースの最新状態をリアルタイム（5秒以内）に反映できる。

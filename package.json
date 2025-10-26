@@ -22,6 +22,7 @@
 		"coverage": "pnpm --recursive coverage",
 		"prebuild": "pnpm run build:photo-cleaner",
 		"emulator": "pnpm run prebuild && firebase emulators:start",
+		"emulator:bg": "pnpm run prebuild && firebase emulators:start &",
 		"deploy:fire": "pnpm exec firebase deploy && pnpm --recursive deploy:fire",
 		"deploy:fire:check": "pnpm run prebuild && pnpm exec firebase deploy --dry-run"
 	},

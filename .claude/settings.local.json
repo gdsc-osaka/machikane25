@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(pnpm test:photo:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(pnpm coverage:*)"
     ],
     "deny": [],
     "ask": []

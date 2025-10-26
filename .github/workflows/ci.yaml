@@ -13,21 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  activation:
-    name: Request manual activation file 🔑
-    runs-on: ubuntu-latest
-    steps:
-      # GameCI の Activation を利用して alf ファイルを発行する
-      - name: Request manual activation file
-        id: getManualLicenseFile
-        uses: game-ci/unity-request-activation-file@v2
-        with:
-          unityVersion: 6000.2.6f2
-      - name: Expose as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.getManualLicenseFile.outputs.filePath }}
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
   ci:
     name: CI (${{ matrix.app }})
     runs-on: ubuntu-latest
@@ -134,17 +119,27 @@ jobs:
           chmod +x lint.sh
           ./lint.sh
         working-directory: ./apps/art
+      # FIXME: Not working due to Unity License issue
       - name: Run Unity Tests for art
         uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           projectPath: apps/art
       - name: Build Unity Project for art
         id: builder
         uses: game-ci/unity-builder@v4
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           projectPath: apps/art
           # WebGL, StandaloneWindows64, Android, iOS
           targetPlatform: WebGL
+          unityVersion: 'auto'
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:

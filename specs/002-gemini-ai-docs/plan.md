@@ -54,35 +54,35 @@ specs/[###-feature]/
 ```
 apps/
 ├── photo/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── (booth)/
-│   │   │   │   ├── control/[boothId]/
-│   │   │   │   ├── display/[boothId]/
-│   │   │   │   └── layout.tsx
-│   │   │   ├── (user)/
-│   │   │   │   ├── download/[boothId]/[photoId]/
-│   │   │   │   ├── upload/[boothId]/
-│   │   │   │   └── layout.tsx
-│   │   │   ├── 404/
-│   │   │   ├── admin/
-│   │   │   ├── login/
-│   │   │   ├── photos/
-│   │   │   ├── favicon.ico
-│   │   │   ├── global-error.tsx
-│   │   │   ├── globals.css
-│   │   │   ├── layout.tsx
-│   │   │   └── page.tsx
-│   │   ├── components/
-│   │   ├── domain/
-│   │   ├── application/
-│   │   ├── infra/
-│   │   ├── hooks/
-│   │   └── libs/
-│   ├── public/
-│   └── test/
-│       ├── unit/
-│       └── integration/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── (booth)/
+│   │   │   │   ├── admin/
+│   │   │   │   ├── control/[boothId]/
+│   │   │   │   ├── display/[boothId]/
+│   │   │   │   ├── login/
+│   │   │   │   ├── photos/
+│   │   │   │   └── layout.tsx
+│   │   │   ├── (user)/
+│   │   │   │   ├── download/[boothId]/[photoId]/
+│   │   │   │   ├── upload/[boothId]/
+│   │   │   │   └── layout.tsx
+│   │   │   ├── 404/
+│   │   │   ├── favicon.ico
+│   │   │   ├── global-error.tsx
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── components/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   ├── infra/
+│   │   ├── hooks/
+│   │   └── libs/
+│   ├── public/
+│   └── test/
+│       ├── unit/
+│       └── integration/
 packages/
 ├── logger/
 ├── shared-types/

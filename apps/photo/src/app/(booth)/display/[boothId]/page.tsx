@@ -32,8 +32,9 @@ export default function DisplayPage() {
 	);
 
 	const renderMenu = () => {
-		const uploadUrl = `photo.fes2025.gdsc-osaka.jp/upload/${boothId}`;
-		return (
+		const baseurl = process.env.NEXT_PUBLIC_BASE_URL;
+		const uploadUrl = `${baseurl}/upload/${boothId}`;
+		return (	
 			<div className="flex flex-col items-center gap-6">
 				<p className="text-xl font-semibold">
 					スマホでQRコードを読み取って写真をアップロードしてください

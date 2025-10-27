@@ -29,6 +29,26 @@ const ensureBoothId = (value: unknown): string =>
 const getBoothState = (state: string | undefined): string =>
 	typeof state === "string" ? state : "idle";
 
+type DownloadPath = `/download/${string}/${string}`;
+
+const sanitizeBaseUrl = (value: string): string => value.replace(/\/+$/, "");
+
+const resolveBaseUrl = (): string => {
+	const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	if (typeof envBaseUrl === "string" && envBaseUrl.length > 0) {
+		return sanitizeBaseUrl(envBaseUrl);
+	}
+
+	if (typeof window !== "undefined" && typeof window.location?.origin === "string") {
+		return sanitizeBaseUrl(window.location.origin);
+	}
+
+	return "";
+};
+
+const buildDownloadPath = (boothId: string, photoId: string): DownloadPath =>
+	`/download/${boothId}/${photoId}`;
+
 export default function ControlPage() {
 	const params = useParams();
 	const boothId = ensureBoothId((params as Record<string, unknown>)?.boothId);
@@ -46,9 +66,7 @@ export default function ControlPage() {
 
 
 	const handleStartSession = useCallback(() => {
-		console.log("Starting session...");
 		startSession({ boothId });
-		console.log("Session started.");
 	}, [boothId]);
 
 	const handleStartCapture = useCallback(() => {
@@ -223,10 +241,16 @@ export default function ControlPage() {
 
 	const renderCompleted = () => {
 		const latestPhotoId = booth?.latestPhotoId;
-		const downloadHref: string | null =
-			typeof latestPhotoId === "string" && latestPhotoId.length > 0
-				? `/download/${boothId}/${latestPhotoId}`
-				: null;
+		const canBuildDownloadPath =
+			typeof latestPhotoId === "string" &&
+			latestPhotoId.length > 0 &&
+			boothId.length > 0;
+		const downloadPath = canBuildDownloadPath
+			? buildDownloadPath(boothId, latestPhotoId)
+			: null;
+		const baseUrl = resolveBaseUrl();
+		const qrValue =
+			downloadPath && baseUrl.length > 0 ? `${baseUrl}${downloadPath}` : downloadPath;
 
 		return (
 			<div className="flex flex-col items-center gap-6">
@@ -238,17 +262,17 @@ export default function ControlPage() {
 						className="h-48 w-48 rounded object-cover shadow-lg"
 					/>
 				) : null}
-				{downloadHref && (
+				{qrValue ? (
 					<div className="flex flex-col items-center gap-3">
-						<QRCode value={downloadHref} />
-						<Link
-							href={downloadHref as `/download/${string}/${string}`}
-							className="text-primary underline"
-						>
-							ダウンロードページを開く
-						</Link>
+						<QRCode value={qrValue} />
+						{downloadPath ? (
+							<Link href={downloadPath} className="text-primary underline">
+								ダウンロードページを開く
+							</Link>
+						) : null}
+						<p className="text-xs text-muted-foreground">{qrValue}</p>
 					</div>
-				)}
+				) : null}
 				<Button onClick={handleStartSession} variant="secondary">
 					次の来場者を案内する
 				</Button>

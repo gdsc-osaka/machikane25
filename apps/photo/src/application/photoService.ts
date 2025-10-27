@@ -4,136 +4,122 @@
  * Handles Storage uploads and Firestore metadata for uploaded photos.
  */
 
-import { FieldValue } from "firebase-admin/firestore";
 import { ulid } from "ulid";
 import { Buffer } from "node:buffer";
-import { getAdminFirestore, getAdminStorage } from "@/lib/firebase/admin";
+import { getAdminStorage } from "@/lib/firebase/admin";
+import {
+  createUploadedPhoto,
+  deleteUploadedPhotoByDocumentPath,
+  fetchUploadedPhotos,
+  queryUploadedPhotosByPhotoId,
+} from "@/infra/firebase/photoRepository";
 
-type UploadedPhotoMetadata = {
-	photoId: string;
-	imagePath: string;
-	imageUrl: string;
+export type UploadedPhotoMetadata = {
+  photoId: string;
+  imagePath: string;
+  imageUrl: string;
 };
 
-const boothsCollection = () => getAdminFirestore().collection("booths");
-
-const uploadedPhotosCollection = (boothId: string) =>
-	boothsCollection().doc(boothId).collection("uploadedPhotos");
-
 const storageBucket = () => {
-	const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-	return getAdminStorage().bucket(bucketName);
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+  return getAdminStorage().bucket(bucketName);
 };
 
 const createPhotoId = (): string => ulid().toLowerCase();
 
-const createImagePath = (photoId: string): string => `photos/${photoId}/photo.png`;
+const createImagePath = (photoId: string): string =>
+  ["photos", photoId, "photo.png"].join("/");
 
 const createImageUrl = (imagePath: string): string => {
-	const bucket = storageBucket();
-	return `https://storage.googleapis.com/${bucket.name}/${imagePath}`;
+  const bucket = storageBucket();
+  return ["https://storage.googleapis.com", bucket.name, imagePath].join("/");
 };
 
 const saveImageToStorage = async (imagePath: string, file: File) => {
-	const storageFile = storageBucket().file(imagePath);
-	const arrayBuffer = await file.arrayBuffer();
-	const buffer = Buffer.from(arrayBuffer);
+  const storageFile = storageBucket().file(imagePath);
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-	await storageFile.save(buffer, {
-		resumable: false,
-		contentType: file.type,
-		metadata: {
-			cacheControl: "public,max-age=3600",
-		},
-		validation: false,
-	});
+  await storageFile.save(buffer, {
+    resumable: false,
+    contentType: file.type,
+    metadata: {
+      cacheControl: "public,max-age=3600",
+    },
+    validation: false,
+  });
 };
 
 const storeUploadedPhotoDocument = async (
-	boothId: string,
-	metadata: UploadedPhotoMetadata,
+  boothId: string,
+  metadata: UploadedPhotoMetadata,
 ) => {
-	const { photoId, imagePath, imageUrl } = metadata;
-
-	const docRef = uploadedPhotosCollection(boothId).doc(photoId);
-	await docRef.set({
-		boothId,
-		photoId,
-		imagePath,
-		imageUrl,
-		createdAt: FieldValue.serverTimestamp(),
-	});
+  const { photoId, imagePath, imageUrl } = metadata;
+  await createUploadedPhoto({
+    boothId,
+    photoId,
+    imagePath,
+    imageUrl,
+  });
 };
 
 const uploadPhoto = async (boothId: string, file: File) => {
-	const photoId = createPhotoId();
-	const imagePath = createImagePath(photoId);
+  const photoId = createPhotoId();
+  const imagePath = createImagePath(photoId);
 
-	await saveImageToStorage(imagePath, file);
+  await saveImageToStorage(imagePath, file);
 
-	const imageUrl = createImageUrl(imagePath);
-	await storeUploadedPhotoDocument(boothId, {
-		photoId,
-		imagePath,
-		imageUrl,
-	});
+  const imageUrl = createImageUrl(imagePath);
+  await storeUploadedPhotoDocument(boothId, {
+    photoId,
+    imagePath,
+    imageUrl,
+  });
 
-	return { photoId, imagePath, imageUrl };
+  return { photoId, imagePath, imageUrl } satisfies UploadedPhotoMetadata;
 };
 
 export const uploadUserPhoto = async (
-	boothId: string,
-	file: File,
+  boothId: string,
+  file: File,
 ): Promise<UploadedPhotoMetadata> => uploadPhoto(boothId, file);
 
 export const uploadCapturedPhoto = async (
-	boothId: string,
-	file: File,
+  boothId: string,
+  file: File,
 ): Promise<UploadedPhotoMetadata> => uploadPhoto(boothId, file);
 
 export const getUploadedPhotos = async (
-	boothId: string,
+  boothId: string,
 ): Promise<UploadedPhotoMetadata[]> => {
-	const snapshot = await uploadedPhotosCollection(boothId).get();
+  const photos = await fetchUploadedPhotos(boothId);
 
-	return snapshot.docs.map((doc) => {
-		const data = doc.data();
-		const imagePathValue =
-			typeof data.imagePath === "string" ? data.imagePath : "";
-		const imageUrlValue = typeof data.imageUrl === "string" ? data.imageUrl : "";
-
-		return {
-			photoId: doc.id,
-			imagePath: imagePathValue,
-			imageUrl: imageUrlValue,
-		};
-	});
+  return photos.map((photo) => ({
+    photoId: photo.photoId,
+    imagePath: photo.imagePath,
+    imageUrl: photo.imageUrl,
+  }));
 };
 
 export const deleteUsedPhoto = async (photoId: string): Promise<void> => {
-	const firestore = getAdminFirestore();
-	const querySnapshot = await firestore
-		.collectionGroup("uploadedPhotos")
-		.where("photoId", "==", photoId)
-		.limit(1)
-		.get();
+  const querySnapshot = await queryUploadedPhotosByPhotoId(photoId).get();
 
-	if (querySnapshot.empty) {
-		return;
-	}
+  if (querySnapshot.empty) {
+    return;
+  }
 
-	const [docSnapshot] = querySnapshot.docs;
-	const data = docSnapshot.data();
+  const [docSnapshot] = querySnapshot.docs;
+  const data = docSnapshot.data();
 
-	const imagePathValue =
-		typeof data.imagePath === "string" ? data.imagePath : null;
+  const imagePathValue =
+    data && typeof data.imagePath === "string" ? data.imagePath : null;
 
-	await docSnapshot.ref.delete();
+  await deleteUploadedPhotoByDocumentPath(docSnapshot.ref.path);
 
-	if (imagePathValue) {
-		await storageBucket()
-			.file(imagePathValue)
-			.delete()
-			.catch(() => undefined);
-	}
+  if (imagePathValue) {
+    await storageBucket()
+      .file(imagePathValue)
+      .delete()
+      .catch(() => undefined);
+  }
 };

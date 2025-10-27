@@ -12,7 +12,7 @@ const expiredMessage =
   "This download link has expired. Please rescan your QR code at the booth to regenerate your photo.";
 
 const DownloadPage = async ({ params }: DownloadPageProps) => {
-  const result = await getGeneratedPhotoAction(params.photoId);
+  const result = await getGeneratedPhotoAction(params.boothId, params.photoId);
 
   if (result.error === "NOT_FOUND") {
     notFound();

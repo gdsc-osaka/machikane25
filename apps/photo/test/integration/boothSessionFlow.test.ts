@@ -324,13 +324,13 @@ const cleanupSeedData = async (
 		}),
 	);
 
-	const generatedQuery = await firestore
-		.collection("generatedPhotos")
-		.where("boothId", "==", boothId)
-		.get();
+	const generatedCollection = firestore.collection(
+		`booths/${boothId}/generatedPhotos`,
+	);
+	const generatedSnapshots = await generatedCollection.get();
 
 	await Promise.all(
-		generatedQuery.docs.map(async (snapshot) => {
+		generatedSnapshots.docs.map(async (snapshot) => {
 			const data = snapshot.data();
 			const imagePath = typeof data.imagePath === "string" ? data.imagePath : null;
 
@@ -459,7 +459,8 @@ it("should orchestrate upload, capture, and generation lifecycle with Firebase E
 			expect(boothAfterGenerationComplete.data()?.state).toBe("completed");
 			expect(boothAfterGenerationComplete.data()?.latestPhotoId).toBe(generatedPhotoId);
 
-			const generatedDocRef = adminFirestore.collection("generatedPhotos").doc(generatedPhotoId);
+			const generatedDocRef = adminFirestore
+				.doc(`booths/${boothId}/generatedPhotos/${generatedPhotoId}`);
 			const generatedDoc = await generatedDocRef.get();
 			expect(generatedDoc.exists).toBe(true);
 

@@ -70,6 +70,10 @@ describe("[RED] DownloadPage", () => {
       "https://example.com/generated/photo.png",
     );
     expect(downloadLink.getAttribute("download")).toBe("ai_photo.png");
+    expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(
+      params.boothId,
+      params.photoId,
+    );
   });
 
   it("shows expiry message when getGeneratedPhotoAction returns EXPIRED", async () => {
@@ -80,6 +84,10 @@ describe("[RED] DownloadPage", () => {
 
     await renderDownloadPage();
 
+    expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(
+      params.boothId,
+      params.photoId,
+    );
     expect(
       screen.getByText(
         "This download link has expired. Please rescan your QR code at the booth to regenerate your photo.",
@@ -95,5 +103,9 @@ describe("[RED] DownloadPage", () => {
 
     await expect(DownloadPage({ params })).rejects.toThrow("ROUTE_NOT_FOUND");
     expect(mockNotFound).toHaveBeenCalledTimes(1);
+    expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(
+      params.boothId,
+      params.photoId,
+    );
   });
 });

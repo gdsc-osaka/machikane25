@@ -47,18 +47,31 @@ describe("useBoothState", () => {
 		const generatedDocRef = { path: "generatedPhotos/photo-555" };
 		const boothSnapshotListeners: Array<(snapshot: unknown) => void> = [];
 
-		docMock.mockImplementation((firestore, collection, docId) => {
-			if (collection === "booths") {
+		docMock.mockImplementation(
+			(
+				firestore,
+				segmentOne: string,
+				segmentTwo: string,
+				...rest: string[]
+			) => {
 				expect(firestore).toEqual({ name: "firestore" });
-				expect(docId).toBe("booth-123");
-				return boothDocRef;
-			}
-			if (collection === "generatedPhotos") {
-				expect(docId).toBe("photo-555");
-				return generatedDocRef;
-			}
-			throw new Error("Unexpected doc call");
-		});
+
+				if (segmentOne === "booths" && segmentTwo === "booth-123" && rest.length === 0) {
+					return boothDocRef;
+				}
+
+				if (
+					segmentOne === "booths" &&
+					segmentTwo === "booth-123" &&
+					rest[0] === "generatedPhotos" &&
+					rest[1] === "photo-555"
+				) {
+					return generatedDocRef;
+				}
+
+				throw new Error("Unexpected doc call");
+			},
+		);
 
 		onSnapshotMock.mockImplementation((_ref: unknown, listener: (snapshot: unknown) => void) => {
 			boothSnapshotListeners.push(listener);

@@ -23,10 +23,11 @@ export type GeneratedPhotoActionResult =
     };
 
 export const getGeneratedPhotoAction = async (
+  boothId: string,
   photoId: string,
 ): Promise<GeneratedPhotoActionResult> => {
   try {
-    const photo = await getGeneratedPhoto(photoId);
+    const photo = await getGeneratedPhoto(boothId, photoId);
     return {
       data: {
         imageUrl: photo.imageUrl,

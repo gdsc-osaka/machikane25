@@ -50,9 +50,16 @@ const parseState = (value: unknown): BoothState => {
 
 const fetchGeneratedPhotoUrl = async (
 	firestore: Firestore,
+	boothId: string,
 	photoId: string,
 ): Promise<string | null> => {
-	const generatedRef = doc(firestore, "generatedPhotos", photoId);
+	const generatedRef = doc(
+		firestore,
+		"booths",
+		boothId,
+		"generatedPhotos",
+		photoId,
+	);
 	const snapshot = await getDoc(generatedRef);
 
 	if (!snapshot.exists()) {
@@ -125,11 +132,12 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 						setBooth(boothSnapshot);
 						setError(null);
 
-						if (boothSnapshot.latestPhotoId) {
-							void fetchGeneratedPhotoUrl(
-								firestore,
-								boothSnapshot.latestPhotoId,
-							)
+				if (boothSnapshot.latestPhotoId) {
+					void fetchGeneratedPhotoUrl(
+						firestore,
+						boothSnapshot.id,
+						boothSnapshot.latestPhotoId,
+					)
 								.then((url) => {
 									if (isMountedRef.current) {
 										setLatestUrl(url);

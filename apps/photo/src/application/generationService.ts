@@ -7,35 +7,14 @@
 
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
 import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
-import { getAdminFirestore } from "@/lib/firebase/admin";
+import { findGeneratedPhoto } from "@/infra/firebase/photoRepository";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-type FirestoreTimestamp = {
-  toMillis: () => number;
-};
-
-type FirestoreGeneratedPhoto = {
-  imageUrl?: unknown;
-  createdAt?: unknown;
-};
 
 type GeneratedPhoto = {
   id: string;
   imageUrl: string;
 };
-
-const hasToMillis = (value: unknown): value is FirestoreTimestamp => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const maybeToMillis = Reflect.get(value, "toMillis");
-  return typeof maybeToMillis === "function";
-};
-
-const isFirestoreGeneratedPhoto = (
-  value: unknown,
-): value is FirestoreGeneratedPhoto => typeof value === "object" && value !== null;
 
 const createNamedError = (name: string, message: string): Error => {
   const error = new Error(message);
@@ -113,48 +92,24 @@ export const generateImage = async (
  * Retrieve generated photo metadata by id.
  * Throws PhotoNotFoundError when document is missing and PhotoExpiredError when older than 24 hours.
  */
-export const getGeneratedPhoto = async (photoId: string): Promise<GeneratedPhoto> => {
-  const firestore = getAdminFirestore();
-  const snapshot = await firestore.collection("generatedPhotos").doc(photoId).get();
+export const getGeneratedPhoto = async (
+  boothId: string,
+  photoId: string,
+): Promise<GeneratedPhoto> => {
+  const photo = await findGeneratedPhoto(boothId, photoId);
 
-  if (!snapshot.exists) {
+  if (!photo) {
     throw createNamedError("PhotoNotFoundError", "Generated photo not found");
   }
 
-  const data = snapshot.data();
-
-  if (!isFirestoreGeneratedPhoto(data)) {
-    throw createNamedError(
-      "PhotoNotFoundError",
-      "Generated photo document is missing required fields",
-    );
-  }
-
-  const rawImageUrl = data.imageUrl;
-  const rawCreatedAt = data.createdAt;
-
-  if (typeof rawImageUrl !== "string" || rawImageUrl.length === 0) {
-    throw createNamedError(
-      "PhotoNotFoundError",
-      "Generated photo document has no imageUrl",
-    );
-  }
-
-  if (!hasToMillis(rawCreatedAt)) {
-    throw createNamedError(
-      "PhotoNotFoundError",
-      "Generated photo document has invalid createdAt",
-    );
-  }
-
-  const ageInMs = Date.now() - rawCreatedAt.toMillis();
+  const ageInMs = Date.now() - photo.createdAt.getTime();
 
   if (ageInMs > ONE_DAY_IN_MS) {
     throw createNamedError("PhotoExpiredError", "Generated photo download expired");
   }
 
   return {
-    id: photoId,
-    imageUrl: rawImageUrl,
+    id: photo.photoId,
+    imageUrl: photo.imageUrl,
   };
 };

@@ -10,6 +10,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { deleteUsedPhoto } from "./photoService";
 import { generateImage } from "./generationService";
 import { Buffer } from "node:buffer";
+import { createGeneratedPhoto } from "@/infra/firebase/photoRepository";
 
 type BoothStateUpdate = {
 	state?: BoothState;
@@ -18,8 +19,6 @@ type BoothStateUpdate = {
 };
 
 const boothsCollection = () => getAdminFirestore().collection("booths");
-const generatedPhotosCollection = () =>
-	getAdminFirestore().collection("generatedPhotos");
 const storageBucket = () => {
 	const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
 	return getAdminStorage().bucket(bucketName);
@@ -39,7 +38,6 @@ const updateBoothState = async (boothId: string, update: BoothStateUpdate) => {
 
 export const startSession = async (boothId: string): Promise<void> => {
 	await updateBoothState(boothId, { state: "menu" });
-	console.log(`update session tp menu for boothId: ${boothId}`);
 };
 
 export const startCapture = async (boothId: string): Promise<void> => {
@@ -75,7 +73,11 @@ export const completeGeneration = async (
 	});
 
 	const bucket = storageBucket();
-	const imagePath = `generated_photos/${generatedPhotoId}/photo.png`;
+	const imagePath = [
+		"generated_photos",
+		generatedPhotoId,
+		"photo.png",
+	].join("/");
 
 	await bucket.file(imagePath).save(Buffer.from(SAMPLE_GENERATED_IMAGE_BYTES), {
 		resumable: false,
@@ -86,14 +88,17 @@ export const completeGeneration = async (
 		validation: false,
 	});
 
-	const imageUrl = `https://storage.googleapis.com/${bucket.name}/${imagePath}`;
+	const imageUrl = [
+		"https://storage.googleapis.com",
+		bucket.name,
+		imagePath,
+	].join("/");
 
-	await generatedPhotosCollection().doc(generatedPhotoId).set({
+	await createGeneratedPhoto({
 		boothId,
 		photoId: generatedPhotoId,
 		imagePath,
 		imageUrl,
-		createdAt: FieldValue.serverTimestamp(),
 	});
 
 	// Cleanup uploaded photo in the background

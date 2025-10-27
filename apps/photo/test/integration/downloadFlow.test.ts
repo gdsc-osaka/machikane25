@@ -65,35 +65,39 @@ const ensureAdminEnvironment = (): void => {
     process.env.FIREBASE_STORAGE_BUCKET ?? "photo-test.appspot.com";
 };
 
-const seedGeneratedPhotos = async (photos: SeedPhoto[]): Promise<void> => {
+const seedGeneratedPhotos = async (
+  boothId: string,
+  photos: SeedPhoto[],
+): Promise<void> => {
   const { getAdminFirestore } = await import("@/lib/firebase/admin");
   const adminFirestore = getAdminFirestore();
   await Promise.all(
     photos.map((photo) =>
       adminFirestore
-        .collection("generatedPhotos")
+        .collection(`booths/${boothId}/generatedPhotos`)
         .doc(photo.id)
         .set({
-          boothId: "test-booth",
           imageUrl: photo.imageUrl,
-          imagePath: `photos/${photo.id}/generated.png`,
+          imagePath: `generated_photos/${photo.id}/photo.png`,
           createdAt: photo.createdAt,
         }),
     ),
   );
 };
 
-const clearGeneratedPhotos = async (): Promise<void> => {
+const clearGeneratedPhotos = async (boothId: string): Promise<void> => {
   const { getAdminFirestore } = await import("@/lib/firebase/admin");
   const adminFirestore = getAdminFirestore();
-  const snapshot = await adminFirestore.collection("generatedPhotos").get();
-  const deletions = snapshot.docs.map((doc) =>
-    adminFirestore.collection("generatedPhotos").doc(doc.id).delete(),
-  );
+  const snapshot = await adminFirestore
+    .collection(`booths/${boothId}/generatedPhotos`)
+    .get();
+  const deletions = snapshot.docs.map((doc) => doc.ref.delete());
   await Promise.all(deletions);
 };
 
 describe("Download flow server action", () => {
+  const boothId = "test-booth";
+
   beforeAll(async () => {
     ensureEmulatorEnvironment();
     ensureAdminEnvironment();
@@ -109,15 +113,16 @@ describe("Download flow server action", () => {
       imageUrl: "https://example.com/generated/photo-expired.png",
       createdAt: Timestamp.fromMillis(now - 5 * 24 * 60 * 60 * 1000),
     };
-    await seedGeneratedPhotos([validPhoto, expiredPhoto]);
+    await seedGeneratedPhotos(boothId, [validPhoto, expiredPhoto]);
   });
 
   afterAll(async () => {
-    await clearGeneratedPhotos();
+    await clearGeneratedPhotos(boothId);
   });
 
   it("should return imageUrl for valid photo (FR-004)", async () => {
     const result = (await getGeneratedPhotoAction(
+      boothId,
       "photo_valid",
     )) as GeneratedPhotoActionResult;
 
@@ -130,6 +135,7 @@ describe("Download flow server action", () => {
 
   it("should surface EXPIRED error for photo older than 24h", async () => {
     const result = (await getGeneratedPhotoAction(
+      boothId,
       "photo_expired",
     )) as GeneratedPhotoActionResult;
 
@@ -139,6 +145,7 @@ describe("Download flow server action", () => {
 
   it("should surface NOT_FOUND error when photo is missing", async () => {
     const result = (await getGeneratedPhotoAction(
+      boothId,
       "photo_unknown",
     )) as GeneratedPhotoActionResult;
 

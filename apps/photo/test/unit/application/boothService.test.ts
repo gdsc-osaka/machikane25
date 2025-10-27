@@ -15,9 +15,14 @@ const docMock = vi.fn(() => ({
 	update: updateMock,
 	set: setMock,
 }));
-const collectionMock = vi.fn(() => ({
-	doc: docMock,
-}));
+const collectionMock = vi.fn((collectionName: string) => {
+	if (collectionName === "booths") {
+		return {
+			doc: docMock,
+		};
+	}
+	throw new Error(`Unexpected collection requested: ${collectionName}`);
+});
 
 vi.mock("@/lib/firebase/admin", () => ({
 	getAdminFirestore: () => ({
@@ -45,11 +50,16 @@ const deleteUsedPhotoMock = vi.fn(() => Promise.resolve());
 vi.mock("@/application/photoService", () => ({
 	deleteUsedPhoto: deleteUsedPhotoMock,
 }));
+const createGeneratedPhotoMock = vi.fn(() => Promise.resolve());
+vi.mock("@/infra/firebase/photoRepository", () => ({
+	createGeneratedPhoto: createGeneratedPhotoMock,
+}));
 
 describe("BoothService", () => {
 	beforeEach(() => {
 		updateMock.mockReset();
 		setMock.mockReset();
+		createGeneratedPhotoMock.mockReset();
 		storageSaveMock.mockReset();
 		storageFileMock.mockClear();
 		storageBucketMock.mockClear();
@@ -138,17 +148,15 @@ describe("BoothService", () => {
 			validation: false,
 		});
 
-		// Verify generatedPhotos collection update
-		expect(collectionMock).toHaveBeenCalledWith("generatedPhotos");
-		expect(docMock).toHaveBeenCalledWith("generated-1");
-		expect(setMock).toHaveBeenCalledWith({
+		// Verify generated photos stored via subcollection repository
+		expect(createGeneratedPhotoMock).toHaveBeenCalledWith({
 			boothId: "booth-5",
 			photoId: "generated-1",
 			imagePath: "generated_photos/generated-1/photo.png",
 			imageUrl:
 				"https://storage.googleapis.com/test-bucket/generated_photos/generated-1/photo.png",
-			createdAt: "server-timestamp",
 		});
+		expect(collectionMock).not.toHaveBeenCalledWith("generatedPhotos");
 
 		// Verify cleanup
 		expect(deleteUsedPhotoMock).toHaveBeenCalledWith("uploaded-2");

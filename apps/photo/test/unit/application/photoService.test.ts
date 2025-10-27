@@ -1,209 +1,151 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const setMock = vi.fn();
-const uploadedDocMock = vi.fn(() => ({
-	set: setMock,
-}));
-const uploadedCollectionMock = vi.fn(() => ({
-	doc: uploadedDocMock,
-	get: vi.fn(),
-}));
-const boothDocMock = vi.fn(() => ({
-	collection: uploadedCollectionMock,
-}));
-const collectionMock = vi.fn(() => ({
-	doc: boothDocMock,
-}));
-
-const whereGetMock = vi.fn();
-const limitMock = vi.fn(() => ({
-	get: whereGetMock,
-}));
-const whereMock = vi.fn(() => ({
-	limit: limitMock,
-}));
-const collectionGroupMock = vi.fn(() => ({
-	where: whereMock,
-}));
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { UploadedPhotoMetadata } from "@/application/photoService";
 
 const saveMock = vi.fn(() => Promise.resolve());
-const storageDeleteMock = vi.fn(() => Promise.resolve());
-const fileMock = vi.fn(() => ({
-	save: saveMock,
-	delete: storageDeleteMock,
-}));
-
-const bucket = {
-	name: "photo-test.appspot.com",
-	file: fileMock,
-};
+const deleteMock = vi.fn(() => Promise.resolve());
 
 vi.mock("@/lib/firebase/admin", () => ({
-	getAdminFirestore: () => ({
-		collection: collectionMock,
-		collectionGroup: collectionGroupMock,
-	}),
-	getAdminStorage: () => ({
-		bucket: () => bucket,
-	}),
+  getAdminStorage: () => ({
+    bucket: () => ({
+      name: "photo-test.appspot.com",
+      file: () => ({
+        save: saveMock,
+        delete: deleteMock,
+      }),
+    }),
+  }),
 }));
 
-const serverTimestampMock = vi.fn(() => "server-timestamp");
+const createUploadedPhotoMock = vi.fn(() => Promise.resolve());
+const fetchUploadedPhotosMock = vi.fn(() => Promise.resolve([] as UploadedPhotoMetadata[]));
+const deleteUploadedPhotoByDocumentPathMock = vi.fn(() => Promise.resolve());
+const queryUploadedPhotosByPhotoIdMock = vi.fn();
 
-vi.mock("firebase-admin/firestore", () => ({
-	FieldValue: {
-		serverTimestamp: serverTimestampMock,
-	},
+vi.mock("@/infra/firebase/photoRepository", () => ({
+  createUploadedPhoto: createUploadedPhotoMock,
+  fetchUploadedPhotos: fetchUploadedPhotosMock,
+  deleteUploadedPhotoByDocumentPath: deleteUploadedPhotoByDocumentPathMock,
+  queryUploadedPhotosByPhotoId: queryUploadedPhotosByPhotoIdMock,
 }));
+
+const createSampleFile = (bytes: number[]) => {
+  const file = new File([new Uint8Array(bytes)], "sample.png", {
+    type: "image/png",
+  });
+  Object.defineProperty(file, "arrayBuffer", {
+    value: () => Promise.resolve(new Uint8Array(bytes).buffer),
+  });
+  return file;
+};
+
+const expectMetadataShape = (metadata: UploadedPhotoMetadata) => {
+  expect(metadata.photoId).toMatch(/^[0-9a-hjkmnp-tv-z]{26}$/);
+  expect(metadata.imagePath.startsWith("photos/")).toBe(true);
+  expect(metadata.imagePath.endsWith("/photo.png")).toBe(true);
+  expect(metadata.imageUrl.startsWith("https://storage.googleapis.com/")).toBe(true);
+};
 
 describe("PhotoService", () => {
-	beforeEach(() => {
-		setMock.mockReset();
-		uploadedDocMock.mockClear();
-		uploadedCollectionMock.mockClear();
-		boothDocMock.mockClear();
-		collectionMock.mockClear();
-		saveMock.mockReset();
-		storageDeleteMock.mockReset();
-		fileMock.mockClear();
-		serverTimestampMock.mockClear();
-		whereMock.mockClear();
-		whereGetMock.mockReset();
-	});
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-	afterEach(() => {
-		collectionGroupMock.mockReset();
-	});
+  it("uploadUserPhoto stores image and metadata", async () => {
+    const { uploadUserPhoto } = await import("@/application/photoService");
 
-	it("uploadUserPhoto stores image and metadata", async () => {
-		const { uploadUserPhoto } = await import("@/application/photoService");
+    const file = createSampleFile([1, 2, 3]);
 
-		const file = new File([new Uint8Array([1, 2, 3])], "visitor.png", {
-			type: "image/png",
-		});
-		Object.defineProperty(file, "arrayBuffer", {
-			value: () =>
-				Promise.resolve(new Uint8Array([1, 2, 3]).buffer),
-		});
+    const result = await uploadUserPhoto("booth-1", file);
 
-		const result = await uploadUserPhoto("booth-1", file);
+    expect(saveMock).toHaveBeenCalledWith(expect.any(Buffer), expect.objectContaining({
+      contentType: "image/png",
+    }));
 
-		expect(fileMock).toHaveBeenCalledWith(expect.stringMatching(/^photos\/.+\/photo\.png$/));
-		expect(saveMock).toHaveBeenCalledWith(
-			expect.any(Buffer),
-			expect.objectContaining({
-				contentType: "image/png",
-			}),
-		);
+    expect(createUploadedPhotoMock).toHaveBeenCalledTimes(1);
+    const [payload] = createUploadedPhotoMock.mock.calls[0] as [UploadedPhotoMetadata];
+    expect(payload.boothId).toBe("booth-1");
+    expect(payload.imagePath.startsWith("photos/")).toBe(true);
+    expect(payload.imageUrl.startsWith("https://storage.googleapis.com/")).toBe(true);
 
-		expect(collectionMock).toHaveBeenCalledWith("booths");
-		expect(boothDocMock).toHaveBeenCalledWith("booth-1");
-		expect(uploadedCollectionMock).toHaveBeenCalledWith("uploadedPhotos");
+    expectMetadataShape(result);
+  });
 
-		const callArgs = uploadedDocMock.mock.calls[0] as unknown[];
-		const docId = callArgs[0] as string;
-		expect(docId).toBeTruthy();
-		expect(setMock).toHaveBeenCalledWith({
-			boothId: "booth-1",
-			photoId: docId,
-			imagePath: `photos/${docId}/photo.png`,
-			imageUrl: `https://storage.googleapis.com/${bucket.name}/photos/${docId}/photo.png`,
-			createdAt: "server-timestamp",
-		});
+  it("uploadCapturedPhoto reuses upload logic", async () => {
+    const { uploadCapturedPhoto } = await import("@/application/photoService");
 
-		expect(result.photoId).toBe(docId);
-		expect(result.imagePath).toBe(`photos/${docId}/photo.png`);
-		expect(result.imageUrl).toBe(
-			`https://storage.googleapis.com/${bucket.name}/photos/${docId}/photo.png`,
-		);
-	});
+    const file = createSampleFile([4, 5, 6]);
 
-	it("uploadCapturedPhoto reuses upload logic", async () => {
-		const { uploadCapturedPhoto } = await import("@/application/photoService");
+    const result = await uploadCapturedPhoto("booth-2", file);
 
-		const file = new File([new Uint8Array([4, 5, 6])], "capture.png", {
-			type: "image/png",
-		});
-		Object.defineProperty(file, "arrayBuffer", {
-			value: () =>
-				Promise.resolve(new Uint8Array([4, 5, 6]).buffer),
-		});
+    expect(saveMock).toHaveBeenCalled();
+    expect(createUploadedPhotoMock).toHaveBeenCalledTimes(1);
+    const [payload] = createUploadedPhotoMock.mock.calls[0] as [UploadedPhotoMetadata];
+    expect(payload.boothId).toBe("booth-2");
+    expectMetadataShape(result);
+  });
 
-		const result = await uploadCapturedPhoto("booth-2", file);
+  it("getUploadedPhotos returns stored documents", async () => {
+    fetchUploadedPhotosMock.mockResolvedValueOnce([
+      {
+        boothId: "booth-3",
+        photoId: "photo-1",
+        imagePath: "photos/photo-1/photo.png",
+        imageUrl: "https://example.com/photo-1.png",
+        createdAt: new Date(),
+      },
+      {
+        boothId: "booth-3",
+        photoId: "photo-2",
+        imagePath: "photos/photo-2/photo.png",
+        imageUrl: "https://example.com/photo-2.png",
+        createdAt: new Date(),
+      },
+    ]);
 
-		expect(result.photoId).toBeTruthy();
-		expect(saveMock).toHaveBeenCalled();
-		expect(setMock).toHaveBeenCalled();
-	});
+    const { getUploadedPhotos } = await import("@/application/photoService");
 
-	it("getUploadedPhotos returns stored documents", async () => {
-		const fakeDocs = [
-			{
-				id: "photo-1",
-				data: () => ({
-					boothId: "booth-3",
-					imagePath: "photos/photo-1/photo.png",
-					imageUrl: "https://example.com/photo-1.png",
-				}),
-			},
-			{
-				id: "photo-2",
-				data: () => ({
-					boothId: "booth-3",
-					imagePath: "photos/photo-2/photo.png",
-					imageUrl: "https://example.com/photo-2.png",
-				}),
-			},
-		];
+    const result = await getUploadedPhotos("booth-3");
 
-		uploadedCollectionMock.mockReturnValueOnce({
-			doc: uploadedDocMock,
-			get: vi.fn(() => Promise.resolve({ docs: fakeDocs })),
-		});
+    expect(fetchUploadedPhotosMock).toHaveBeenCalledWith("booth-3");
+    expect(result).toEqual([
+      {
+        photoId: "photo-1",
+        imagePath: "photos/photo-1/photo.png",
+        imageUrl: "https://example.com/photo-1.png",
+      },
+      {
+        photoId: "photo-2",
+        imagePath: "photos/photo-2/photo.png",
+        imageUrl: "https://example.com/photo-2.png",
+      },
+    ]);
+  });
 
-		const { getUploadedPhotos } = await import("@/application/photoService");
+  it("deleteUsedPhoto removes Firestore doc and storage file", async () => {
+    const getMock = vi.fn().mockResolvedValue({
+      empty: false,
+      docs: [
+        {
+          data: () => ({
+            imagePath: "photos/photo-99/photo.png",
+          }),
+          ref: {
+            path: "booths/booth-3/uploadedPhotos/photo-99",
+          },
+        },
+      ],
+    });
 
-		const result = await getUploadedPhotos("booth-3");
+    queryUploadedPhotosByPhotoIdMock.mockReturnValueOnce({ get: getMock });
 
-		expect(result).toEqual([
-			{
-				photoId: "photo-1",
-				imagePath: "photos/photo-1/photo.png",
-				imageUrl: "https://example.com/photo-1.png",
-			},
-			{
-				photoId: "photo-2",
-				imagePath: "photos/photo-2/photo.png",
-				imageUrl: "https://example.com/photo-2.png",
-			},
-		]);
-	});
+    const { deleteUsedPhoto } = await import("@/application/photoService");
 
-	it("deleteUsedPhoto removes Firestore doc and storage file", async () => {
-		const deleteDocMock = vi.fn(() => Promise.resolve());
-		whereGetMock.mockResolvedValueOnce({
-			empty: false,
-			docs: [
-				{
-					ref: {
-						delete: deleteDocMock,
-					},
-					data: () => ({
-						imagePath: "photos/photo-99/photo.png",
-					}),
-				},
-			],
-		});
+    await deleteUsedPhoto("photo-99");
 
-		const { deleteUsedPhoto } = await import("@/application/photoService");
-
-		await deleteUsedPhoto("photo-99");
-
-		expect(collectionGroupMock).toHaveBeenCalledWith("uploadedPhotos");
-		expect(whereMock).toHaveBeenCalledWith("photoId", "==", "photo-99");
-		expect(limitMock).toHaveBeenCalledWith(1);
-		expect(deleteDocMock).toHaveBeenCalled();
-		expect(fileMock).toHaveBeenCalledWith("photos/photo-99/photo.png");
-		expect(storageDeleteMock).toHaveBeenCalled();
-	});
+    expect(queryUploadedPhotosByPhotoIdMock).toHaveBeenCalledWith("photo-99");
+    expect(deleteUploadedPhotoByDocumentPathMock).toHaveBeenCalledWith(
+      "booths/booth-3/uploadedPhotos/photo-99",
+    );
+    expect(deleteMock).toHaveBeenCalledWith();
+  });
 });

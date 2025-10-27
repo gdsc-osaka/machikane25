@@ -1,9 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const updateMock = vi.fn();
+const setMock = vi.fn();
 const storageSaveMock = vi.fn(() => Promise.resolve());
+const storageFileMock = vi.fn(() => ({
+	save: storageSaveMock,
+	exists: () => Promise.resolve([true]),
+}));
+const storageBucketMock = vi.fn(() => ({
+	name: "test-bucket",
+	file: storageFileMock,
+}));
 const docMock = vi.fn(() => ({
 	update: updateMock,
+	set: setMock,
 }));
 const collectionMock = vi.fn(() => ({
 	doc: docMock,
@@ -14,12 +24,7 @@ vi.mock("@/lib/firebase/admin", () => ({
 		collection: collectionMock,
 	}),
 	getAdminStorage: () => ({
-		bucket: () => ({
-			file: () => ({
-				save: storageSaveMock,
-				exists: () => Promise.resolve([true]),
-			}),
-		}),
+		bucket: storageBucketMock,
 	}),
 }));
 
@@ -44,6 +49,10 @@ vi.mock("@/application/photoService", () => ({
 describe("BoothService", () => {
 	beforeEach(() => {
 		updateMock.mockReset();
+		setMock.mockReset();
+		storageSaveMock.mockReset();
+		storageFileMock.mockClear();
+		storageBucketMock.mockClear();
 		docMock.mockClear();
 		collectionMock.mockClear();
 		serverTimestampMock.mockClear();
@@ -107,11 +116,41 @@ describe("BoothService", () => {
 
 		await completeGeneration("booth-5", "generated-1", "uploaded-2");
 
+		// Verify booth state update
+		expect(collectionMock).toHaveBeenCalledWith("booths");
+		expect(docMock).toHaveBeenCalledWith("booth-5");
 		expect(updateMock).toHaveBeenCalledWith({
 			state: "completed",
 			latestPhotoId: "generated-1",
 			updatedAt: "server-timestamp",
 		});
+
+		// Verify storage file save
+		expect(storageFileMock).toHaveBeenCalledWith(
+			"generated_photos/generated-1/photo.png",
+		);
+		expect(storageSaveMock).toHaveBeenCalledWith(expect.any(Buffer), {
+			resumable: false,
+			contentType: "image/png",
+			metadata: {
+				cacheControl: "public,max-age=3600",
+			},
+			validation: false,
+		});
+
+		// Verify generatedPhotos collection update
+		expect(collectionMock).toHaveBeenCalledWith("generatedPhotos");
+		expect(docMock).toHaveBeenCalledWith("generated-1");
+		expect(setMock).toHaveBeenCalledWith({
+			boothId: "booth-5",
+			photoId: "generated-1",
+			imagePath: "generated_photos/generated-1/photo.png",
+			imageUrl:
+				"https://storage.googleapis.com/test-bucket/generated_photos/generated-1/photo.png",
+			createdAt: "server-timestamp",
+		});
+
+		// Verify cleanup
 		expect(deleteUsedPhotoMock).toHaveBeenCalledWith("uploaded-2");
 	});
 });

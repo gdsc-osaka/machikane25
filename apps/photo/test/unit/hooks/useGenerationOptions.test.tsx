@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const unsubscribeMock = vi.fn();
 const collectionMock = vi.fn();
-const onSnapshotMock = vi.fn(() => unsubscribeMock);
+const onSnapshotMock = vi.fn();
 
 vi.mock("@/lib/firebase/client", () => ({
 	getFirebaseFirestore: () => ({ name: "firestore" }),
@@ -11,8 +11,8 @@ vi.mock("@/lib/firebase/client", () => ({
 }));
 
 vi.mock("firebase/firestore", () => ({
-	collection: (...args: unknown[]) => collectionMock(...args),
-	onSnapshot: (...args: unknown[]) => onSnapshotMock(...args),
+	collection: collectionMock,
+	onSnapshot: onSnapshotMock,
 }));
 
 describe("useGenerationOptions", () => {
@@ -32,7 +32,7 @@ describe("useGenerationOptions", () => {
 			return optionsCollectionRef;
 		});
 
-		onSnapshotMock.mockImplementation((ref, listener) => {
+		onSnapshotMock.mockImplementation((ref: unknown, listener: (snapshot: unknown) => void) => {
 			expect(ref).toBe(optionsCollectionRef);
 			snapshotListeners.push(listener);
 			return unsubscribeMock;

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(pnpm test:photo:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm coverage:*)"
+      "Bash(pnpm coverage:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(cat:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -30,18 +30,12 @@ const hookMocks = vi.hoisted(() => ({
 	useParams: vi.fn(),
 }));
 
-vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }), {
-	virtual: true,
-});
+vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
 
-vi.mock(
-	"@/app/actions/photoActions",
-	() => ({
-		uploadCapturedPhoto: vi.fn(),
-		completeCapture: vi.fn(),
-	}),
-	{ virtual: true },
-);
+vi.mock("@/app/actions/photoActions", () => ({
+	uploadCapturedPhoto: vi.fn(),
+	completeCapture: vi.fn(),
+}));
 
 vi.mock("react-webcam", () => ({
 	__esModule: true,

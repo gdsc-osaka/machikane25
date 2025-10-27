@@ -5,7 +5,7 @@ const unsubscribeMock = vi.fn();
 const collectionMock = vi.fn();
 const queryMock = vi.fn();
 const orderByMock = vi.fn();
-const onSnapshotMock = vi.fn(() => unsubscribeMock);
+const onSnapshotMock = vi.fn();
 
 vi.mock("@/lib/firebase/client", () => ({
 	getFirebaseFirestore: () => ({ name: "firestore" }),
@@ -13,10 +13,10 @@ vi.mock("@/lib/firebase/client", () => ({
 }));
 
 vi.mock("firebase/firestore", () => ({
-	collection: (...args: unknown[]) => collectionMock(...args),
-	query: (...args: unknown[]) => queryMock(...args),
-	orderBy: (...args: unknown[]) => orderByMock(...args),
-	onSnapshot: (...args: unknown[]) => onSnapshotMock(...args),
+	collection: collectionMock,
+	query: queryMock,
+	orderBy: orderByMock,
+	onSnapshot: onSnapshotMock,
 }));
 
 describe("useUploadedPhotos", () => {
@@ -51,7 +51,7 @@ describe("useUploadedPhotos", () => {
 			return queryRef;
 		});
 
-		onSnapshotMock.mockImplementation((ref, listener) => {
+		onSnapshotMock.mockImplementation((ref: unknown, listener: (snapshot: unknown) => void) => {
 			expect(ref).toBe(queryRef);
 			snapshotListeners.push(listener);
 			return unsubscribeMock;

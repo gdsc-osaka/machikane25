@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 
 const boothServiceMocks = vi.hoisted(() => ({
@@ -9,7 +9,7 @@ const boothServiceMocks = vi.hoisted(() => ({
 	completeGeneration: vi.fn(),
 }));
 
-vi.mock("@/application/boothService", () => boothServiceMocks, { virtual: true });
+vi.mock("@/application/boothService", () => boothServiceMocks);
 
 const mockStartSession = boothServiceMocks.startSession;
 const mockStartCapture = boothServiceMocks.startCapture;
@@ -92,7 +92,6 @@ describe("boothActions", () => {
 		const { completeGeneration } = await import("@/app/actions/boothActions");
 
 		await expect(
-			// @ts-expect-error intentional invalid payload for validation test
 			completeGeneration({ boothId: "", generatedPhotoId: "", usedUploadedPhotoId: "" }),
 		).rejects.toBeInstanceOf(ZodError);
 		expect(mockCompleteGeneration).not.toHaveBeenCalled();

@@ -100,7 +100,8 @@ describe("PhotoService", () => {
 		expect(boothDocMock).toHaveBeenCalledWith("booth-1");
 		expect(uploadedCollectionMock).toHaveBeenCalledWith("uploadedPhotos");
 
-		const docId = uploadedDocMock.mock.calls[0]?.[0];
+		const callArgs = uploadedDocMock.mock.calls[0] as unknown[];
+		const docId = callArgs[0] as string;
 		expect(docId).toBeTruthy();
 		expect(setMock).toHaveBeenCalledWith({
 			boothId: "booth-1",

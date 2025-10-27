@@ -29,22 +29,14 @@ const navigationMocks = vi.hoisted(() => ({
 	useParams: vi.fn(),
 }));
 
-vi.mock(
-	"@/lib/firebase/client",
-	() => ({
-		ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
-		initializeFirebaseClient: clientMocks.initializeFirebaseClient,
-	}),
-	{ virtual: true },
-);
+vi.mock("@/lib/firebase/client", () => ({
+	ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
+	initializeFirebaseClient: clientMocks.initializeFirebaseClient,
+}));
 
-vi.mock(
-	"@/app/actions/photoActions",
-	() => ({
-		uploadUserPhoto: photoActionMocks.uploadUserPhoto,
-	}),
-	{ virtual: true },
-);
+vi.mock("@/app/actions/photoActions", () => ({
+	uploadUserPhoto: photoActionMocks.uploadUserPhoto,
+}));
 
 vi.mock("sonner", () => ({
 	toast: {

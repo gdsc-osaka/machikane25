@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { feLogger } from "@/packages/logger/fe-logger";
 
 vi.mock("@sentry/nextjs", () => ({
@@ -27,7 +27,12 @@ describe("feLogger", () => {
 		consoleInfoSpy.mockRestore();
 		consoleWarnSpy.mockRestore();
 		consoleErrorSpy.mockRestore();
-		process.env.NODE_ENV = originalEnv;
+		Object.defineProperty(process.env, "NODE_ENV", {
+			value: originalEnv,
+			writable: true,
+			configurable: true,
+			enumerable: true,
+		});
 	});
 
 	describe("debug", () => {
@@ -51,7 +56,7 @@ describe("feLogger", () => {
 		});
 
 		it("should send to Sentry in production", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.info("info message", { data: 123 });
 			expect(Sentry.captureMessage).toHaveBeenCalledWith(
 				'info message {"data":123}',
@@ -60,7 +65,7 @@ describe("feLogger", () => {
 		});
 
 		it("should not send to Sentry in development", () => {
-			process.env.NODE_ENV = "development";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "development", writable: true, configurable: true, enumerable: true });
 			feLogger.info("info message");
 			expect(Sentry.captureMessage).not.toHaveBeenCalled();
 		});
@@ -73,7 +78,7 @@ describe("feLogger", () => {
 		});
 
 		it("should send to Sentry in production", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.warn("warning message", 456);
 			expect(Sentry.captureMessage).toHaveBeenCalledWith(
 				"warning message 456",
@@ -82,7 +87,7 @@ describe("feLogger", () => {
 		});
 
 		it("should not send to Sentry in development", () => {
-			process.env.NODE_ENV = "development";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "development", writable: true, configurable: true, enumerable: true });
 			feLogger.warn("warning message");
 			expect(Sentry.captureMessage).not.toHaveBeenCalled();
 		});
@@ -96,14 +101,14 @@ describe("feLogger", () => {
 		});
 
 		it("should send Error instance to Sentry in production", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			const error = new Error("test error");
 			feLogger.error(error);
 			expect(Sentry.captureException).toHaveBeenCalledWith(error);
 		});
 
 		it("should create Error from string and send to Sentry in production", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.error("error message");
 			expect(Sentry.captureException).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -113,7 +118,7 @@ describe("feLogger", () => {
 		});
 
 		it("should handle multiple arguments", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.error("error:", { code: 500 }, "details");
 			expect(Sentry.captureException).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -123,7 +128,7 @@ describe("feLogger", () => {
 		});
 
 		it("should not send to Sentry in development", () => {
-			process.env.NODE_ENV = "development";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "development", writable: true, configurable: true, enumerable: true });
 			feLogger.error("error message");
 			expect(Sentry.captureException).not.toHaveBeenCalled();
 		});
@@ -131,7 +136,7 @@ describe("feLogger", () => {
 
 	describe("safeStringify behavior", () => {
 		it("should handle circular references", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			const circular: Record<string, unknown> = { name: "test" };
 			circular.self = circular;
 
@@ -141,31 +146,31 @@ describe("feLogger", () => {
 		});
 
 		it("should handle undefined values", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.info(undefined);
 			expect(Sentry.captureMessage).toHaveBeenCalledWith("undefined", "info");
 		});
 
 		it("should handle null values", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.info(null);
 			expect(Sentry.captureMessage).toHaveBeenCalledWith("null", "info");
 		});
 
 		it("should handle string values", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.info("plain string");
 			expect(Sentry.captureMessage).toHaveBeenCalledWith("plain string", "info");
 		});
 
 		it("should handle number values", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.info(42);
 			expect(Sentry.captureMessage).toHaveBeenCalledWith("42", "info");
 		});
 
 		it("should handle boolean values", () => {
-			process.env.NODE_ENV = "production";
+			Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true, configurable: true, enumerable: true });
 			feLogger.info(true);
 			expect(Sentry.captureMessage).toHaveBeenCalledWith("true", "info");
 		});

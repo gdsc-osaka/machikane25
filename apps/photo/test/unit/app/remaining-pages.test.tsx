@@ -36,30 +36,20 @@ const clientMocks = vi.hoisted(() => ({
 	initializeFirebaseClient: vi.fn(),
 }));
 
-vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }), {
-	virtual: true,
-});
+vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
 
-vi.mock(
-	"@/hooks/useUploadedPhotos",
-	() => ({ useUploadedPhotos: hookMocks.useUploadedPhotos }),
-	{ virtual: true },
-);
+vi.mock("@/hooks/useUploadedPhotos", () => ({
+	useUploadedPhotos: hookMocks.useUploadedPhotos,
+}));
 
-vi.mock(
-	"@/hooks/useGenerationOptions",
-	() => ({ useGenerationOptions: hookMocks.useGenerationOptions }),
-	{ virtual: true },
-);
+vi.mock("@/hooks/useGenerationOptions", () => ({
+	useGenerationOptions: hookMocks.useGenerationOptions,
+}));
 
-vi.mock(
-	"@/lib/firebase/client",
-	() => ({
-		ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
-		initializeFirebaseClient: clientMocks.initializeFirebaseClient,
-	}),
-	{ virtual: true },
-);
+vi.mock("@/lib/firebase/client", () => ({
+	ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
+	initializeFirebaseClient: clientMocks.initializeFirebaseClient,
+}));
 
 vi.mock("next/navigation", () => ({
 	useParams: () => ({ boothId: "booth-id", photoId: "photo-id" }),

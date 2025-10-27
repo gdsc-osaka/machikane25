@@ -39,32 +39,22 @@ const hookMocks = vi.hoisted(() => ({
 	useParams: vi.fn(),
 }));
 
-vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }), {
-	virtual: true,
-});
+vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
 
-vi.mock(
-	"@/hooks/useUploadedPhotos",
-	() => ({ useUploadedPhotos: hookMocks.useUploadedPhotos }),
-	{ virtual: true },
-);
+vi.mock("@/hooks/useUploadedPhotos", () => ({
+	useUploadedPhotos: hookMocks.useUploadedPhotos,
+}));
 
-vi.mock(
-	"@/hooks/useGenerationOptions",
-	() => ({ useGenerationOptions: hookMocks.useGenerationOptions }),
-	{ virtual: true },
-);
+vi.mock("@/hooks/useGenerationOptions", () => ({
+	useGenerationOptions: hookMocks.useGenerationOptions,
+}));
 
-vi.mock(
-	"@/app/actions/boothActions",
-	() => ({
-		startSession: boothActionMocks.startSession,
-		startCapture: boothActionMocks.startCapture,
-		startGeneration: boothActionMocks.startGeneration,
-		completeCapture: boothActionMocks.completeCapture,
-	}),
-	{ virtual: true },
-);
+vi.mock("@/app/actions/boothActions", () => ({
+	startSession: boothActionMocks.startSession,
+	startCapture: boothActionMocks.startCapture,
+	startGeneration: boothActionMocks.startGeneration,
+	completeCapture: boothActionMocks.completeCapture,
+}));
 
 vi.mock("next/navigation", () => ({
 	useParams: () => hookMocks.useParams(),

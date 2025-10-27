@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const unsubscribeMock = vi.fn();
 const docMock = vi.fn();
-const onSnapshotMock = vi.fn(() => unsubscribeMock);
+const onSnapshotMock = vi.fn();
 const getDocMock = vi.fn();
 
 class MockTimestamp {
@@ -24,9 +24,9 @@ vi.mock("@/lib/firebase/client", () => ({
 }));
 
 vi.mock("firebase/firestore", () => ({
-	doc: (...args: unknown[]) => docMock(...args),
-	onSnapshot: (...args: unknown[]) => onSnapshotMock(...args),
-	getDoc: (...args: unknown[]) => getDocMock(...args),
+	doc: docMock,
+	onSnapshot: onSnapshotMock,
+	getDoc: getDocMock,
 	Timestamp: MockTimestamp,
 }));
 
@@ -56,7 +56,7 @@ describe("useBoothState", () => {
 			throw new Error("Unexpected doc call");
 		});
 
-		onSnapshotMock.mockImplementation((ref, listener) => {
+		onSnapshotMock.mockImplementation((_ref: unknown, listener: (snapshot: unknown) => void) => {
 			boothSnapshotListeners.push(listener);
 			return unsubscribeMock;
 		});
@@ -114,6 +114,7 @@ describe("useBoothState", () => {
 	it("cleans up subscription on unmount", async () => {
 		const boothDocRef = { path: "booths/booth-999" };
 		docMock.mockReturnValue(boothDocRef);
+		onSnapshotMock.mockReturnValue(unsubscribeMock);
 
 		const { useBoothState } = await import("@/hooks/useBoothState");
 		let currentState: ReturnType<typeof useBoothState> | undefined;

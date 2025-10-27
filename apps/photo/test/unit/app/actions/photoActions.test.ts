@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 
 const photoServiceMocks = vi.hoisted(() => ({
@@ -6,7 +6,7 @@ const photoServiceMocks = vi.hoisted(() => ({
 	uploadCapturedPhoto: vi.fn(),
 }));
 
-vi.mock("@/application/photoService", () => photoServiceMocks, { virtual: true });
+vi.mock("@/application/photoService", () => photoServiceMocks);
 
 const mockUploadUserPhoto = photoServiceMocks.uploadUserPhoto;
 const mockUploadCapturedPhoto = photoServiceMocks.uploadCapturedPhoto;

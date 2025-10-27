@@ -221,7 +221,7 @@ export default function ControlPage() {
 
 	const renderCompleted = () => {
 		const latestPhotoId = booth?.latestPhotoId;
-		const downloadHref =
+		const downloadHref: string | null =
 			typeof latestPhotoId === "string" && latestPhotoId.length > 0
 				? `/download/${boothId}/${latestPhotoId}`
 				: null;
@@ -236,17 +236,17 @@ export default function ControlPage() {
 						className="h-48 w-48 rounded object-cover shadow-lg"
 					/>
 				) : null}
-				{downloadHref ? (
+				{downloadHref && (
 					<div className="flex flex-col items-center gap-3">
 						<QRCode value={downloadHref} />
 						<Link
-							href={downloadHref}
+							href={downloadHref as `/download/${string}/${string}`}
 							className="text-primary underline"
 						>
 							ダウンロードページを開く
 						</Link>
 					</div>
-				) : null}
+				)}
 				<Button onClick={handleStartSession} variant="secondary">
 					次の来場者を案内する
 				</Button>

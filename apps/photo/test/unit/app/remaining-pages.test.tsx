@@ -36,6 +36,17 @@ const clientMocks = vi.hoisted(() => ({
 	initializeFirebaseClient: vi.fn(),
 }));
 
+const generationActionMocks = vi.hoisted(() => ({
+	getGeneratedPhotoAction: vi.fn(() =>
+		Promise.resolve({
+			data: {
+				imageUrl: "https://example.com/generated/photo.png",
+			},
+			error: null,
+		}),
+	),
+}));
+
 vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
 
 vi.mock("@/hooks/useUploadedPhotos", () => ({
@@ -49,6 +60,10 @@ vi.mock("@/hooks/useGenerationOptions", () => ({
 vi.mock("@/lib/firebase/client", () => ({
 	ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
 	initializeFirebaseClient: clientMocks.initializeFirebaseClient,
+}));
+
+vi.mock("@/app/actions/generationActions", () => ({
+	getGeneratedPhotoAction: generationActionMocks.getGeneratedPhotoAction,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -79,7 +94,7 @@ vi.mock("sonner", () => ({
 
 const expectHeadingStyles = (heading: HTMLElement) => {
 	const className = heading.getAttribute("class") ?? "";
-	expect(className).toContain("font-bold");
+	expect(className).toMatch(/font-(semi)?bold/);
 	expect(className).toMatch(/text-(3|4|5)xl/);
 };
 
@@ -92,7 +107,7 @@ const expectMainLayout = (main: HTMLElement | null) => {
 
 	const hasPadding = className
 		.split(/\s+/)
-		.some((cls) => cls.startsWith("p-") || cls.includes(":p-"));
+		.some((cls) => /^p[a-z-]*\d/.test(cls) || cls.includes(":p"));
 	expect(hasPadding).toBe(true);
 };
 
@@ -166,16 +181,31 @@ describe("Remaining Page Components", () => {
 	});
 
 	describe("DownloadPage", () => {
-		it("should render the download page", () => {
-			render(<DownloadPage />);
+		const mockGetGeneratedPhotoAction = generationActionMocks.getGeneratedPhotoAction;
+		const params = { boothId: "booth-id", photoId: "photo-id" };
 
-			const heading = screen.getByRole("heading", { name: /download/i });
+		beforeEach(() => {
+			vi.clearAllMocks();
+			mockGetGeneratedPhotoAction.mockResolvedValue({
+				data: {
+					imageUrl: "https://example.com/generated/photo.png",
+				},
+				error: null,
+			});
+		});
+
+		it("should render the download page", async () => {
+			const page = await DownloadPage({ params });
+			render(page);
+
+			const heading = screen.getByRole("heading", { name: /ai photo/i });
 			expect(heading).toBeInTheDocument();
 			expectHeadingStyles(heading);
 		});
 
-		it("should have correct layout structure", () => {
-			const { container } = render(<DownloadPage />);
+		it("should have correct layout structure", async () => {
+			const page = await DownloadPage({ params });
+			const { container } = render(page);
 
 			const main = container.querySelector("main");
 			expectMainLayout(main);

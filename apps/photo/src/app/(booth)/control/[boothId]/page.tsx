@@ -46,9 +46,9 @@ export default function ControlPage() {
 
 
 	const handleStartSession = useCallback(() => {
-		startTransition(async () => {
-			await startSession({ boothId });
-		});
+		console.log("Starting session...");
+		startSession({ boothId });
+		console.log("Session started.");
 	}, [boothId]);
 
 	const handleStartCapture = useCallback(() => {
@@ -264,6 +264,7 @@ export default function ControlPage() {
 		const detectedError = error;
 
 		if (detectedError) {
+			console.error(detectedError);
 			return (
 				<div className="flex flex-col gap-4">
 					<p className="text-sm text-destructive">

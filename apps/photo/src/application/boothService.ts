@@ -39,6 +39,7 @@ const updateBoothState = async (boothId: string, update: BoothStateUpdate) => {
 
 export const startSession = async (boothId: string): Promise<void> => {
 	await updateBoothState(boothId, { state: "menu" });
+	console.log(`update session tp menu for boothId: ${boothId}`);
 };
 
 export const startCapture = async (boothId: string): Promise<void> => {

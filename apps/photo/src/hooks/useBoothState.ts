@@ -99,6 +99,7 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 						}
 
 						setIsLoading(false);
+						console.log("Booth snapshot received:", snapshot);
 
 						if (!snapshot.exists()) {
 							setBooth(null);

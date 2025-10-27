@@ -32,7 +32,7 @@ export default function DisplayPage() {
 	);
 
 	const renderMenu = () => {
-		const uploadUrl = `/upload/${boothId}`;
+		const uploadUrl = `photo.fes2025.gdsc-osaka.jp/upload/${boothId}`;
 		return (
 			<div className="flex flex-col items-center gap-6">
 				<p className="text-xl font-semibold">

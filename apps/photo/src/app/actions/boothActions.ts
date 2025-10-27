@@ -26,8 +26,15 @@ const completeGenerationSchema = z.object({
 });
 
 export const startSession = async (input: { boothId: string }) => {
+	console.log("startSession called with input:", input);
+	try {
 	const { boothId } = boothIdSchema.parse(input);
+	console.log(`Starting session for boothId: ${boothId}`);
 	await startSessionService(boothId);
+	} catch (error) {
+		console.error("Error in startSession:", error);
+		throw error;
+	}
 };
 
 export const startCapture = async (input: { boothId: string }) => {

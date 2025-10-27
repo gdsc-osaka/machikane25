@@ -5,6 +5,7 @@ const unsubscribeMock = vi.fn();
 const docMock = vi.fn();
 const onSnapshotMock = vi.fn();
 const getDocMock = vi.fn();
+const ensureAnonymousSignInMock = vi.fn();
 
 class MockTimestamp {
 	constructor(private readonly value: Date) {}
@@ -21,6 +22,7 @@ class MockTimestamp {
 vi.mock("@/lib/firebase/client", () => ({
 	getFirebaseFirestore: () => ({ name: "firestore" }),
 	initializeFirebaseClient: vi.fn(),
+	ensureAnonymousSignIn: ensureAnonymousSignInMock,
 }));
 
 vi.mock("firebase/firestore", () => ({
@@ -36,6 +38,8 @@ describe("useBoothState", () => {
 		docMock.mockReset();
 		onSnapshotMock.mockReset();
 		getDocMock.mockReset();
+		ensureAnonymousSignInMock.mockReset();
+		ensureAnonymousSignInMock.mockResolvedValue({ uid: "anon-user" });
 	});
 
 	it("subscribes to booth document and returns state with latest photo URL", async () => {
@@ -78,7 +82,13 @@ describe("useBoothState", () => {
 
 		render(<TestComponent />);
 
-		expect(onSnapshotMock).toHaveBeenCalledWith(boothDocRef, expect.any(Function), expect.any(Function));
+		await waitFor(() => {
+			expect(onSnapshotMock).toHaveBeenCalledWith(
+				boothDocRef,
+				expect.any(Function),
+				expect.any(Function),
+			);
+		});
 
 		expect(currentState?.isLoading).toBe(true);
 
@@ -125,6 +135,10 @@ describe("useBoothState", () => {
 		};
 
 		const { unmount } = render(<TestComponent />);
+
+		await waitFor(() => {
+			expect(onSnapshotMock).toHaveBeenCalled();
+		});
 
 		expect(currentState?.isLoading).toBe(true);
 		unmount();

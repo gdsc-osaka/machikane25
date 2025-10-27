@@ -4,8 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"dev:photo": "pnpm --filter photo dev",
-		"dev:stamp": "pnpm --filter stamp dev",
+		"dev:photo": "pnpm --filter photo dev -p 3000",
+		"dev:stamp": "pnpm --filter stamp dev -p 3001",
 		"build:photo": "pnpm --filter photo build",
 		"build:photo-cleaner": "pnpm --filter photo-cleaner build",
 		"build:stamp": "pnpm --filter stamp build",

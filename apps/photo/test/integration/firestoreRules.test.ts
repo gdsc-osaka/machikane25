@@ -285,7 +285,7 @@ describe("Firestore Security Rules", () => {
 		});
 	});
 
-	describe("GeneratedPhotos Sub-collection", () => {
+	describe("GeneratedPhotos Collection", () => {
 		beforeEach(async () => {
 			// Setup: Create a booth and a generated photo as admin
 			const adminContext = testEnv.authenticatedContext("admin-setup", {
@@ -300,9 +300,10 @@ describe("Firestore Security Rules", () => {
 				createdAt: serverTimestamp(),
 			});
 
-			await setDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-1"), {
+			await setDoc(doc(adminDb, "generatedPhotos", "photo-1"), {
 				imageUrl: "https://storage.example.com/generated.png",
 				imagePath: "generated_photos/photo-1/photo.png",
+				boothId: "booth-1",
 				createdAt: serverTimestamp(),
 			});
 		});
@@ -312,7 +313,7 @@ describe("Firestore Security Rules", () => {
 			const unauthDb = unauthContext.firestore();
 
 			await assertSucceeds(
-				getDoc(doc(unauthDb, "booths/booth-1/generatedPhotos", "photo-1")),
+				getDoc(doc(unauthDb, "generatedPhotos", "photo-1")),
 			);
 		});
 
@@ -321,7 +322,7 @@ describe("Firestore Security Rules", () => {
 			const anonDb = anonContext.firestore();
 
 			await assertSucceeds(
-				getDoc(doc(anonDb, "booths/booth-1/generatedPhotos", "photo-1")),
+				getDoc(doc(anonDb, "generatedPhotos", "photo-1")),
 			);
 		});
 
@@ -330,9 +331,10 @@ describe("Firestore Security Rules", () => {
 			const anonDb = anonContext.firestore();
 
 			await assertFails(
-				setDoc(doc(anonDb, "booths/booth-1/generatedPhotos", "photo-2"), {
+				setDoc(doc(anonDb, "generatedPhotos", "photo-2"), {
 					imageUrl: "https://storage.example.com/new.png",
 					imagePath: "generated_photos/photo-2/photo.png",
+					boothId: "booth-1",
 					createdAt: serverTimestamp(),
 				}),
 			);
@@ -346,16 +348,17 @@ describe("Firestore Security Rules", () => {
 
 			// Create
 			await assertSucceeds(
-				setDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-2"), {
+				setDoc(doc(adminDb, "generatedPhotos", "photo-2"), {
 					imageUrl: "https://storage.example.com/new.png",
 					imagePath: "generated_photos/photo-2/photo.png",
+					boothId: "booth-1",
 					createdAt: serverTimestamp(),
 				}),
 			);
 
 			// Delete
 			await assertSucceeds(
-				deleteDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-2")),
+				deleteDoc(doc(adminDb, "generatedPhotos", "photo-2")),
 			);
 		});
 	});

@@ -6,10 +6,12 @@ const collectionMock = vi.fn();
 const queryMock = vi.fn();
 const orderByMock = vi.fn();
 const onSnapshotMock = vi.fn();
+const ensureAnonymousSignInMock = vi.fn();
 
 vi.mock("@/lib/firebase/client", () => ({
 	getFirebaseFirestore: () => ({ name: "firestore" }),
 	initializeFirebaseClient: vi.fn(),
+	ensureAnonymousSignIn: ensureAnonymousSignInMock,
 }));
 
 vi.mock("firebase/firestore", () => ({
@@ -26,6 +28,8 @@ describe("useUploadedPhotos", () => {
 		queryMock.mockReset();
 		orderByMock.mockReset();
 		onSnapshotMock.mockReset();
+		ensureAnonymousSignInMock.mockReset();
+		ensureAnonymousSignInMock.mockResolvedValue({ uid: "anon-user" });
 	});
 
 	it("subscribes to uploaded photos collection and maps data", async () => {
@@ -66,6 +70,10 @@ describe("useUploadedPhotos", () => {
 		};
 
 		render(<TestComponent />);
+
+		await waitFor(() => {
+			expect(onSnapshotMock).toHaveBeenCalled();
+		});
 
 		expect(state?.isLoading).toBe(true);
 
@@ -130,6 +138,11 @@ describe("useUploadedPhotos", () => {
 		};
 
 		const { unmount } = render(<TestComponent />);
+
+		await waitFor(() => {
+			expect(onSnapshotMock).toHaveBeenCalled();
+		});
+
 		unmount();
 
 		expect(unsubscribeMock).toHaveBeenCalled();

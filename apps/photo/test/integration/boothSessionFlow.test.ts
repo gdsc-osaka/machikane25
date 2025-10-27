@@ -43,6 +43,8 @@ const ensureEmulatorEnvironment = (): void => {
 		process.env.FIREBASE_STORAGE_EMULATOR_HOST ?? "localhost:11004";
 	process.env.STORAGE_EMULATOR_HOST =
 		process.env.STORAGE_EMULATOR_HOST ?? "http://localhost:11004";
+	process.env.FIREBASE_STORAGE_BUCKET =
+		process.env.FIREBASE_STORAGE_BUCKET ?? "photo-test.appspot.com";
 };
 
 const ensureAdminEnvironment = (): void => {

@@ -8,6 +8,7 @@ import {
 import {
 	getFirebaseFirestore,
 	initializeFirebaseClient,
+	ensureAnonymousSignIn,
 } from "@/lib/firebase/client";
 
 type UploadedPhotoItem = {
@@ -30,46 +31,84 @@ export const useUploadedPhotos = (boothId: string): UploadedPhotosResult => {
 
 	useEffect(() => {
 		isMountedRef.current = true;
-		initializeFirebaseClient();
+		setIsLoading(true);
+		setError(null);
 
-		const firestore = getFirebaseFirestore();
-		const collectionRef = collection(firestore, "booths", boothId, "uploadedPhotos");
-		const photosQuery = query(collectionRef, orderBy("createdAt", "desc"));
+		let unsubscribe: (() => void) | null = null;
+		let isCancelled = false;
 
-		const unsubscribe = onSnapshot(
-			photosQuery,
-			(snapshot) => {
+		const setupSubscription = async () => {
+			try {
+				initializeFirebaseClient();
+				await ensureAnonymousSignIn();
+
+				if (isCancelled) {
+					return;
+				}
+
+				const firestore = getFirebaseFirestore();
+				const collectionRef = collection(
+					firestore,
+					"booths",
+					boothId,
+					"uploadedPhotos",
+				);
+				const photosQuery = query(collectionRef, orderBy("createdAt", "desc"));
+
+				unsubscribe = onSnapshot(
+					photosQuery,
+					(snapshot) => {
+						if (!isMountedRef.current) {
+							return;
+						}
+						setIsLoading(false);
+						setError(null);
+
+						const mapped = snapshot.docs.map((docSnapshot) => {
+							const data = docSnapshot.data();
+							const imageUrl = Reflect.get(data, "imageUrl");
+							const imagePath = Reflect.get(data, "imagePath");
+
+							return {
+								photoId: docSnapshot.id,
+								imageUrl:
+									typeof imageUrl === "string" ? imageUrl : "",
+								imagePath:
+									typeof imagePath === "string" ? imagePath : "",
+							};
+						});
+
+						setPhotos(mapped);
+					},
+					(snapshotError) => {
+						if (!isMountedRef.current) {
+							return;
+						}
+						setIsLoading(false);
+						setError(snapshotError);
+					},
+				);
+			} catch (initializationError) {
 				if (!isMountedRef.current) {
 					return;
 				}
 				setIsLoading(false);
+				setError(
+					initializationError instanceof Error
+						? initializationError
+						: new Error("Failed to load uploaded photos"),
+				);
+			}
+		};
 
-				const mapped = snapshot.docs.map((docSnapshot) => {
-					const data = docSnapshot.data();
-					const imageUrl = Reflect.get(data, "imageUrl");
-					const imagePath = Reflect.get(data, "imagePath");
-
-					return {
-						photoId: docSnapshot.id,
-						imageUrl: typeof imageUrl === "string" ? imageUrl : "",
-						imagePath: typeof imagePath === "string" ? imagePath : "",
-					};
-				});
-
-				setPhotos(mapped);
-			},
-			(snapshotError) => {
-				if (!isMountedRef.current) {
-					return;
-				}
-				setIsLoading(false);
-				setError(snapshotError);
-			},
-		);
+		void setupSubscription();
 
 		return () => {
+			isCancelled = true;
 			isMountedRef.current = false;
-			unsubscribe();
+			if (typeof unsubscribe === "function") {
+				unsubscribe();
+			}
 		};
 	}, [boothId]);
 

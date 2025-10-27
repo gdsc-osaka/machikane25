@@ -20,7 +20,10 @@ type BoothStateUpdate = {
 const boothsCollection = () => getAdminFirestore().collection("booths");
 const generatedPhotosCollection = () =>
 	getAdminFirestore().collection("generatedPhotos");
-const storageBucket = () => getAdminStorage().bucket();
+const storageBucket = () => {
+	const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+	return getAdminStorage().bucket(bucketName);
+};
 
 const withTimestamps = (data: BoothStateUpdate) => ({
 	...data,
@@ -31,7 +34,7 @@ const updateBoothState = async (boothId: string, update: BoothStateUpdate) => {
 	ensureValidBoothState(update.state);
 
 	const docRef = boothsCollection().doc(boothId);
-	await docRef.update(withTimestamps(update));
+	await docRef.set(withTimestamps(update), { merge: true });
 };
 
 export const startSession = async (boothId: string): Promise<void> => {

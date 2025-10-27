@@ -37,11 +37,13 @@ export default function ControlPage() {
 	const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
 	const [isPending, startTransition] = useTransition();
 
-	const { booth, latestGeneratedPhotoUrl, isLoading } = useBoothState(boothId);
+	const { booth, latestGeneratedPhotoUrl, isLoading, error } =
+		useBoothState(boothId);
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
 
 	const boothState = getBoothState(booth?.state);
+
 
 	const handleStartSession = useCallback(() => {
 		startTransition(async () => {
@@ -257,6 +259,19 @@ export default function ControlPage() {
 	const renderContent = () => {
 		if (isLoading) {
 			return <p className="text-sm text-muted-foreground">読み込み中...</p>;
+		}
+
+		const detectedError = error;
+
+		if (detectedError) {
+			return (
+				<div className="flex flex-col gap-4">
+					<p className="text-sm text-destructive">
+						エラーが発生しました: {detectedError.message}
+					</p>
+					<Button onClick={() => window.location.reload()}>再読み込み</Button>
+				</div>
+			);
 		}
 
 		if (boothState === "idle") {

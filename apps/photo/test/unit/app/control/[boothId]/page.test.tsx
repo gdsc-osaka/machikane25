@@ -32,6 +32,10 @@ const boothActionMocks = vi.hoisted(() => ({
 	completeCapture: vi.fn(),
 }));
 
+const clientMocks = vi.hoisted(() => ({
+	ensureAnonymousSignIn: vi.fn(() => Promise.resolve()),
+}));
+
 const hookMocks = vi.hoisted(() => ({
 	useBoothState: vi.fn(),
 	useUploadedPhotos: vi.fn(),
@@ -47,6 +51,10 @@ vi.mock("@/hooks/useUploadedPhotos", () => ({
 
 vi.mock("@/hooks/useGenerationOptions", () => ({
 	useGenerationOptions: hookMocks.useGenerationOptions,
+}));
+
+vi.mock("@/lib/firebase/client", () => ({
+	ensureAnonymousSignIn: clientMocks.ensureAnonymousSignIn,
 }));
 
 vi.mock("@/app/actions/boothActions", () => ({
@@ -69,6 +77,7 @@ const mockStartSession = boothActionMocks.startSession;
 const mockStartCapture = boothActionMocks.startCapture;
 const mockStartGeneration = boothActionMocks.startGeneration;
 const mockCompleteCapture = boothActionMocks.completeCapture;
+const mockEnsureAnonymousSignIn = clientMocks.ensureAnonymousSignIn;
 
 const mockUseBoothState = hookMocks.useBoothState;
 const mockUseUploadedPhotos = hookMocks.useUploadedPhotos;
@@ -108,6 +117,7 @@ const renderControlPage = (booth: MockBooth): void => {
 describe("[RED] ControlPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockEnsureAnonymousSignIn.mockResolvedValue(undefined);
 	});
 
 	it("shows idle state prompt and triggers startSession action", async () => {

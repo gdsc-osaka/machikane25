@@ -20,7 +20,10 @@ const boothsCollection = () => getAdminFirestore().collection("booths");
 const uploadedPhotosCollection = (boothId: string) =>
 	boothsCollection().doc(boothId).collection("uploadedPhotos");
 
-const storageBucket = () => getAdminStorage().bucket();
+const storageBucket = () => {
+	const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+	return getAdminStorage().bucket(bucketName);
+};
 
 const createPhotoId = (): string => ulid().toLowerCase();
 

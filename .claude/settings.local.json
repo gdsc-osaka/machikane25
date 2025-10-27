@@ -6,7 +6,8 @@
       "Bash(pnpm coverage:*)",
       "mcp__ide__getDiagnostics",
       "Bash(cat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pnpm test:photo:boothSessionFlow:*)"
     ],
     "deny": [],
     "ask": []

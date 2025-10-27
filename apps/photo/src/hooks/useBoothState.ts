@@ -10,6 +10,7 @@ import { boothStateSchema, type BoothState } from "@/domain/booth";
 import {
 	getFirebaseFirestore,
 	initializeFirebaseClient,
+	ensureAnonymousSignIn,
 } from "@/lib/firebase/client";
 
 type BoothSnapshot = {
@@ -72,73 +73,109 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 	useEffect(() => {
 		isMountedRef.current = true;
-		initializeFirebaseClient();
+		setIsLoading(true);
+		setError(null);
 
-		const firestore = getFirebaseFirestore();
-		const boothRef = doc(firestore, "booths", boothId);
+		let unsubscribe: (() => void) | null = null;
+		let isCancelled = false;
 
-		const unsubscribe = onSnapshot(
-			boothRef,
-			(snapshot) => {
+		const setupSubscription = async () => {
+			try {
+				initializeFirebaseClient();
+				await ensureAnonymousSignIn();
+
+				if (isCancelled) {
+					return;
+				}
+
+				const firestore = getFirebaseFirestore();
+				const boothRef = doc(firestore, "booths", boothId);
+
+				unsubscribe = onSnapshot(
+					boothRef,
+					(snapshot) => {
+						if (!isMountedRef.current) {
+							return;
+						}
+
+						setIsLoading(false);
+
+						if (!snapshot.exists()) {
+							setBooth(null);
+							setLatestUrl(null);
+							return;
+						}
+
+						const data = snapshot.data();
+						const stateValue = parseState(Reflect.get(data, "state"));
+						const latestPhotoIdValue = Reflect.get(data, "latestPhotoId");
+						const lastTakePhotoAtValue = Reflect.get(data, "lastTakePhotoAt");
+
+						const boothSnapshot: BoothSnapshot = {
+							id: typeof snapshot.id === "string" ? snapshot.id : boothId,
+							state: stateValue,
+							latestPhotoId:
+								typeof latestPhotoIdValue === "string"
+									? latestPhotoIdValue
+									: null,
+							lastTakePhotoAt: toDate(lastTakePhotoAtValue),
+						};
+
+						setBooth(boothSnapshot);
+						setError(null);
+
+						if (boothSnapshot.latestPhotoId) {
+							void fetchGeneratedPhotoUrl(
+								firestore,
+								boothSnapshot.latestPhotoId,
+							)
+								.then((url) => {
+									if (isMountedRef.current) {
+										setLatestUrl(url);
+									}
+								})
+								.catch((fetchError) => {
+									if (isMountedRef.current) {
+										setError(
+											fetchError instanceof Error
+												? fetchError
+												: new Error("Failed to load generated photo"),
+										);
+									}
+								});
+						} else {
+							setLatestUrl(null);
+						}
+					},
+					(snapshotError) => {
+						if (!isMountedRef.current) {
+							return;
+						}
+						setIsLoading(false);
+						setError(snapshotError);
+					},
+				);
+			} catch (initializationError) {
 				if (!isMountedRef.current) {
 					return;
 				}
-
 				setIsLoading(false);
+				setError(
+					initializationError instanceof Error
+						? initializationError
+						: new Error("Failed to load booth state"),
+				);
+			}
+		};
 
-				if (!snapshot.exists()) {
-					setBooth(null);
-					setLatestUrl(null);
-					return;
-				}
-
-				const data = snapshot.data();
-				const stateValue = parseState(Reflect.get(data, "state"));
-				const latestPhotoIdValue = Reflect.get(data, "latestPhotoId");
-				const lastTakePhotoAtValue = Reflect.get(data, "lastTakePhotoAt");
-
-				const boothSnapshot: BoothSnapshot = {
-					id: typeof snapshot.id === "string" ? snapshot.id : boothId,
-					state: stateValue,
-					latestPhotoId:
-						typeof latestPhotoIdValue === "string" ? latestPhotoIdValue : null,
-					lastTakePhotoAt: toDate(lastTakePhotoAtValue),
-				};
-
-				setBooth(boothSnapshot);
-
-				if (boothSnapshot.latestPhotoId) {
-					void fetchGeneratedPhotoUrl(firestore, boothSnapshot.latestPhotoId)
-						.then((url) => {
-							if (isMountedRef.current) {
-								setLatestUrl(url);
-							}
-						})
-						.catch((fetchError) => {
-							if (isMountedRef.current) {
-								setError(
-									fetchError instanceof Error
-										? fetchError
-										: new Error("Failed to load generated photo"),
-								);
-							}
-						});
-				} else {
-					setLatestUrl(null);
-				}
-			},
-			(snapshotError) => {
-				if (!isMountedRef.current) {
-					return;
-				}
-				setIsLoading(false);
-				setError(snapshotError);
-			},
-		);
+		void setupSubscription();
 
 		return () => {
+			isCancelled = true;
 			isMountedRef.current = false;
-			unsubscribe();
+			if (typeof unsubscribe === "function") {
+				unsubscribe();
+			}
 		};
 	}, [boothId]);
 

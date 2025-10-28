@@ -2,6 +2,10 @@
 Remember to also check out docs/DDD.md and docs/TDD.md for deeper dives into Domain-Driven Development and Test-Driven Development practices.
 
 ## Project Structure & Module Organization
+- `apps/art` is the Unity workspace for the interactive art installation.
+- `apps/art-backend` is the Node.js backend for the art installation.
+- `apps/photo` is the Next.js workspace for the photobooth app.
+- `apps/photo-cleaner` is the Firebase Functions workspace for cleaning photobooth images.
 - `apps/stamp/` is the Next.js workspace. Pages live in `src/app`, shared UI in `src/components`, Domain-Driven Development files in `src/domain`, `src/infra`, `src/application`, Firebase wiring in `src/firebase.ts`, custom hooks in `src/hooks`, and i18n copy in `src/libs/i18n`.
 - Co-locate tests beside implementation in `**/__tests__/*.test.{ts,tsx}` for unit testing or in `apps/stamp/test/integration` for integration testing so coverage reporting stays aligned with the constitution.
 

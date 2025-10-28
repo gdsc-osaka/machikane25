@@ -32,22 +32,44 @@ const createImagePath = (photoId: string): string =>
 
 const createImageUrl = (imagePath: string): string => {
   const bucket = storageBucket();
-  return ["https://storage.googleapis.com", bucket.name, imagePath].join("/");
+  const bucketName = bucket.name;
+
+  // Check if running in emulator environment
+  const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+
+  if (storageEmulatorHost) {
+    // Emulator URL format: http://localhost:11004/v0/b/bucket-name/o/path?alt=media
+    const encodedPath = encodeURIComponent(imagePath);
+    return `http://${storageEmulatorHost}/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
+  }
+
+  // Production URL format: https://storage.googleapis.com/bucket-name/path
+  return `https://storage.googleapis.com/${bucketName}/${imagePath}`;
 };
 
-const saveImageToStorage = async (imagePath: string, file: File) => {
-  const storageFile = storageBucket().file(imagePath);
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+const saveImageToStorage = async (imagePath: string, file: File): Promise<void> => {
+  try {
+    const bucket = storageBucket();
+    const storageFile = bucket.file(imagePath);
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-  await storageFile.save(buffer, {
-    resumable: false,
-    contentType: file.type,
-    metadata: {
-      cacheControl: "public,max-age=3600",
-    },
-    validation: false,
-  });
+    console.log(`[photoService] Uploading file to Storage: ${imagePath}`);
+
+    await storageFile.save(buffer, {
+      resumable: false,
+      contentType: file.type,
+      metadata: {
+        cacheControl: "public,max-age=3600",
+      },
+      validation: false,
+    });
+
+    console.log(`[photoService] Successfully uploaded file to Storage: ${imagePath}`);
+  } catch (error) {
+    console.error(`[photoService] Failed to upload file to Storage: ${imagePath}`, error);
+    throw error;
+  }
 };
 
 const storeUploadedPhotoDocument = async (
@@ -63,20 +85,40 @@ const storeUploadedPhotoDocument = async (
   });
 };
 
-const uploadPhoto = async (boothId: string, file: File) => {
+const uploadPhoto = async (boothId: string, file: File): Promise<UploadedPhotoMetadata> => {
   const photoId = createPhotoId();
   const imagePath = createImagePath(photoId);
 
-  await saveImageToStorage(imagePath, file);
+  console.log(`[photoService] Starting photo upload for booth ${boothId}, photoId: ${photoId}`);
 
-  const imageUrl = createImageUrl(imagePath);
-  await storeUploadedPhotoDocument(boothId, {
-    photoId,
-    imagePath,
-    imageUrl,
-  });
+  try {
+    // First, upload to Storage
+    await saveImageToStorage(imagePath, file);
 
-  return { photoId, imagePath, imageUrl } satisfies UploadedPhotoMetadata;
+    // Only after successful Storage upload, save metadata to Firestore
+    const imageUrl = createImageUrl(imagePath);
+    await storeUploadedPhotoDocument(boothId, {
+      photoId,
+      imagePath,
+      imageUrl,
+    });
+
+    console.log(`[photoService] Successfully uploaded photo: ${photoId}`);
+
+    return { photoId, imagePath, imageUrl } satisfies UploadedPhotoMetadata;
+  } catch (error) {
+    console.error(`[photoService] Failed to upload photo: ${photoId}`, error);
+
+    // Try to clean up the Storage file if Firestore save failed
+    try {
+      const bucket = storageBucket();
+      await bucket.file(imagePath).delete().catch(() => undefined);
+    } catch (cleanupError) {
+      console.error(`[photoService] Failed to cleanup Storage file: ${imagePath}`, cleanupError);
+    }
+
+    throw error;
+  }
 };
 
 export const uploadUserPhoto = async (

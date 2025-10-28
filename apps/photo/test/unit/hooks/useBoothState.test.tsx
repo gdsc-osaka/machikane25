@@ -6,6 +6,8 @@ const docMock = vi.fn();
 const onSnapshotMock = vi.fn();
 const getDocMock = vi.fn();
 const ensureAnonymousSignInMock = vi.fn();
+const getDownloadURLMock = vi.fn();
+const refMock = vi.fn();
 
 class MockTimestamp {
 	constructor(private readonly value: Date) {}
@@ -21,6 +23,7 @@ class MockTimestamp {
 
 vi.mock("@/lib/firebase/client", () => ({
 	getFirebaseFirestore: () => ({ name: "firestore" }),
+	getFirebaseStorage: () => ({ name: "storage" }),
 	initializeFirebaseClient: vi.fn(),
 	ensureAnonymousSignIn: ensureAnonymousSignInMock,
 }));
@@ -32,6 +35,11 @@ vi.mock("firebase/firestore", () => ({
 	Timestamp: MockTimestamp,
 }));
 
+vi.mock("firebase/storage", () => ({
+	ref: refMock,
+	getDownloadURL: getDownloadURLMock,
+}));
+
 describe("useBoothState", () => {
 	beforeEach(() => {
 		unsubscribeMock.mockClear();
@@ -39,7 +47,15 @@ describe("useBoothState", () => {
 		onSnapshotMock.mockReset();
 		getDocMock.mockReset();
 		ensureAnonymousSignInMock.mockReset();
+		getDownloadURLMock.mockReset();
+		refMock.mockReset();
 		ensureAnonymousSignInMock.mockResolvedValue({ uid: "anon-user" });
+
+		// Mock getDownloadURL to return a URL
+		refMock.mockImplementation((storage, path: string) => ({ storage, path }));
+		getDownloadURLMock.mockImplementation(() => {
+			return Promise.resolve("https://example.com/generated.png");
+		});
 	});
 
 	it("subscribes to booth document and returns state with latest photo URL", async () => {
@@ -81,7 +97,7 @@ describe("useBoothState", () => {
 		getDocMock.mockResolvedValue({
 			exists: () => true,
 			data: () => ({
-				imageUrl: "https://example.com/generated.png",
+				imagePath: "generated_photos/photo-555/photo.png",
 			}),
 		});
 

@@ -64,17 +64,18 @@ export const useUploadedPhotos = (boothId: string): UploadedPhotosResult => {
 						setIsLoading(false);
 						setError(null);
 
+						// Use imageUrl directly from Firestore (already contains the correct URL)
 						const mapped = snapshot.docs.map((docSnapshot) => {
 							const data = docSnapshot.data();
-							const imageUrl = Reflect.get(data, "imageUrl");
 							const imagePath = Reflect.get(data, "imagePath");
+							const imageUrl = Reflect.get(data, "imageUrl");
+							const imagePathStr = typeof imagePath === "string" ? imagePath : "";
+							const imageUrlStr = typeof imageUrl === "string" ? imageUrl : "";
 
 							return {
 								photoId: docSnapshot.id,
-								imageUrl:
-									typeof imageUrl === "string" ? imageUrl : "",
-								imagePath:
-									typeof imagePath === "string" ? imagePath : "",
+								imageUrl: imageUrlStr,
+								imagePath: imagePathStr,
 							};
 						});
 

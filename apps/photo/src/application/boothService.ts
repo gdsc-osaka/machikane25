@@ -88,11 +88,18 @@ export const completeGeneration = async (
 		validation: false,
 	});
 
-	const imageUrl = [
-		"https://storage.googleapis.com",
-		bucket.name,
-		imagePath,
-	].join("/");
+	// Generate URL based on environment (emulator or production)
+	const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+	let imageUrl: string;
+
+	if (storageEmulatorHost) {
+		// Emulator URL format
+		const encodedPath = encodeURIComponent(imagePath);
+		imageUrl = `http://${storageEmulatorHost}/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
+	} else {
+		// Production URL format
+		imageUrl = `https://storage.googleapis.com/${bucket.name}/${imagePath}`;
+	}
 
 	await createGeneratedPhoto({
 		boothId,

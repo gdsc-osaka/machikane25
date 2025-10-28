@@ -154,7 +154,7 @@ describe("BoothService", () => {
 			photoId: "generated-1",
 			imagePath: "generated_photos/generated-1/photo.png",
 			imageUrl:
-				"https://storage.googleapis.com/test-bucket/generated_photos/generated-1/photo.png",
+				"http://localhost:11004/v0/b/test-bucket/o/generated_photos%2Fgenerated-1%2Fphoto.png?alt=media",
 		});
 		expect(collectionMock).not.toHaveBeenCalledWith("generatedPhotos");
 

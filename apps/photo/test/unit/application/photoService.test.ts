@@ -42,7 +42,8 @@ const expectMetadataShape = (metadata: UploadedPhotoMetadata) => {
   expect(metadata.photoId).toMatch(/^[0-9a-hjkmnp-tv-z]{26}$/);
   expect(metadata.imagePath.startsWith("photos/")).toBe(true);
   expect(metadata.imagePath.endsWith("/photo.png")).toBe(true);
-  expect(metadata.imageUrl.startsWith("https://storage.googleapis.com/")).toBe(true);
+  // In development/test environment, URL should use emulator format
+  expect(metadata.imageUrl.startsWith("http://localhost:11004/")).toBe(true);
 };
 
 describe("PhotoService", () => {
@@ -65,7 +66,8 @@ describe("PhotoService", () => {
     const [payload] = createUploadedPhotoMock.mock.calls[0] as [UploadedPhotoMetadata];
     expect(payload.boothId).toBe("booth-1");
     expect(payload.imagePath.startsWith("photos/")).toBe(true);
-    expect(payload.imageUrl.startsWith("https://storage.googleapis.com/")).toBe(true);
+    // In development/test environment, URL should use emulator format
+    expect(payload.imageUrl.startsWith("http://localhost:11004/")).toBe(true);
 
     expectMetadataShape(result);
   });

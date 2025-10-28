@@ -61,16 +61,47 @@ export const getAdminAuth = (): Auth => {
 
 /**
  * Get Firebase Admin Firestore instance
+ * Automatically connects to Firestore Emulator in development/test environments
  */
 export const getAdminFirestore = (): Firestore => {
 	const app = initializeAdminApp();
-	return admin.firestore(app);
+	const firestore = admin.firestore(app);
+
+	// Connect to Firestore Emulator if not in production
+	if (process.env.NODE_ENV !== "production") {
+		const firestoreEmulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
+		if (!firestoreEmulatorHost) {
+			// Default to localhost:11002 (from firebase.json)
+			process.env.FIRESTORE_EMULATOR_HOST = "localhost:11002";
+			console.log("[admin] Using Firestore Emulator at localhost:11002");
+		}
+	}
+
+	return firestore;
 };
 
 /**
  * Get Firebase Admin Storage instance
+ * Automatically connects to Storage Emulator in development/test environments
  */
 export const getAdminStorage = (): Storage => {
 	const app = initializeAdminApp();
-	return admin.storage(app);
+	const storage = admin.storage(app);
+
+	// Connect to Storage Emulator if environment variable is set
+	const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST || process.env.STORAGE_EMULATOR_HOST;
+
+	if (storageEmulatorHost) {
+		// Parse host and port from the emulator host string
+		const [host, portStr] = storageEmulatorHost.split(':');
+		const port = portStr ? parseInt(portStr, 10) : 9199;
+
+		// Set the emulator host for the storage instance
+		if (host && port) {
+			process.env.STORAGE_EMULATOR_HOST = `${host}:${port}`;
+			console.log(`[admin] Using Storage Emulator at ${host}:${port}`);
+		}
+	}
+
+	return storage;
 };

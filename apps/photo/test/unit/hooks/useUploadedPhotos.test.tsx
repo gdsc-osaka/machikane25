@@ -82,14 +82,14 @@ describe("useUploadedPhotos", () => {
 				{
 					id: "photo-1",
 					data: () => ({
-						imageUrl: "https://cdn/photo-1.png",
+						imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-1%2Fphoto.png?alt=media",
 						imagePath: "photos/photo-1/photo.png",
 					}),
 				},
 				{
 					id: "photo-2",
 					data: () => ({
-						imageUrl: "https://cdn/photo-2.png",
+						imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-2%2Fphoto.png?alt=media",
 						imagePath: "photos/photo-2/photo.png",
 					}),
 				},
@@ -109,12 +109,12 @@ describe("useUploadedPhotos", () => {
 			expect(state?.photos).toEqual([
 				{
 					photoId: "photo-1",
-					imageUrl: "https://cdn/photo-1.png",
+					imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-1%2Fphoto.png?alt=media",
 					imagePath: "photos/photo-1/photo.png",
 				},
 				{
 					photoId: "photo-2",
-					imageUrl: "https://cdn/photo-2.png",
+					imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-2%2Fphoto.png?alt=media",
 					imagePath: "photos/photo-2/photo.png",
 				},
 			]);

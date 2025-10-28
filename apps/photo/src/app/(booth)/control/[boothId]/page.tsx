@@ -113,6 +113,8 @@ export default function ControlPage() {
 		<div className="grid grid-cols-2 gap-4">
 			{photos.map((photo) => {
 				const isSelected = selectedPhotoId === photo.photoId;
+				const hasValidImageUrl = photo.imageUrl && photo.imageUrl.length > 0;
+
 				return (
 					<button
 						type="button"
@@ -123,11 +125,17 @@ export default function ControlPage() {
 							isSelected ? "border-primary" : "border-muted",
 						].join(" ")}
 					>
-						<img
-							src={photo.imageUrl}
-							alt="アップロード済みの写真"
-							className="h-24 w-full rounded object-cover"
-						/>
+						{hasValidImageUrl ? (
+							<img
+								src={photo.imageUrl}
+								alt="アップロード済みの写真"
+								className="h-24 w-full rounded object-cover"
+							/>
+						) : (
+							<div className="flex h-24 w-full items-center justify-center rounded bg-muted text-sm text-muted-foreground">
+								読み込み中...
+							</div>
+						)}
 					</button>
 				);
 			})}

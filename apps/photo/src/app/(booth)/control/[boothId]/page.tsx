@@ -79,6 +79,8 @@ export default function ControlPage() {
 		if (!selectedPhotoId) {
 			return;
 		}
+		console.log("Starting generation with options:", selectedOptions);
+		console.log("Selected photo ID:", selectedPhotoId);
 
 		startTransition(async () => {
 			await startGeneration({
@@ -197,7 +199,7 @@ export default function ControlPage() {
 			</div>
 			<Separator />
 			<div className="flex flex-col gap-6">
-				<h2 className="text-lg font-semibold">アップロード済みの写真</h2>
+				<h2 className="text-lg font-semibold">生成に使用する画像</h2>
 				{photos.length > 0 ? (
 					renderPhotos()
 				) : (

@@ -1,10 +1,10 @@
 import { collection, onSnapshot } from "firebase/firestore";
 import { use, useCallback, useEffect, useRef, useState } from "react";
+import { set } from "zod";
 import {
 	getFirebaseFirestore,
 	initializeFirebaseClient,
 } from "@/lib/firebase/client";
-import { set } from "zod";
 
 type GenerationOptionItem = {
 	id: string;
@@ -96,7 +96,6 @@ export const useGenerationOptions = (): GenerationOptionsResult => {
 		setIsLoading(true);
 		setError(null);
 	}, []);
-
 
 	return {
 		options,

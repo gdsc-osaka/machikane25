@@ -192,7 +192,9 @@ describe("[RED] ControlPage", () => {
 		renderControlPage(booth);
 
 		expect(screen.getByText("撮影中...")).toBeInTheDocument();
-		expect(screen.getByText("ディスプレイ（大画面）を見てください")).toBeInTheDocument();
+		expect(
+			screen.getByText("ディスプレイ（大画面）を見てください"),
+		).toBeInTheDocument();
 	});
 
 	it("shows generating state progress message", () => {

@@ -309,7 +309,8 @@ const seedGenerationOptions = async (
 		},
 	];
 
-	const bucketName = process.env.FIREBASE_STORAGE_BUCKET ?? "photo-test.appspot.com";
+	const bucketName =
+		process.env.FIREBASE_STORAGE_BUCKET ?? "photo-test.appspot.com";
 	const bucket = storage.bucket(bucketName);
 
 	const seedPayloads = await Promise.all(

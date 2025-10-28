@@ -42,7 +42,7 @@ export const startSession = async (boothId: string): Promise<void> => {
 
 export const discardSession = async (boothId: string): Promise<void> => {
 	await updateBoothState(boothId, { state: "idle" });
-}
+};
 
 export const startCapture = async (boothId: string): Promise<void> => {
 	await updateBoothState(boothId, {

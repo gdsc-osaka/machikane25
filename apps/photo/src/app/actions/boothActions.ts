@@ -4,10 +4,10 @@ import { z } from "zod";
 import {
 	completeCapture as completeCaptureService,
 	completeGeneration as completeGenerationService,
+	discardSession as discardSessionService,
 	startCapture as startCaptureService,
 	startGeneration as startGenerationService,
 	startSession as startSessionService,
-	discardSession as discardSessionService,
 } from "@/application/boothService";
 
 const boothIdSchema = z.object({
@@ -42,7 +42,7 @@ export const discardSession = async (input: { boothId: string }) => {
 	const { boothId } = boothIdSchema.parse(input);
 	console.log(`Discarding session for boothId: ${boothId}`);
 	await discardSessionService(boothId);
-}
+};
 
 export const startCapture = async (input: { boothId: string }) => {
 	const { boothId } = boothIdSchema.parse(input);

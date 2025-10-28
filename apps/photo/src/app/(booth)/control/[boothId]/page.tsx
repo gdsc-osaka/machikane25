@@ -13,10 +13,10 @@ import {
 import QRCode from "react-qr-code";
 import {
 	completeCapture,
+	discardSession,
 	startCapture,
 	startGeneration,
 	startSession,
-	discardSession,
 } from "@/app/actions/boothActions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

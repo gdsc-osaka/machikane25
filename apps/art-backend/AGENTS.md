@@ -20,7 +20,6 @@
 ## API Surface
 - `POST /upload-photo` accepts a multipart form with a single `photo` binary part and requires the `X-API-KEY` header. On success it stores the image in Firebase Storage, blurs faces before saving, extracts the dominant hue in HSV space, and persists the fish entry.
 - `GET /get-fish` returns the list of fish records for the renderer. Responses must stay compatible with the `Fish` schema defined in the design doc.
-- Propagate errors through consistent problem responses; wrap handler logic with neverthrow `ResultAsync` to centralize failure handling.
 
 ## Data Model & Storage
 - Firestore collection: `fishs/{fishId}` with `imageUrl`, `imagePath`, `color` (HEX), and `createdAt`.
@@ -33,7 +32,7 @@
 - Sentry captures renderer issues; the backend should emit structured logs for parity and make it easy to correlate requests with renderer events.
 
 ## Tech Stack & Practices
-- TypeScript 5.x, Node.js runtime on Cloud Run, Hono.js routing, neverthrow for error handling, obj-err for richer error metadata, Firebase Admin SDK for Storage/Firestore, and Google Cloud Logging + Sentry for observability.
+- TypeScript 5.x, Node.js runtime on Cloud Run, Hono.js routing, Firebase Admin SDK for Storage/Firestore, and Google Cloud Logging + Sentry for observability.
 - Embrace DDD: keep domain logic in function-oriented modules, avoid classes, and model variants with discriminated unions. Consult `docs/DDD.md` for boundaries.
 - Work test-first (Vitest) and maintain co-located `*.test.ts` specs; target 100% coverage and verify with `pnpm --filter art-backend coverage`.
 - Run `pnpm --filter art-backend lint` (or `lint:fix`) before submitting changes to satisfy Biome.

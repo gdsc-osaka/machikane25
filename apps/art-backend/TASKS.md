@@ -5,8 +5,8 @@
 - [x] Implement structured Cloud Logging helper in `src/infra/logging/cloud-logger.ts` and expose logging factory (see `docs/setup-config.md`).
 
 ## Domain Layer
-- [x] Model fish entity, color value logic, and photo value object under `src/domain/fish` (see `docs/domain-layer.md`).
-- [x] Implement HSV hue extraction utilities and image blur policy as pure domain helpers (see `docs/domain-layer.md`).
+- [ ] Model fish entity, color value logic, and photo value object under `src/domain/fish` (see `docs/domain-layer.md`).
+- [ ] Implement HSV hue extraction utilities and image blur policy as pure domain helpers (see `docs/domain-layer.md`).
 
 ## Application Layer
 - [ ] Define repository and service ports in `src/application/ports.ts` (see `docs/application-layer.md`).

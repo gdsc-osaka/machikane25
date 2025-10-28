@@ -8,20 +8,11 @@ import {
 	type Firestore,
 	type FirestoreDataConverter,
 	getFirestore,
-	type QueryDocumentSnapshot,
-	type Timestamp,
 } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
+import type { FishDocument } from "../domain/fish/fish.js";
 import { AppError } from "../errors/app-error.js";
 import type { Config } from "./env.js";
-
-export type FishDocument = Readonly<{
-	id: string;
-	imageUrl: string;
-	imagePath: string;
-	color: string;
-	createdAt: Timestamp;
-}>;
 
 type FirebaseServices = Readonly<{
 	firestore: Firestore;
@@ -32,23 +23,21 @@ type FirebaseServices = Readonly<{
 }>;
 
 const fishConverter: FirestoreDataConverter<FishDocument> = {
-	toFirestore: (fish) => {
-		return {
-			imageUrl: fish.imageUrl,
-			imagePath: fish.imagePath,
-			color: fish.color,
-			createdAt: fish.createdAt,
-		}
-	},
+	toFirestore: (fish) => ({
+		imageUrl: fish.imageUrl,
+		imagePath: fish.imagePath,
+		color: fish.color,
+		createdAt: fish.createdAt,
+	}),
 	fromFirestore: (snapshot) => {
-		const data = snapshot.data();
-		return {
+		const data = snapshot.data() as Omit<FishDocument, "id">;
+		return Object.freeze({
 			id: snapshot.id,
 			imageUrl: data.imageUrl,
 			imagePath: data.imagePath,
 			color: data.color,
 			createdAt: data.createdAt,
-		};
+		});
 	},
 };
 

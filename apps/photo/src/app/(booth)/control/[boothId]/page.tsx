@@ -129,7 +129,7 @@ export default function ControlPage() {
 							<img
 								src={photo.imageUrl}
 								alt="アップロード済みの写真"
-								className="h-24 w-full rounded object-cover"
+								className="h-70 w-full rounded object-cover"
 							/>
 						) : (
 							<div className="flex h-24 w-full items-center justify-center rounded bg-muted text-sm text-muted-foreground">

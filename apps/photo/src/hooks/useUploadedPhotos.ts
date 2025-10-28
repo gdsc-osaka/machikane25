@@ -5,8 +5,10 @@ import {
 	orderBy,
 	query,
 } from "firebase/firestore";
+import { ref, getDownloadURL } from "firebase/storage";
 import {
 	getFirebaseFirestore,
+	getFirebaseStorage,
 	initializeFirebaseClient,
 	ensureAnonymousSignIn,
 } from "@/lib/firebase/client";
@@ -57,28 +59,38 @@ export const useUploadedPhotos = (boothId: string): UploadedPhotosResult => {
 
 				unsubscribe = onSnapshot(
 					photosQuery,
-					(snapshot) => {
+					async (snapshot) => {
 						if (!isMountedRef.current) {
 							return;
 						}
 						setIsLoading(false);
 						setError(null);
 
-						// Use imageUrl directly from Firestore (already contains the correct URL)
-						const mapped = snapshot.docs.map((docSnapshot) => {
+						// Get download URLs using Firebase Storage SDK
+						const storage = getFirebaseStorage();
+						const photoPromises = snapshot.docs.map(async (docSnapshot) => {
 							const data = docSnapshot.data();
 							const imagePath = Reflect.get(data, "imagePath");
-							const imageUrl = Reflect.get(data, "imageUrl");
 							const imagePathStr = typeof imagePath === "string" ? imagePath : "";
-							const imageUrlStr = typeof imageUrl === "string" ? imageUrl : "";
+
+							let imageUrl = "";
+							if (imagePathStr) {
+								try {
+									const storageRef = ref(storage, imagePathStr);
+									imageUrl = await getDownloadURL(storageRef);
+								} catch (urlError) {
+									console.error(`[useUploadedPhotos] Failed to get download URL for ${imagePathStr}:`, urlError);
+								}
+							}
 
 							return {
 								photoId: docSnapshot.id,
-								imageUrl: imageUrlStr,
+								imageUrl,
 								imagePath: imagePathStr,
 							};
 						});
 
+						const mapped = await Promise.all(photoPromises);
 						setPhotos(mapped);
 					},
 					(snapshotError) => {

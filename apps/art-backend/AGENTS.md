@@ -56,6 +56,7 @@
 - **DRY:** deduplicate validation, logging, and error mapping through shared helpers; centralize constants for storage paths, collection names, and error codes.
 - **Security first:** treat user input (photos, headers) as untrusted, sanitize aggressively, and log through structured helpers without leaking sensitive data.
 - **Observability:** ensure every use case emits correlated logs and surfaces domain errors so Cloud Logging and Sentry traces remain actionable during the exhibition.
+- **DDD:** Domain layer should not depend on Application or Infrastructure; model business rules as pure functions and immutable data structures without side effects.
 
 ## Security & Operations
 - Authenticate every controller with the `X-API-KEY` header that matches the configured environment value; never downgrade this requirement.

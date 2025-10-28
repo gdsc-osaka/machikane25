@@ -23,7 +23,7 @@
 - [ ] Implement `upload-photo` and `get-fish` handlers plus route registration in `src/controller/http` (see `docs/controller-layer.md`).
 
 ## Utilities
-- [ ] Add neverthrow result helpers and error mapping in `src/utils/result.ts` (see `docs/utilities.md`).
+- [ ] Introduce `AppError` hierarchy and shared error-to-response mapping in `src/errors/` (see `docs/utilities.md`).
 
 ## Quality & Operations
 - [ ] Write unit tests for domain/application/controller logic using infrastructure mocks (see `docs/quality-ops.md`).

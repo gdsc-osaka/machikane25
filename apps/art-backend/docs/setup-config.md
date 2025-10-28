@@ -9,7 +9,7 @@
 - `src/config/env.ts`
   - Use `env-var` to read required variables: `API_KEY`, `FIREBASE_PROJECT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, `FISH_TTL_MINUTES`, `MAX_PHOTO_SIZE_MB`.
   - Return an immutable `Config` object exported for other layers.
-  - Fail fast (throw) if validation fails; wrap in `Result` if necessary for tests.
+  - Fail fast by throwing a `ConfigError` when validation fails; tests assert on the error instance.
 - `src/config/firebase.ts`
   - Initialize Firebase Admin using credentials resolved from config.
   - Export Firestore and Storage handles plus typed `FirestoreDataConverter` for fish entities.
@@ -24,6 +24,11 @@
 - `buildConfig(): Config` — reads environment variables, validates them, and returns typed configuration.
 - `getFirebaseServices(config: Config): { firestore: FirebaseFirestore.Firestore; storage: admin.storage.Storage; converters: { fish: FirebaseFirestore.FirestoreDataConverter<FishDocument> } }` — initializes Firebase Admin and exposes typed handles.
 - `createLogger(deps: { config: Config; requestId?: string }): Logger` — returns logging functions with signature `(message: string, context?: Record<string, unknown>) => void`.
+
+## Error Contracts
+- `buildConfig` throws `ConfigError` (extends `AppError`) when required variables are missing or fail validation; the error includes a `context` object listing offending keys.
+- `getFirebaseServices` throws `FirebaseInitializationError` when Admin SDK bootstrap fails (bad credentials, missing project); the application layer catches and rethrows as `InfrastructureError` when appropriate.
+- `createLogger` should never throw; defensive guards log-and-continue using `console` fallback if structured logging setup fails during initialization.
 
 ## Steps
 1. Define `Config` type and builder in `env.ts`; write unit tests using temporary env overrides.

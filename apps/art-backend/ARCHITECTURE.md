@@ -57,8 +57,10 @@ apps/art-backend/
 │   │   └── middleware/
 │   │       ├── api-key.ts               # Validates X-API-KEY against env config and short-circuits on failure
 │   │       └── error-handler.ts         # Translates error into HTTP responses + log severity
-│   └── utils/
-│       └── result.ts                    # Result helpers and standardized error factory/guards
+│   ├── errors/
+│   │   ├── app-error.ts                 # Base AppError plus typed subclasses (validation, auth, infra, processing)
+│   │   └── http-error-map.ts            # Helpers mapping AppError codes to HTTP status + log metadata
+│   └── utils/                           # Shared pure helpers (e.g., correlation ID generation)
 └── test/
     └── integration/
         └── renderer-contract.test.ts    # High-level test covering API contract with Unity renderer
@@ -92,7 +94,9 @@ apps/art-backend/
 5. Cache-control header (`no-store`) keeps renderer polling consistently.
 
 ## Error Handling & Logging
-- Centralized error map (`src/utils/result.ts`) converts domain/infrastructure errors into HTTP-friendly codes and log levels.
+- Use try/catch blocks in controllers, application services, and infrastructure adapters to translate unexpected failures into typed `AppError` subclasses defined in `src/errors/app-error.ts`.
+- `ValidationError`, `AuthenticationError`, `ImageProcessingError`, `StorageError`, and `RepositoryError` all extend `AppError` and carry a `code` plus optional `context` for log enrichment.
+- The error-handling middleware inspects thrown `AppError` instances, looks up response metadata via `src/errors/http-error-map.ts`, and emits structured logs before serializing `{ error: code, message }`.
 - Google Cloud Logging captures structured logs with `severity`, `requestId`, and contextual metadata derived from controllers.
 
 ## Configuration & Secrets

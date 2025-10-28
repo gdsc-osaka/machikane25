@@ -15,7 +15,6 @@
 		"env-var": "^7.4.1",
 		"firebase-admin": "^13.5.0",
 		"hono": "^4.10.3",
-		"neverthrow": "^8.2.0",
 		"zod": "^4.1.12"
 	},
 	"devDependencies": {

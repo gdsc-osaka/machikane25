@@ -1,8 +1,8 @@
-# **タスク指示書: Gemini API (Nano Banana)による画像生成**
+# **タスク指示書: Gemini API (Nano Banana)による画像生成と保存**
 
 ## **1\. 目的**
 
-GoogleのGemini API (Nano Banana / gemini-2.5-flash-image) を使用し、複数の参照画像（ベース画像1枚＋役割別オプション画像5枚）に基づいて、指示通りの合成画像を生成する。
+GoogleのGemini API (Nano Banana / gemini-2.5-flash-image) を使用し、複数の参照画像に基づいて合成画像を生成する。その後、生成された画像をデコードしてCloud Storageに保存し、指定された GeneratedPhoto データモデルに従ってメタデータをFirestoreに登録する。
 
 ## **2\. APIエンドポイント**
 
@@ -26,7 +26,7 @@ POSTリクエストを送信するエンドポイントURLは以下とする。
 単純に全画像を配列で渡すのではなく、「テキストラベル」と「画像データ」を交互に配置する **インターリーブ（Interleaved）形式** で parts 配列を構築する必要がある。
 
 ### **リクエストボディの構造**
-```typescript
+
 {  
   "contents": \[  
     {  
@@ -66,9 +66,8 @@ POSTリクエストを送信するエンドポイントURLは以下とする。
     }  
   \]  
 }
-```
 
-## **5\. 実装タスク**
+## **5\. 実装タスク: API呼び出し**
 
 以下の仕様で、generateImage 関数（または同等の機能）を実装すること。
 
@@ -76,21 +75,14 @@ POSTリクエストを送信するエンドポイントURLは以下とする。
 
 * uploadedPhotoId (string): ベースとなる人物画像のFirestore ID (例: 01k8p096tpxnmzg7eya0pnv6h5)  
 * options (Record\<string, string\>): 役割（キー）と画像のFirestore ID（値）のマッピング。  
-  // 例:  
-  {  
-    location: "P001",  
-    outfit: "P003",  
-    person: "P005",  
-    pose: "P009",  
-    style: "P007"  
-  }
+* boothId (string): (保存時に必要なため、入力に追加)
 
-### **5.2. 必須となるヘルパー関数**
+### **5.2. 必須となるヘルパー関数 (入力)**
 
 * getImageDataFromId(id: string): Promise\<{ mimeType: string, data: string }\>  
-  * この関数は、入力されたFirestore IDをもとに、Cloud Storageなどから該当する画像ファイルを取得し、**Base64エンコードされた文字列**と**MIMEタイプ**（image/jpeg, image/png等）をオブジェクトとして返す非同期関数である。（この関数の具体的な実装は、既存のFirestore/Storage構成に依存する）
+  * この関数は、入力されたFirestore IDをもとに、Cloud Storageなどから該当する画像ファイルを取得し、**Base64エンコードされた文字列**と**MIMEタイプ**をオブジェクトとして返す非同期関数である。
 
-### **5.3. 実装ロジックの擬似コード**
+### **5.3. 実装ロジックの擬似コード (API呼び出し)**
 
 1. 空の parts 配列を初期化する。  
 2. uploadedPhotoId を使って getImageDataFromId を await で呼び出し、ベース画像データを取得する。  
@@ -98,7 +90,6 @@ POSTリクエストを送信するエンドポイントURLは以下とする。
 4. parts にベース画像の inlineData オブジェクトを追加する。  
 5. options オブジェクトのキー (location, outfit, ...) を配列として取得する。  
 6. Promise.all と .map を使い、**すべてのオプション画像を並列で** getImageDataFromId を呼び出して取得・エンコードする。  
-   * *（注意: Promise.all により、I/O待機時間が大幅に短縮される）*  
 7. 並列取得した結果（キーと画像データのペア配列）をループ処理する。  
 8. ループ内で、各オプションについて parts にテキストラベル（例: {"text": "This image is for the 'location':"}）を追加する。  
 9. 続けて、parts にそのオプション画像の inlineData オブジェクトを追加する。  
@@ -106,4 +97,61 @@ POSTリクエストを送信するエンドポイントURLは以下とする。
 11. parts 配列を {"contents": \[{"parts": parts}\]} の形式でラップし、apiRequestBody を作成する。  
 12. fetch を使用して、指定のエンドポイントに apiRequestBody と認証ヘッダーを送信する。  
 13. レスポンスが \!response.ok の場合はエラーをスローする。  
-14. response.json() をパースし、結果を返す。
+14. response.json() をパースし、**この結果（APIレスポンス）と boothId をセクション6の保存ロジックに渡す。**
+
+## **6\. 実装タスク: レスポンス処理と保存**
+
+generateImage 関数内、またはそれが呼び出す後続の関数で、APIレスポンスを処理し、GeneratedPhoto データモデルに従って保存する。
+
+### **6.1. APIレスポンスの構造（期待値）**
+
+APIからの成功レスポンス（result）には、以下の構造で生成された画像データが含まれる。
+
+```typescript
+// result の期待される構造  
+{  
+  "candidates": \[  
+    {  
+      "content": {  
+        "parts": \[  
+          {  
+            "inlineData": {  
+              "mimeType": "image/png", // (または jpeg)  
+              "data": "iVBORw0KGgoAAA..." // (生成された画像のBase64文字列)  
+            }  
+          }  
+        \],  
+        "role": "model"  
+      }  
+      // ... 他のメタデータ  
+    }  
+  \]  
+}
+```
+
+### **6.2. 必須となるヘルパー関数 (出力)**
+
+* handleGeminiResponse(imageBuffer: Buffer, boothId: string, mimeType: string): Promise\<{ imagePath: string, imageUrl: string }\>  
+  * この関数は、デコードされた画像データ（Buffer）を受け取り、Cloud Storageにアップロードする。  
+  * アップロード後、Storageのパス (imagePath) と公開URL (imageUrl) を含むオブジェクトを返す。
+
+### **6.3. 実装ロジックの擬似コード (保存処理)**
+
+1. (セクション5.3から result と boothId を受け取る)  
+2. result.candidates\[0\].content.parts\[0\].inlineData から、data (Base64文字列) と mimeType を抽出する。  
+   * *（注意: result.candidates や parts が存在しない場合に備え、nullチェック/オプショナルチェーン (?.) を行うこと）*  
+3. Base64データが存在しない場合、エラーをスローする。  
+4. 抽出した data (Base64文字列) を **Buffer** オブジェクトにデコードする。  
+   * const imageBuffer \= Buffer.from(base64Data, 'base64');  
+5. handleGeminiResponse(imageBuffer, boothId, mimeType) を await で呼び出し、imagePath と imageUrl を取得する。  
+6. Firestoreの generatedPhotos コレクション（または適切なパス）への参照を取得する。  
+7. 保存する GeneratedPhoto オブジェクトを構築する。  
+   const newPhotoData \= {  
+    photoId: firestore doc id
+     imageUrl: imageUrl,       // Storageから取得  
+     imagePath: imagePath,     // Storageから取得  
+     createdAt: serverTimestamp() // Firestoreのサーバータイムスタンプ  
+   };
+
+8. Firestoreの addDoc を使用して newPhotoData をコレクションに保存する。  
+9. 生成されたFirestoreドキュメントのID (photoId) または参照を呼び出し元に返す。

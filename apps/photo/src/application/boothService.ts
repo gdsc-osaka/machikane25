@@ -11,6 +11,7 @@ import { createGeneratedPhoto } from "@/infra/firebase/photoRepository";
 import { getAdminFirestore, getAdminStorage } from "@/lib/firebase/admin";
 import { generateImage } from "./generationService";
 import { deleteUsedPhoto } from "./photoService";
+import {useGenerationOptions } from "@/hooks/useGenerationOptions";
 
 type BoothStateUpdate = {
 	state?: BoothState;
@@ -39,6 +40,10 @@ const updateBoothState = async (boothId: string, update: BoothStateUpdate) => {
 export const startSession = async (boothId: string): Promise<void> => {
 	await updateBoothState(boothId, { state: "menu" });
 };
+
+export const discardSession = async (boothId: string): Promise<void> => {
+	await updateBoothState(boothId, { state: "idle" });
+}
 
 export const startCapture = async (boothId: string): Promise<void> => {
 	await updateBoothState(boothId, {

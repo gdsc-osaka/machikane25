@@ -16,6 +16,7 @@ import {
 	startCapture,
 	startGeneration,
 	startSession,
+	discardSession,
 } from "@/app/actions/boothActions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,6 +77,13 @@ export default function ControlPage() {
 
 	const boothState = getBoothState(booth?.state);
 
+	useEffect(() => {
+		if (boothState === "idle") {
+			setSelectedOptions({});
+			setSelectedPhotoId(null);
+		}
+	}, [boothState]);
+
 	// カウントダウンロジック（Display Pageと同期）
 	useEffect(() => {
 		if (boothState === "capturing" && !isCapturing) {
@@ -100,6 +108,10 @@ export default function ControlPage() {
 
 	const handleStartSession = useCallback(() => {
 		startSession({ boothId });
+	}, [boothId]);
+
+	const handleDiscardSession = useCallback(() => {
+		discardSession({ boothId });
 	}, [boothId]);
 
 	const handleStartCapture = useCallback(() => {
@@ -336,7 +348,7 @@ export default function ControlPage() {
 						<p className="text-xs text-muted-foreground">{qrValue}</p>
 					</div>
 				) : null}
-				<Button onClick={handleStartSession} variant="secondary">
+				<Button onClick={handleDiscardSession} variant="secondary">
 					次の来場者を案内する
 				</Button>
 			</div>

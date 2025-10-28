@@ -1,187 +1,143 @@
-# Task 1: App Bootstrap & Service Registry
+# Task 1: App Bootstrap & Controller Wiring
 
 ## Architectural Context
-This task realises the renderer boot sequence described in `Architecture.md` (see sections **System Overview**, **Boot Sequence**, and **Service Surface**). It creates the foundation that other gameplay systems plug into, ensuring `AppRoot` and `ServiceRegistry` orchestrate configuration, polling, visitor detection, rare characters, and telemetry.
+Implements the renderer boot sequence outlined in `Architecture.md` under **System Overview**, **Runtime Data Flow**, and **Boot Sequence**. The aim is to keep the bootstrap lightweight: `AppRoot` reads configuration, hands it to controller behaviours, and starts the two coroutines that drive polling and rare character spawns. No service registry or dependency injection container is required.
 
 ## Directory & Asset Layout
-- `Assets/Art/Scenes/Aquarium.unity`  
-  - Scene entry point. Must reference an `AppRoot` prefab or GameObject with required serialized fields.
+- `Assets/Art/Scenes/Aquarium.unity`
+  - Scene entry point with an `AppRoot` GameObject (prefab optional) holding serialized references to each controller.
 - `Assets/Art/Scripts/App/`
-  - `AppRoot.cs`: MonoBehaviour owning lifecycle hooks (`Awake`, `Start`, `OnDestroy`).
-  - `ServiceLocatorBehaviour.cs` (optional helper to expose registry to scene objects).
-- `Assets/Art/Scripts/Infrastructure/`
-  - `ServiceRegistry.cs`: plain C# composition root.
-  - Interface definitions for infrastructure services (`IFishApiClient`, `IFishTextureClient`, `ITelemetrySink`, etc.).
-  - Concrete configuration loaders (e.g., `AppConfigLoader.cs`).
-- `Assets/Art/Scripts/Domain/`
-  - Domain-level interfaces referenced by the registry (`IFishRepository`, `IVisitorDetector`, `IRareCharacterService`, etc.).
-- `Assets/Art/Configs/`
-  - `AppConfig.asset`: ScriptableObject storing environment-specific endpoints, keys, cadence bounds, telemetry DSN.
-  - Future environment overrides (e.g., `AppConfig.Staging.asset`, `AppConfig.Production.asset`).
+  - `AppRoot.cs`: orchestrates initialization, coroutine lifetime, and simple error handling.
+  - `AppConfig.cs`: ScriptableObject carrying backend URL, API key, polling cadence limits, rare spawn odds, and telemetry DSN.
+- `Assets/Art/Scripts/Fish/`
+  - `FishPollingController.cs`, `FishRepository.cs`, `FishSpawner.cs`, `FishTextureCache.cs`.
+- `Assets/Art/Scripts/Visitors/VisitorDetector.cs`
+- `Assets/Art/Scripts/Rare/RareCharacterController.cs`
+- `Assets/Art/Scripts/Telemetry/TelemetryLogger.cs`
 
-## Key Classes & Interfaces
+## Key Behaviours
 ```csharp
 // Assets/Art/Scripts/App/AppRoot.cs
 public sealed class AppRoot : MonoBehaviour
 {
     [SerializeField] private AppConfig config;
-    private ServiceRegistry registry;
+    [Header("Controllers")]
+    [SerializeField] private FishPollingController fishPolling;
+    [SerializeField] private FishRepository fishRepository;
+    [SerializeField] private FishSpawner fishSpawner;
+    [SerializeField] private VisitorDetector visitorDetector;
+    [SerializeField] private RareCharacterController rareCharacters;
+    [SerializeField] private TelemetryLogger telemetry;
+
+    private Coroutine pollingRoutine;
+    private Coroutine rareRoutine;
 
     private void Awake()
     {
-        registry = ServiceRegistry.Create(config);
-        registry.Telemetry.RegisterSceneContext(gameObject.scene);
-        StartCoroutine(registry.FishPolling.Run());
-        StartCoroutine(registry.RareCharacters.Run());
-        registry.Telemetry.BeginSession();
+        ValidateConfig();
+
+        telemetry.Initialize(config.sentryDsn);
+        fishRepository.Initialize(config.fishTtlSeconds);
+        fishSpawner.Initialize(fishRepository, telemetry);
+        fishPolling.Initialize(config, fishRepository, telemetry);
+        visitorDetector.Initialize(config, telemetry);
+        rareCharacters.Initialize(config, fishSpawner, telemetry);
+
+        pollingRoutine = StartCoroutine(fishPolling.Run());
+        rareRoutine = StartCoroutine(rareCharacters.Run());
+        visitorDetector.StartDetection();
     }
 
     private void OnDestroy()
     {
-        registry?.Dispose();
-    }
-}
-```
-
-```csharp
-// Assets/Art/Scripts/Infrastructure/ServiceRegistry.cs
-public sealed class ServiceRegistry : IDisposable
-{
-    private readonly Dictionary<Type, object> services = new();
-
-    private ServiceRegistry() {}
-
-    public static ServiceRegistry Create(AppConfig config)
-    {
-        var registry = new ServiceRegistry();
-        registry.RegisterSingleton<ITelemetrySink>(new SentryTelemetry(config.sentryDsn));
-        registry.RegisterSingleton<IFishApiClient>(new FishApiClient(config));
-        registry.RegisterSingleton<IFishRepository>(new FishRepository(config.fishTtl));
-        registry.RegisterSingleton<IFishPollingService>(new FishPollingService(
-            registry.Get<IFishApiClient>(),
-            registry.Get<IFishRepository>(),
-            registry.Get<ITelemetrySink>(),
-            config.pollingCadence));
-        // Additional services wired here (texture client, visitor detection, etc.).
-        return registry;
+        if (pollingRoutine != null) StopCoroutine(pollingRoutine);
+        if (rareRoutine != null) StopCoroutine(rareRoutine);
+        visitorDetector.StopDetection();
+        telemetry.Flush();
     }
 
-    public T Get<T>() where T : class => (T)services[typeof(T)];
-
-    public void RegisterSingleton<T>(T instance) where T : class
+    private void ValidateConfig()
     {
-        services[typeof(T)] = instance;
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in services.Values.OfType<IDisposable>())
+        if (config == null)
         {
-            disposable.Dispose();
+            Debug.LogError("AppRoot missing AppConfig reference.");
         }
     }
 }
 ```
 
 ```csharp
-// Assets/Art/Scripts/Infrastructure/AppConfig.cs
-[CreateAssetMenu(menuName = "Art/App Config", fileName = "AppConfig")]
-public sealed class AppConfig : ScriptableObject
+// Assets/Art/Scripts/Fish/FishPollingController.cs
+public sealed class FishPollingController : MonoBehaviour
 {
-    [Header("Backend")]
-    public string backendBaseUrl;
-    public string apiKey;
+    private AppConfig config;
+    private FishRepository repository;
+    private TelemetryLogger telemetry;
+    private float currentInterval;
 
-    [Header("Polling")]
-    public float pollIntervalSeconds = 30f;
-    public float pollIntervalMinSeconds = 15f;
-    public float pollIntervalMaxSeconds = 60f;
+    public void Initialize(AppConfig cfg, FishRepository repo, TelemetryLogger telemetryLogger)
+    {
+        config = cfg;
+        repository = repo;
+        telemetry = telemetryLogger;
+        currentInterval = cfg.pollIntervalSeconds;
+    }
 
-    [Header("Telemetry")]
-    public string sentryDsn;
+    public IEnumerator Run()
+    {
+        while (enabled && config != null)
+        {
+            yield return FetchOnce();
+            yield return new WaitForSeconds(currentInterval);
+        }
+    }
 
-    [Header("Visitor Detection")]
-    public string calibrationProfileId;
+    private IEnumerator FetchOnce()
+    {
+        // UnityWebRequest logic goes here (Task 2 expands this).
+        yield break;
+    }
 }
 ```
+
+`FishRepository`, `FishSpawner`, `VisitorDetector`, `RareCharacterController`, and `TelemetryLogger` each expose a simple `Initialize` method to accept dependencies. Where a plain C# class suffices (`FishRepository`, `FishTextureCache`, `TelemetryLogger`), construct it directly and mark the field `[SerializeReference]` or instantiate inside `AppRoot` if that keeps the inspector clean.
 
 ## Detailed Logic
-1. **Configuration Load**  
-   - `AppRoot` serializes an `AppConfig` asset reference. During `Awake`, it validates required fields (non-empty URL, API key unless running in editor, DSN optional).
-   - Optional: extend `AppConfig` to pull overrides from environment variables for kiosk builds.
+1. **Configuration Load**
+   - `AppRoot` references an `AppConfig` asset. During `Awake`, verify it is assigned and contains basic values (non-empty backend URL, sensible polling limits, optional Sentry DSN).
+   - For kiosk builds, authors will swap `AppConfig` assets (e.g., staging vs production) manually before building—no runtime overrides.
 
-2. **Service Registry Construction**  
-   - `ServiceRegistry.Create(AppConfig)` wires all baseline services described in `Architecture.md` table (**Service Surface**).  
-   - Order: telemetry (so subsequent services can log), HTTP clients, repositories, polling, visitor detection, rare character scheduler, texture cache, school coordinator.
-   - Use `RegisterSingleton` for singletons; expose strongly typed accessors (`registry.FishPolling`) or rely on `Get<T>()`.
+2. **Controller Initialization**
+   - `AppRoot` calls `Initialize` on each controller with the minimum dependencies it needs (config, repository, telemetry, etc.).
+   - `FishRepository` builds its internal dictionaries and TTL timer values.
+   - `FishSpawner` subscribes to repository events.
+   - `VisitorDetector` prepares webcam capture but delays heavy work until `StartDetection`.
 
-3. **Lifecycle Management**  
-   - `AppRoot.Awake()` instantiates registry, kicks off coroutines for polling and rare characters with `StartCoroutine`.
-   - `AppRoot.Start()` informs presentation components (e.g., `SchoolCoordinator`) via `ServiceLocatorBehaviour` or static accessor about the ready registry.
-   - `OnDestroy()` disposes services; ensure coroutines are stopped and network clients shut down gracefully.
+3. **Coroutine Management**
+   - Launch two coroutines: `fishPolling.Run()` for backend polling and `rareCharacters.Run()` for rare-character timers.
+   - Store coroutine handles so `OnDestroy` can stop them cleanly.
 
-4. **Scene Access Pattern**  
-   - Non-AppRoot behaviours request services in `Start()`:
-     ```csharp
-     private IFishRepository fishRepository;
-     private void Start()
-     {
-         fishRepository = ServiceLocator.Require<IFishRepository>();
-         fishRepository.FishAdded += HandleFishAdded;
-     }
-     ```
-   - `ServiceLocator` can be a thin wrapper storing the active registry (set in `AppRoot.Awake`).
+4. **Visitor Detection Lifecycle**
+   - `visitorDetector.StartDetection()` begins the webcam capture loop.
+   - `OnDestroy` must call `visitorDetector.StopDetection()` to release the camera.
 
-5. **Telemetry Integration**  
-   - During boot, `TelemetryService` begins a session, tags environment info (`Application.platform`, configuration profile), and logs boot milestones (`BootPhase.AppRootAwake`, `BootPhase.ServicesReady`).
+5. **Telemetry Setup**
+   - `telemetry.Initialize` sets up the Sentry DSN and basic context (build, platform).
+   - Controllers log significant milestones (poll success/failure, rare spawn, visitor detector errors) through the shared telemetry instance.
 
-6. **Fallback & Error Handling**  
-   - If critical services fail (e.g., missing config), display an in-editor warning and halt coroutines to avoid null dereferences.
-   - Provide inspector-level validation by implementing `OnValidate()` in `AppRoot` to check serialized references.
-
-## Interface Definitions (Initial Set)
-```csharp
-public interface IFishPollingService
-{
-    IEnumerator Run();
-}
-
-public interface IFishRepository
-{
-    event Action<FishState> FishAdded;
-    event Action<FishState> FishUpdated;
-    event Action<string> FishExpired;
-    IReadOnlyCollection<FishState> Snapshot();
-}
-
-public interface IVisitorDetector
-{
-    event Action<IReadOnlyList<VisitorGroup>> VisitorsUpdated;
-    void StartDetection();
-    void StopDetection();
-}
-
-public interface ITelemetrySink
-{
-    void BeginSession();
-    void LogEvent(string eventName, IDictionary<string, object> data = null);
-    void CaptureException(Exception ex, IDictionary<string, object> context = null);
-    void RegisterSceneContext(Scene scene);
-}
-```
-
-These interfaces enable Tasks 2–5 to target abstractions without knowing concrete implementations.
+6. **Error Handling**
+   - Missing configuration or controller references should surface clear Unity console errors and disable polling until resolved.
+   - Wrap coroutine bodies with try/catch blocks that log exceptions via `telemetry.LogException`.
 
 ## Testing & Validation
-- Author lightweight edit-mode tests for `ServiceRegistry` ensuring required services are registered and retrievable.
-- Add play mode smoke test verifying `AppRoot` boots with stub implementations, starts coroutines, and disposes cleanly.
-- Validate configuration assets in editor by loading `Aquarium.unity` and confirming inspector reports no missing references.
+- Edit Mode: instantiate `AppRoot` in a test scene using test doubles for controllers to confirm `Awake` calls `Initialize` in the expected order.
+- Play Mode: load `Aquarium.unity` and ensure `AppRoot` starts/stops coroutines without `NullReferenceException`.
+- Validate `AppConfig` assets: add an `OnValidate` method checking URL/API key formatting and poll cadence bounds.
 
 ## Dependencies
-- None upstream, but this task must land before Tasks 2–5 (polling, spawning, visitor detection, rare+telemetry) to guarantee shared infrastructure.
-- Coordinate with Task 6 for test assembly definitions; Task 6 will extend tests started here.
+- Prereqs: none. This task unblocks Task 2 (Fish Polling), Task 3 (Fish Spawning), Task 4 (Visitor Detection), Task 5 (Rare Characters & Telemetry), and Task 6 (Testing).
 
 ## Risks & Mitigations
-- **Configuration drift**: Document how to swap `AppConfig` assets per environment; consider a build preflight script.
-- **Service access timing**: Ensure `ServiceRegistry` is available before other behaviours run. Use `RuntimeInitializeOnLoadMethod` if script execution order becomes an issue.
-- **Lifecycle leaks**: Keep track of coroutines started by services; ensure `Dispose()` stops them or uses `CancellationToken`.
+- **Missing Inspector References**: create a one-time editor script or use `[Required]` attributes to highlight missing fields.
+- **Coroutine Leakage**: always guard `StartCoroutine` calls with stored handles so `OnDestroy` can stop them.
+- **Configuration Mistakes**: provide clear log guidance when URLs/keys are missing so on-site debugging is fast.

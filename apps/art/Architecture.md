@@ -6,78 +6,80 @@
 - Provide naming and directory conventions so engineers and artists can share the scene without stepping on each other.
 
 ## System Overview
-The system is split between the Unity renderer (this repository) and a Cloud Run–hosted backend described in `Design Doc.md`. The renderer polls fish metadata from the backend, downloads textures from Firebase Storage, and animates fish prefabs inside a dedicated presentation scene. A webcam feed is analysed locally with OpenCV to pull fish toward detected visitors. Sentry captures runtime issues for both renderer and backend paths.
+The system is split between the Unity renderer (this repository) and a Cloud Run–hosted backend described in `Design Doc.md`. The renderer keeps a small set of controller behaviours that talk to each other through direct references on `AppRoot`. It polls fish metadata from the backend, downloads textures from Firebase Storage, animates fish prefabs inside the presentation scene, and nudges fish toward visitors detected through an OpenCVSharp pipeline. Sentry records runtime issues via a lightweight telemetry helper.
 
 ```mermaid
 flowchart LR
     subgraph Renderer
-        AppRoot --> ServiceRegistry
-        ServiceRegistry --> FishPollingService
-        ServiceRegistry --> VisitorDetectionService
-        ServiceRegistry --> RareCharacterService
-        FishPollingService --> FishRepository
+        AppRoot --> AppConfig
+        AppRoot --> FishPollingController
+        AppRoot --> FishRepository
+        AppRoot --> FishSpawner
+        AppRoot --> VisitorDetector
+        AppRoot --> RareCharacterController
+        AppRoot --> TelemetryLogger
+        FishPollingController --> FishRepository
         FishRepository --> FishSpawner
-        VisitorDetectionService --> SchoolCoordinator
         FishSpawner --> SchoolCoordinator
-        SchoolCoordinator --> FishPrefab
-        RareCharacterService --> RareCharacterController
-        ServiceRegistry --> TelemetryService
+        FishSpawner --> TextureCache
+        VisitorDetector --> SchoolCoordinator
+        RareCharacterController --> FishSpawner
     end
     subgraph Backend
         UploadController --> FishService
         FishService --> Firestore[(Firestore)]
         FishService --> Storage[(Firebase Storage)]
     end
-    FishPollingService <-- HTTP --> Backend
+    FishPollingController <-- HTTP --> Backend
     FishSpawner -->|textures| Storage
 ```
 
 ### Runtime Data Flow
-1. `AppRoot` boots the service layer, loads configuration, and spins up coroutines for polling and telemetry.
-2. `FishPollingService` hits `/get-fish` every 30 seconds, normalises the payload, and refreshes the `FishRepository`.
-3. `FishRepository` raises domain events when fish are added, updated, or culled; `FishSpawner` listens and manages prefabs.
+1. `AppRoot` loads the active `AppConfig`, pushes its values into the attached controller behaviours, and starts their coroutines.
+2. `FishPollingController` hits `/get-fish` every ~30 seconds, normalises the payload, and updates the shared `FishRepository`.
+3. `FishRepository` raises events when fish are added, updated, or culled; `FishSpawner` listens and manages prefab instances.
 4. `FishSpawner` fetches textures from Firebase Storage, applies hue information, and injects fish into the active `SchoolCoordinator`.
-5. `VisitorDetectionService` runs the OpenCV pipeline on the webcam feed to obtain visitor centroids.
+5. `VisitorDetector` runs the OpenCV pipeline on the webcam feed to obtain visitor centroids.
 6. `SchoolCoordinator` adapts boids goals using visitor centroids and rare-character attractors.
-7. `RareCharacterService` schedules rare spawns and forwards their lifecycle to `FishSpawner`.
-8. `TelemetryService` forwards structured logs and exceptions to Sentry.
+7. `RareCharacterController` schedules rare spawns and forwards their lifecycle to `FishSpawner`.
+8. `TelemetryLogger` forwards structured logs and exceptions to Sentry.
 
 ## Unity Renderer Architecture
 
 ### Assemblies and Directory Layout
-- `Assets/Art/Scripts/App`: bootstrap behaviours (`AppRoot`, `ServiceRegistry`, lifecycle hooks).
-- `Assets/Art/Scripts/Domain/Fish`: fish domain models (`FishData`, `FishState`), repository, events.
-- `Assets/Art/Scripts/Domain/Visitors`: visitor detection service, OpenCV wrappers, coordinate transforms.
+- `Assets/Art/Scripts/App`: bootstrap behaviours (`AppRoot`, editor utilities) and lightweight helpers that hand configuration to other controllers.
+- `Assets/Art/Scripts/Fish`: fish domain models (`FishData`, `FishState`), polling controller, repository, spawner logic.
+- `Assets/Art/Scripts/Visitors`: visitor detection pipeline, OpenCV wrappers, coordinate transforms.
 - `Assets/Art/Scripts/Presentation/Schools`: boids simulation, school coordinator, fish controllers.
-- `Assets/Art/Scripts/Presentation/Rare`: rare-character definitions, spawn handlers, FX triggers.
-- `Assets/Art/Scripts/Infrastructure`: HTTP client, storage downloader, telemetry, config loaders.
+- `Assets/Art/Scripts/Rare`: rare-character definitions, spawn handlers, FX triggers.
+- `Assets/Art/Scripts/Telemetry`: telemetry logger and Sentry adapter.
+- `Assets/Art/Scripts/Infrastructure`: shared HTTP helpers, Firebase texture downloader, configuration utilities.
 - `Assets/Art/Configs`: `ScriptableObject` assets for URLs, polling cadence, boids coefficients, rare spawn odds.
 - `Assets/Art/Fish`: prefabs, materials, textures (paired with `.meta` files).
-- `Assets/Art/Tests/EditMode` & `Assets/Art/Tests/PlayMode`: Unity Test Framework suites covering services and simulation glue.
+- `Assets/Art/Tests/EditMode` & `Assets/Art/Tests/PlayMode`: Unity Test Framework suites covering controller logic and simulation glue.
 
 ### Boot Sequence
 `AppRoot` is the single MonoBehaviour referenced from the main scene. On `Awake()` it:
-1. Reads the active `AppConfig` ScriptableObject to determine endpoints, keys, and cadence.
-2. Creates the `ServiceRegistry` (plain C#), wiring concrete implementations for interfaces such as `IFishApiClient`, `IFishRepository`, `IVisitorDetector`, `ITelemetrySink`.
-3. Starts coroutines for polling (`FishPollingService.Run()`), rare character scheduling (`RareCharacterService.Run()`), and telemetry flushing.
+1. Reads the active `AppConfig` ScriptableObject to determine endpoints, keys, cadence limits, and telemetry settings.
+2. Injects that configuration into referenced controllers (`FishPollingController`, `FishRepository`, `FishSpawner`, `VisitorDetector`, `RareCharacterController`, `TelemetryLogger`) via simple `Initialize` calls.
+3. Starts coroutines for polling (`FishPollingController.Run()`), rare character scheduling (`RareCharacterController.Run()`), and periodic telemetry flushing when applicable.
 4. Pushes the initial configuration into presentation controllers (`SchoolCoordinator.Initialize()`).
 
-To keep the scene lean, no other MonoBehaviour directly executes business logic; they request services from the registry during `Start()` and cache interfaces locally.
+Controllers communicate via direct field references set in the inspector, keeping the scene graph explicit and avoiding runtime service lookup.
 
-### Service Surface
-| Service | Responsibility | Key APIs |
+### Core Components
+| Component | Responsibility | Notes |
 | --- | --- | --- |
-| `IFishApiClient` (`UnityWebRequest` wrapper) | Calls `/get-fish`, handles auth header, retries, throttling. | `Task<FishDto[]> FetchFishAsync()` |
-| `IFishTextureClient` | Streams textures from Firebase Storage via HTTPS and caches to disk in `Application.persistentDataPath`. | `Task<Texture2D> GetTextureAsync(string imageUrl)` |
-| `FishPollingService` | Runs timed polls, diffs new vs cached fish, raises repository mutations. | `IEnumerator Run()` |
-| `FishRepository` | In-memory store keyed by fish ID; publishes `FishAdded`, `FishUpdated`, `FishExpired`. | `FishState[] Snapshot()` |
-| `FishSpawner` | Listens to repository events, instantiates prefabs, applies materials, hooks to `SchoolCoordinator`. | `void OnFishAdded(FishState state)` |
-| `VisitorDetectionService` | Manages webcam capture, OpenCV processing, visit centroid smoothing. | `IEnumerator Run()` + `Vector2[] GetVisitorCentroids()` |
-| `SchoolCoordinator` | Governs boids goals, pushes forces to `FishAgent` scripts. | `void UpdateSchool(SchoolContext ctx)` |
-| `RareCharacterService` | Maintains random schedule, notifies spawner, ensures single active rare character. | `IEnumerator Run()` |
-| `TelemetryService` | Wraps `SentrySDK` calls, centralises breadcrumbs and scoped context. | `void TrackEvent(string name, object payload)` |
+| `FishPollingController` (MonoBehaviour) | Calls `/get-fish`, handles auth header, retries, and cadence clamping. | Provides `Initialize(AppConfig, FishRepository, TelemetryLogger)` and `IEnumerator Run()`. |
+| `FishRepository` (plain C#) | Stores fish data and raises `FishAdded`, `FishUpdated`, `FishRemoved`. | Keeps TTL consistent with backend; exposes `IReadOnlyList<FishState> Snapshot()`. |
+| `FishSpawner` (MonoBehaviour) | Instantiates prefabs, applies textures/materials, synchronises with `SchoolCoordinator`. | Subscribes to repository events and reuses pooled prefabs where possible. |
+| `FishTextureCache` (plain C#) | Streams textures from Firebase Storage and caches them on disk. | `Task<Texture2D> LoadAsync(FishState state)` throttles concurrent downloads. |
+| `VisitorDetector` (MonoBehaviour) | Runs OpenCV pipeline to detect visitor centroids. | Emits `OnVisitorsChanged` events consumed by `SchoolCoordinator`. |
+| `SchoolCoordinator` (MonoBehaviour) | Drives boids simulation, blending visitor influence and default schooling. | Offers `ApplyVisitorInfluence(IReadOnlyList<VisitorGroup>)`. |
+| `RareCharacterController` (MonoBehaviour) | Schedules rare spawns and routes them through `FishSpawner`. | Exposes `IEnumerator Run()` to manage timers. |
+| `TelemetryLogger` (plain C# helper) | Sends events/exceptions to Sentry with minimal setup. | Methods `LogEvent`, `LogException`, `LogBreadcrumb`. |
 
-All services are pure C# objects so that EditMode tests can exercise them without scene loading.
+Controllers remain small and self-contained so EditMode tests can exercise their logic without elaborate setup.
 
 ### Fish Domain Model
 - `FishDto`: transport shape from the backend (`id`, `imageUrl`, `color`, `createdAt`).
@@ -88,17 +90,17 @@ All services are pure C# objects so that EditMode tests can exercise them withou
 `FishRepository` enforces TTL (e.g., drop fish older than the configured window) so the renderer survives stale data if the backend misses a cleanup cycle.
 
 ### Texture Pipeline
-1. `FishSpawner` requests the fish texture from `IFishTextureClient`.
-2. The client checks an on-disk cache folder (`FishTextures/`) beneath `persistentDataPath` before downloading.
-3. Textures load asynchronously; `FishAgent` shows a placeholder material until the final texture is applied on the main thread.
-4. Texture reuse is reference-counted so multiple fish sharing the same URL do not re-download.
+1. `FishSpawner` requests the fish texture from `FishTextureCache`.
+2. The cache first checks an on-disk folder (`FishTextures/`) under `persistentDataPath`; if the file is missing it downloads via `UnityWebRequestTexture`.
+3. Textures load asynchronously; each fish shows a placeholder material until the final texture is applied on the main thread.
+4. A simple in-memory dictionary prevents re-downloading textures that are already loaded during the current session.
 
 ### Visitor Detection Pipeline
-- `VisitorDetectionService` captures frames at 10–15 FPS using `WebCamTexture`.
-- Each frame is marshalled to `OpenCvSharp.Mat`, passed through background subtraction, morphology, and contour detection.
-- Contours above an area threshold become candidate visitors; centroids map from camera space to screen space using calibration data stored in `CameraCalibration` ScriptableObject.
-- A simple clustering step merges nearby centroids (DBSCAN with tiny epsilon suffices).
-- Recent centroid history is smoothed with an exponential moving average to stabilise boid goals.
+- `VisitorDetector` captures frames at 10–15 FPS using `WebCamTexture`.
+- Each frame is marshalled to `OpenCvSharp.Mat`, passed through background subtraction, light morphology, and contour detection.
+- Contours above an area threshold become candidate visitors; centroids map from camera space to screen space using calibration data stored in a `CameraCalibration` ScriptableObject.
+- Nearby centroids are merged with a simple distance threshold to avoid double-counting groups.
+- Recent centroid history is smoothed with a short moving average to stabilise boid goals.
 
 ### School Coordination & Boids
 - Each fish prefab hosts a `FishAgent` MonoBehaviour exposing separation, alignment, and cohesion weights.
@@ -110,24 +112,24 @@ All services are pure C# objects so that EditMode tests can exercise them withou
 - `BoidSettings` ScriptableObject provides tunable parameters for designers; the coordinator reads the asset every frame to allow live tweaking in the editor.
 
 ### Rare Character System
-- `RareCharacterService` maintains a weighted list of rare prefabs and a spawn cooldown.
-- On activation, it injects the rare prefab through `FishSpawner` with a special tag so `SchoolCoordinator` treats it as an attractor rather than a regular boid.
-- The service fires events so UI/HUD scripts can trigger SFX or vignette effects.
+- `RareCharacterController` keeps a spawn interval and weighted list of rare prefabs.
+- When triggered, it requests a spawn from `FishSpawner` with flags so `SchoolCoordinator` treats the rare character as an attractor.
+- Optional UnityEvents let the scene trigger SFX or screen effects when a rare character appears.
 
 ### Logging and Error Handling
-- `TelemetryService` configures `SentryUnity` during boot with DSN, release, and environment from `AppConfig`.
-- Every network request emits breadcrumbs (URL, latency, outcome).
-- Critical faults (failed texture load, OpenCV init failure) surface through a central `FatalErrorBus` that can swap the scene to a fallback visual or display guidance to staff.
-- Non-fatal warnings stay in the log console and Sentry breadcrumbs to preserve frame rate.
+- `TelemetryLogger` configures `SentryUnity` during boot with DSN, release, and environment from `AppConfig`.
+- Network requests add breadcrumbs (URL, latency, outcome) and send warnings when retries kick in.
+- Critical faults (failed texture load, OpenCV init failure) log to both Unity console and Sentry, and can trigger a simple on-screen message handled by `AppRoot`.
+- Non-fatal warnings remain as console logs plus Sentry breadcrumbs so frame rate stays unaffected.
 
 ### Configuration & Secrets
-- `AppConfig` ScriptableObject houses base URL, API key, poll cadence, rare spawn odds, and boid defaults. The API key is injected at build time via Unity Cloud Build or local environment variables, never committed.
-- A `ConfigOverrides.json` file inside `Application.persistentDataPath` enables on-site tweaks without rebuilding; `AppRoot` merges overrides at runtime.
-- Editor tooling provides a simple inspector to update calibration data after projector alignment.
+- `AppConfig` ScriptableObject houses base URL, API key (stored via Unity's `PlayerSettings` or environment variables during builds), poll cadence, rare spawn odds, and boid defaults. Avoid committing real keys.
+- For kiosks, maintain separate `AppConfig` asset variants (e.g., staging vs production) and assign the correct one in the scene before building.
+- Editor tooling should provide an inspector to update calibration data after projector alignment.
 
 ### Testing Approach
-- **EditMode**: cover `FishPollingService` (diff logic), `FishRepository` (TTL, events), and `VisitorDetectionService` (processing pipeline with recorded frames).
-- **PlayMode**: verify `AppRoot` wiring, `FishSpawner` prefab lifecycle, and `SchoolCoordinator` integration with synthetic visitor feeds.
+- **EditMode**: cover `FishPollingController`'s diff logic (via extracted helper), `FishRepository` TTL/events, and `VisitorDetector` frame processing using recorded clips.
+- **PlayMode**: verify `AppRoot` wiring with serialized references, `FishSpawner` prefab lifecycle, and `SchoolCoordinator` behaviour with synthetic visitor feeds.
 - Provide deterministic fixtures for fish payloads and recorded webcam frames stored under `Assets/Tests/TestData`.
 
 ## Backend Integration Notes
@@ -148,4 +150,3 @@ All services are pure C# objects so that EditMode tests can exercise them withou
 - Texture download spikes may stall the main thread; consider moving PNG decode to `UnityWebRequestTexture` with async awaits.
 - Ensure Firestore TTL and renderer TTL align so orphaned fish disappear predictably.
 - Rare-character visual effects may need art direction alignment—placeholder hooks exist but require assets and polish.
-

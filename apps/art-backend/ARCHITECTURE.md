@@ -127,7 +127,7 @@ apps/art-backend/
 - Mock infrastructure adapters when testing application or controller layers; unit tests should assert behavior without hitting Firebase.
 - `apps/art-backend/test/` is reserved strictly for occasional integration tests that exercise Cloud Run HTTP surfaces end-to-end.
 - Keep integration coverage lean—prefer deterministic unit tests for most logic to maintain fast feedback.
-- Ensure 100% coverage (`pnpm coverage --filter art-backend`) while respecting the unit-first philosophy.
+- Keep coverage above 90% (`pnpm coverage --filter art-backend`) while respecting the unit-first philosophy.
 
 ## Deployment & Operations
 - CI workflow (GitHub Actions) runs `pnpm lint`, `pnpm test:art-backend`, and `pnpm build`.

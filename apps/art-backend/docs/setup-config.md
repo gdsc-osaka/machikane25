@@ -16,6 +16,14 @@
 - `src/infra/logging/cloud-logger.ts`
   - Factory that accepts config + request context and yields functions for structured logging (`info`, `warn`, `error`).
   - Emit JSON adhering to Google Cloud Logging expectations (`severity`, `message`, `context`).
+- Unit tests under `src/config/__tests__/env.test.ts`, `src/config/__tests__/firebase.test.ts`, and `src/infra/logging/__tests__/cloud-logger.test.ts`.
+
+## Public Interfaces
+- `type Config = Readonly<{ apiKey: string; firebaseProjectId: string; credentialsPath: string; fishTtlMinutes: number; maxPhotoSizeMb: number }>`
+- `type Logger = Readonly<{ info: LogFn; warn: LogFn; error: LogFn }>` where `type LogFn = (message: string, context?: Record<string, unknown>) => void`.
+- `buildConfig(): Config` — reads environment variables, validates them, and returns typed configuration.
+- `getFirebaseServices(config: Config): { firestore: FirebaseFirestore.Firestore; storage: admin.storage.Storage; converters: { fish: FirebaseFirestore.FirestoreDataConverter<FishDocument> } }` — initializes Firebase Admin and exposes typed handles.
+- `createLogger(deps: { config: Config; requestId?: string }): Logger` — returns logging functions with signature `(message: string, context?: Record<string, unknown>) => void`.
 
 ## Steps
 1. Define `Config` type and builder in `env.ts`; write unit tests using temporary env overrides.
@@ -27,3 +35,4 @@
 - Unit test `env.ts` for missing/invalid variables.
 - Stub Firebase admin in tests to avoid using real credentials.
 - Verify logger outputs structured objects by spying on `console.log`.
+- Maintain project-wide coverage above 90%.

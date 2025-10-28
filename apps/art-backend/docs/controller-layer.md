@@ -22,6 +22,19 @@
   - Return `200` JSON array of fish DTOs, set `Cache-Control: no-store`.
 - `src/controller/http/routes.ts`
   - Compose router, apply middleware, register endpoints.
+- Unit tests under `src/controller/middleware/__tests__/api-key.test.ts`, `src/controller/middleware/__tests__/error-handler.test.ts`, `src/controller/http/__tests__/upload-photo.handler.test.ts`, and `src/controller/http/__tests__/get-fish.handler.test.ts`.
+
+## Public Interfaces
+- `type MiddlewareHandler = (c: Context, next: Next) => Promise<void>`
+- `type Handler = (c: Context) => Promise<Response>`
+- `type UploadHandlerDeps = Readonly<{ addFishFromPhoto: (input: { photo: Photo; correlationId: string }) => ResultAsync<FishDTO, AppError>; logger: Logger; config: Config }>`
+- `type GetFishHandlerDeps = Readonly<{ listFish: (input: { correlationId?: string }) => ResultAsync<FishDTO[], AppError>; logger: Logger }>`
+- `type RouteDeps = Readonly<{ config: Config; logger: Logger; handlers: { uploadPhoto: Handler; getFish: Handler } }>`
+- `createApiKeyMiddleware(deps: { config: Config; logger: Logger }): MiddlewareHandler` — enforces authentication and injects correlation ID.
+- `createErrorHandler(deps: { logger: Logger }): MiddlewareHandler` — standardizes error responses and logging.
+- `createUploadPhotoHandler(deps: UploadHandlerDeps): Handler` — returns handler `(c: Context) => Promise<Response>` producing fish DTO.
+- `createGetFishHandler(deps: GetFishHandlerDeps): Handler` — returns handler `(c: Context) => Promise<Response>` returning fish array.
+- `registerRoutes(app: Hono, deps: RouteDeps): void` — wires middleware and handlers into Hono instance.
 
 ## Steps
 1. Implement middleware with dependency injection for config and logger.
@@ -32,3 +45,4 @@
 - Unit test middleware and handlers with mocked use cases and logger.
 - Confirm authentication rejects missing/invalid API keys.
 - Validate JSON responses and headers for both endpoints.
+- Maintain project-wide coverage above 90%.

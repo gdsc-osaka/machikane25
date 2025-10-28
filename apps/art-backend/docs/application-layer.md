@@ -16,6 +16,19 @@
 - `src/application/list-fish.ts`
   - Provide function returning current fish list (optionally filter by TTL using domain helper).
   - Map results to DTO relevant for controller/renderer (id, imageUrl, color).
+- Unit tests under `src/application/__tests__/add-fish-from-photo.test.ts` and `src/application/__tests__/list-fish.test.ts`.
+
+## Public Interfaces
+- `type FishDTO = Readonly<{ id: string; imageUrl: string; color: string }>`
+- `type FishRepository = Readonly<{ save(fish: Fish): ResultAsync<void, InfraError>; list(): ResultAsync<Fish[], InfraError> }>`
+- `type PhotoStorage = Readonly<{ upload(args: { id: string; buffer: Buffer; mimeType: string }): ResultAsync<{ imageUrl: string; imagePath: string }, InfraError> }>`
+- `type ImageProcessor = Readonly<{ blur(buffer: Buffer): ResultAsync<Buffer, InfraError>; extractHSV(buffer: Buffer): ResultAsync<HSVPixel[], InfraError> }>`
+- `type Logger = Readonly<{ info(message: string, context?: Record<string, unknown>): void; warn(message: string, context?: Record<string, unknown>): void; error(message: string, context?: Record<string, unknown>): void }>`
+- `type AddFishDeps = Readonly<{ repo: FishRepository; storage: PhotoStorage; imageProcessor: ImageProcessor; config: Config; logger: Logger }>`
+- `type ListFishDeps = Readonly<{ repo: FishRepository; config: Config; logger: Logger }>`
+- `type AppError = ValidationError | InfraError`
+- `createAddFishFromPhoto(deps: AddFishDeps): (input: { photo: Photo; correlationId: string }) => ResultAsync<FishDTO, AppError>`
+- `createListFish(deps: ListFishDeps): (input: { correlationId?: string }) => ResultAsync<FishDTO[], AppError>`
 
 ## Steps
 1. Define ports with explicit error types (e.g., `InfraError`, `ValidationError`).
@@ -27,3 +40,4 @@
 - Unit test each use case with mocks for ports (success, failure paths).
 - Verify logs are invoked with expected metadata (use spy logger).
 - Confirm TTL filtering logic integrates with domain `isExpired`.
+- Maintain project-wide coverage above 90%.

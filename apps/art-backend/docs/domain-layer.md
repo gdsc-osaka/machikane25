@@ -18,6 +18,21 @@
   - Define `Photo` value object encapsulating buffer, mime type, and size safeguards.
   - Provide `validatePhoto` to ensure size <= `MAX_PHOTO_SIZE_MB`.
   - Specify privacy policy that blur must be applied before persistence (document via function contract).
+- Unit tests under `src/domain/fish/__tests__/fish.test.ts`, `src/domain/fish/__tests__/fish-color.test.ts`, and `src/domain/fish/__tests__/photo.test.ts`.
+
+## Public Interfaces
+- `type Fish = Readonly<{ id: string; imageUrl: string; imagePath: string; color: string; createdAt: Date }>`
+- `type FishDocument = Readonly<{ id: string; imageUrl: string; imagePath: string; color: string; createdAt: FirebaseFirestore.Timestamp }>`
+- `type CreateFishInput = Readonly<{ id: string; imageUrl: string; imagePath: string; color: string; createdAt: Date }>`
+- `type HSVPixel = Readonly<{ h: number; s: number; v: number }>`
+- `type ColorExtractionError = Readonly<{ type: 'color-extraction'; message: string; cause?: unknown }>`
+- `type Photo = Readonly<{ buffer: Buffer; mimeType: string; size: number }>`
+- `type PhotoMeta = Readonly<{ mimeType: string; size: number }>`
+- `type PhotoLimits = Readonly<{ maxSizeBytes: number }>`
+- `createFish(input: CreateFishInput): Result<Fish, ValidationError>` — constructs a validated fish entity.
+- `isExpired(args: { fish: Fish; now: Date; ttlMinutes: number }): boolean` — determines TTL expiry.
+- `deriveFishColor(pixels: HSVPixel[]): Result<string, ColorExtractionError>` — returns representative hex color.
+- `createPhoto(buffer: Buffer, meta: PhotoMeta, limits: PhotoLimits): Result<Photo, ValidationError>` — validates photobooth upload metadata.
 
 ## Steps
 1. Establish core types and zod schemas to validate domain invariants.
@@ -29,3 +44,4 @@
 - Unit test constructors and validators with valid/invalid samples.
 - Verify hue calculations using small synthetic pixel arrays.
 - Ensure `isExpired` respects boundary conditions.
+- Maintain project-wide coverage above 90%.

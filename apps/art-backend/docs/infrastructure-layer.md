@@ -20,6 +20,17 @@
   - Ensure all heavy dependencies are isolated for mocking.
 - `src/infra/logging/cloud-logger.ts`
   - Already outlined in setup; ensure exported factory satisfies application port.
+- Unit tests under `src/infra/repositories/__tests__/firestore-fish-repo.test.ts`, `src/infra/repositories/__tests__/storage-photo-store.test.ts`, and `src/infra/services/__tests__/image-processor.test.ts`.
+
+## Public Interfaces
+- `type FirestoreDeps = Readonly<{ firestore: FirebaseFirestore.Firestore; converter: FirebaseFirestore.FirestoreDataConverter<FishDocument> }>`
+- `type StorageDeps = Readonly<{ storage: admin.storage.Storage; bucketName: string }>`
+- `type ImageProcessorDeps = Readonly<{ blurSigma: number; colorSampleSize: number }>`
+- `createFirestoreFishRepository(deps: FirestoreDeps): FishRepository`
+- `createStoragePhotoStore(deps: StorageDeps): PhotoStorage`
+- `createImageProcessor(deps: ImageProcessorDeps): ImageProcessor` with methods:
+  - `blur(buffer: Buffer): ResultAsync<Buffer, InfraError>`
+  - `extractHSV(buffer: Buffer): ResultAsync<HSVPixel[], InfraError>`
 
 ## Steps
 1. Build typed error helpers to normalize Firebase exceptions.
@@ -31,3 +42,4 @@
 - Unit test each adapter using emulator/mocks (preferred: mocks to avoid heavy dependencies).
 - Verify storage adapter handles both success and rollback paths.
 - Confirm image processor outputs expected histogram on fixture data.
+- Maintain project-wide coverage above 90%.

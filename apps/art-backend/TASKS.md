@@ -9,9 +9,9 @@
 - [x] Implement HSV hue extraction utilities and image blur policy as pure domain helpers (see `docs/domain-layer.md`).
 
 ## Application Layer
-- [ ] Define repository and service ports in `src/application/ports.ts` (see `docs/application-layer.md`).
-- [ ] Implement `add-fish-from-photo` use case orchestrating photo ingestion, blur, color extraction, and persistence (see `docs/application-layer.md`).
-- [ ] Implement `list-fish` use case returning renderer-ready DTOs (see `docs/application-layer.md`).
+- [x] Define repository and service ports in `src/application/ports.ts` (see `docs/application-layer.md`).
+- [x] Implement `add-fish-from-photo` use case orchestrating photo ingestion, blur, color extraction, and persistence (see `docs/application-layer.md`).
+- [x] Implement `list-fish` use case returning renderer-ready DTOs (see `docs/application-layer.md`).
 
 ## Infrastructure Layer
 - [ ] Create Firestore repository using `FirestoreDataConverter` in `src/infra/repositories/firestore-fish-repo.ts` (see `docs/infrastructure-layer.md`).

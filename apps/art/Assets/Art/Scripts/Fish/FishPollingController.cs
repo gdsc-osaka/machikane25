@@ -21,7 +21,7 @@ namespace Art.Fish
         private int consecutiveFailures;
         private bool isInitialized;
 
-        internal void SetHttpClient(IHttpClient client)
+        public void SetHttpClient(IHttpClient client)
         {
             httpClient = client;
         }

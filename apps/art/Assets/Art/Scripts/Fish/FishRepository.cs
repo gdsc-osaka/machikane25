@@ -34,7 +34,7 @@ namespace Art.Fish
             initialized = true;
         }
 
-        internal void SetTimeProvider(Func<float> provider)
+        public void SetTimeProvider(Func<float> provider)
         {
             timeProvider = provider ?? (() => Time.time);
         }

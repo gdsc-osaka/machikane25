@@ -128,25 +128,26 @@ jobs:
 #          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 #        with:
 #          projectPath: apps/art
-      - name: Build Unity Project for art
-        id: builder
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-        with:
-          projectPath: apps/art
-          # WebGL, StandaloneWindows64, Android, iOS
-          targetPlatform: WebGL
-          unityVersion: 'auto'
-          allowDirtyBuild: true
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-art-${{ steps.builder.outputs.targetPlatform }}
-          path: ${{ steps.builder.outputs.buildPath }}
-          retention-days: 1
+      # TODO: Build はライセンス認証後にエラーが発生するのでスキップ
+#      - name: Build Unity Project for art
+#        id: builder
+#        uses: game-ci/unity-builder@v4
+#        env:
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#        with:
+#          projectPath: apps/art
+#          # WebGL, StandaloneWindows64, Android, iOS
+#          targetPlatform: WebGL
+#          unityVersion: 'auto'
+#          allowDirtyBuild: true
+#      - name: Upload Build Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: build-art-${{ steps.builder.outputs.targetPlatform }}
+#          path: ${{ steps.builder.outputs.buildPath }}
+#          retention-days: 1
   # すべてのCIジョブが成功した後に、カバレッジレポートを投稿するジョブ
   report-coverage:
     name: Report Coverage

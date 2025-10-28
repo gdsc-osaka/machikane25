@@ -106,14 +106,13 @@ Rel(art_renderer, projector, "映像出力")
 * Firestore のデータ取得は SWR を用いる. StampService などのサービス層を参照するフックを作成し、コンポーネントからはそのフックを呼び出す.
 * よって、 API Routes はデータ取得・送信には使用しない.
   ただし, Web アプリ外からリクエストを受け付けたい場合は API Routes を使用する.
-* データベース等のデータ書き込みは Service 層に neverthrow の Result 型を返す関数として実装し, それを useSWRMutation で呼び出す.
+* データベース等のデータ書き込みは Service 層で `async/await` と `try/catch` により実装し, それを `useSWRMutation` で呼び出す.
 #### Domain Driven Development
 * `domain/`, `infra/`, `application` の3層に分ける.
 	* `domain/`: ビジネスロジック, 型定義, infra層のインターフェース定義
 	* `infra/`: Firebase SDK など外部サービスの実装
 	* `application/`: React コンポーネントから呼び出すサービス層
-* DDD では neverthrow, ts-pattern, obj-err を使用する.
-	* neverthrow: Result 型を用いたエラーハンドリング
+* DDD では `try/catch`, ts-pattern, obj-err を組み合わせてエラーハンドリングする.
 	* ts-pattern: パターンマッチング
 	* obj-err: classではなくobjectでエラーを定義できる自作ライブラリ. npm に公開している. 使い方は後述
 * class の代わりに interface と object で実装する.

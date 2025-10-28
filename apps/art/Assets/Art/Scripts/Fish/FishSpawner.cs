@@ -42,25 +42,25 @@ namespace Art.Fish
             TeardownSubscriptions();
         }
 
-        private void HandleFishAdded(FishRepository.FishData fish)
+        private void HandleFishAdded(FishState fish)
         {
             if (!initialized || fish == null)
             {
                 return;
             }
 
-            telemetry?.LogInfo($"Spawning fish {fish.id}");
+            telemetry?.LogInfo($"Spawning fish {fish.Id}");
             // Prefab instantiation and texture assignment implemented in a later task.
         }
 
-        private void HandleFishUpdated(FishRepository.FishData fish)
+        private void HandleFishUpdated(FishState fish)
         {
             if (!initialized || fish == null)
             {
                 return;
             }
 
-            telemetry?.LogInfo($"Updating fish {fish.id}");
+            telemetry?.LogInfo($"Updating fish {fish.Id}");
         }
 
         private void HandleFishRemoved(string fishId)

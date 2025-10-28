@@ -3,6 +3,7 @@ using Art.Rare;
 using Art.Telemetry;
 using Art.Visitors;
 using System.Collections;
+using System.IO;
 using UnityEngine;
 
 namespace Art.App
@@ -37,7 +38,8 @@ namespace Art.App
             }
 
             telemetry.Initialize(config.sentryDsn);
-            textureCache.Initialize();
+            var cacheRoot = Path.Combine(Application.persistentDataPath, "FishTextures");
+            textureCache.Initialize(cacheRoot);
             fishRepository.Initialize(config.fishTtlSeconds);
 
             fishSpawner.Initialize(fishRepository, textureCache, telemetry);

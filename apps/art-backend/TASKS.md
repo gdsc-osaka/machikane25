@@ -14,9 +14,9 @@
 - [x] Implement `list-fish` use case returning renderer-ready DTOs (see `docs/application-layer.md`).
 
 ## Infrastructure Layer
-- [ ] Create Firestore repository using `FirestoreDataConverter` in `src/infra/repositories/firestore-fish-repo.ts` (see `docs/infrastructure-layer.md`).
-- [ ] Create Storage adapter uploading blurred textures in `src/infra/repositories/storage-photo-store.ts` (see `docs/infrastructure-layer.md`).
-- [ ] Implement `image-processor` service wrapping blur + HSV histogram logic in `src/infra/services/image-processor.ts` (see `docs/infrastructure-layer.md`).
+- [x] Create Firestore repository using `FirestoreDataConverter` in `src/infra/repositories/firestore-fish-repo.ts` (see `docs/infrastructure-layer.md`).
+- [x] Create Storage adapter uploading blurred textures in `src/infra/repositories/storage-photo-store.ts` (see `docs/infrastructure-layer.md`).
+- [x] Implement `image-processor` service wrapping blur + HSV histogram logic in `src/infra/services/image-processor.ts` (see `docs/infrastructure-layer.md`).
 
 ## Controller Layer
 - [ ] Build API key and error-handling middleware under `src/controller/middleware` (see `docs/controller-layer.md`).

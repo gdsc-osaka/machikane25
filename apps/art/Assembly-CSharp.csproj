@@ -85,29 +85,20 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets/Art/Scripts/Fish/FishPollingController.cs" />
-    <Compile Include="Assets/Art/Scripts/Fish/FishSpawner.cs" />
-    <Compile Include="Assets/Art/Scripts/Rare/RareCharacterController.cs" />
-    <Compile Include="Assets/Art/Scripts/Fish/FishTextureCache.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/PlayerMovement.cs" />
-    <Compile Include="Assets/Art/Scripts/Telemetry/TelemetryLogger.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/VegetationBendControl.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/WindControl.cs" />
-    <Compile Include="Assets/Art/Scripts/App/AppRoot.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/CameraMovement.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ButterflySpawn.cs" />
-    <Compile Include="Assets/Art/Scripts/Visitors/VisitorDetector.cs" />
     <Compile Include="Assets/TutorialInfo/Scripts/Readme.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ButterflySpawnArea.cs" />
-    <Compile Include="Assets/Art/Fish/FishController.cs" />
-    <Compile Include="Assets/Art/Scripts/Fish/FishRepository.cs" />
     <Compile Include="Assets/IgniteCoders/Simple Water Shader/Resources/WaterReflection.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ExitGame.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/BushLeafTrigger.cs" />
-    <Compile Include="Assets/Art/Scripts/App/AppConfig.cs" />
     <None Include="Assets/TerrainSampleAssets/ThirdPartyNotices.txt" />
     <None Include="Assets/Packages/Microsoft.CodeAnalysis.NetAnalyzers.9.0.0/ThirdPartyNotices.txt" />
     <None Include="Assets/Idyllic Fantasy Nature/Shader/CustomLighting.hlsl" />
+    <None Include="Assets/Tests/TestData/Fish/sample-success.json" />
     <None Include="Assets/TerrainSampleAssets/ShaderGraphs/CustomFunctions/CustomLighting.hlsl" />
     <Reference Include="UnityEngine">
       <HintPath>/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/Managed/UnityEngine/UnityEngine.dll</HintPath>
@@ -1026,6 +1017,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Art.csproj">
+      <Project>{c4e9df48-964c-99f8-9c38-47efec923203}</Project>
+      <Name>Art</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

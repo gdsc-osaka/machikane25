@@ -1,8 +1,8 @@
 # Task Overview
 
 ## Setup & Config
-- [ ] Configure environment validation in `src/config/env.ts` and initialize Firebase Admin in `src/config/firebase.ts` (see `docs/setup-config.md`).
-- [ ] Implement structured Cloud Logging helper in `src/infra/logging/cloud-logger.ts` and expose logging factory (see `docs/setup-config.md`).
+- [x] Configure environment validation in `src/config/env.ts` and initialize Firebase Admin in `src/config/firebase.ts` (see `docs/setup-config.md`).
+- [x] Implement structured Cloud Logging helper in `src/infra/logging/cloud-logger.ts` and expose logging factory (see `docs/setup-config.md`).
 
 ## Domain Layer
 - [ ] Model fish entity, color value logic, and photo value object under `src/domain/fish` (see `docs/domain-layer.md`).

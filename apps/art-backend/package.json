@@ -12,6 +12,7 @@
 	},
 	"dependencies": {
 		"@hono/node-server": "^1.19.5",
+		"env-var": "^7.4.1",
 		"hono": "^4.10.3",
 		"firebase-admin": "^13.5.0"
 	},

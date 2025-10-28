@@ -105,6 +105,62 @@ jobs:
       - name: Check Firebase deployment
         shell: bash
         run: pnpm run deploy:fire:check
+  ci-art:
+    name: CI (art)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+#      - name: Activate Unity License
+#        uses: game-ci/unity-activate@v2
+#        env:
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      - name: Cache Unity Library
+        uses: actions/cache@v3
+        with:
+          path: apps/art/Library
+          key: Library-apps-art-${{ hashFiles('apps/art/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            Library-apps-art-
+      - name: Restore .NET tools
+        run: dotnet tool restore
+        working-directory: ./apps/art
+      - name: Run dotnet format for art
+        run: |
+          chmod +x lint.sh
+          ./lint.sh
+        working-directory: ./apps/art
+      # TODO: Unity test は時間がかかる & 現在はテストを書いていない & docker image が巨大で runner の容量が不足するのでスキップ
+#      - name: Run Unity Tests for art
+#        uses: game-ci/unity-test-runner@v4
+#        env:
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#        with:
+#          projectPath: apps/art
+      # TODO: Build はライセンス認証後にエラーが発生するのでスキップ
+#      - name: Build Unity Project for art
+#        id: builder
+#        uses: game-ci/unity-builder@v4
+#        env:
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#        with:
+#          projectPath: apps/art
+#          # WebGL, StandaloneWindows64, Android, iOS
+#          targetPlatform: WebGL
+#          unityVersion: 'auto'
+#          allowDirtyBuild: true
+#      - name: Upload Build Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: build-art-${{ steps.builder.outputs.targetPlatform }}
+#          path: ${{ steps.builder.outputs.buildPath }}
+#          retention-days: 1
   # すべてのCIジョブが成功した後に、カバレッジレポートを投稿するジョブ
   report-coverage:
     name: Report Coverage

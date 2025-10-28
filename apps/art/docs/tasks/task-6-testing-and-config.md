@@ -1,28 +1,89 @@
 # Task 6: Testing, Tooling, and Release Config
 
-## Objective
-Establish the testing infrastructure, linting hooks, and release configuration needed to keep the renderer maintainable and ship-ready.
+## Architectural Context
+Ties together the validation guidance from `Architecture.md` (**Testing Approach**, **Configuration & Secrets**, **Backend Integration Notes**) and ensures the simplified controller architecture stays verifiable. This task formalises the test suites, fixtures, build steps, and documentation that support Tasks 1–5.
 
-## Scope
-- Set up Unity Test Framework suites under `Assets/Art/Tests/EditMode` and `Assets/Art/Tests/PlayMode` aligned with the architecture’s coverage goals.
-- Add fixtures for fish payloads, recorded webcam frames, and texture samples under `Assets/Tests/TestData`.
-- Integrate project automation scripts (`dotnet restore`, `./lint.sh`, Unity CLI test runs) into CI guidance.
-- Document build pipeline steps for generating kiosk-ready binaries and verifying configuration prior to release.
+## Directory & Asset Layout
+- `Assets/Art/Tests/EditMode/`
+  - `Fish/FishRepositoryTests.cs`
+  - `Fish/FishPollingControllerTests.cs`
+  - `Visitors/VisitorDetectorTests.cs`
+  - `Rare/RareCharacterControllerTests.cs`
+  - `Telemetry/TelemetryLoggerTests.cs`
+  - Assembly definition: `Assets/Art/Tests/EditMode/EditModeTests.asmdef`.
+- `Assets/Art/Tests/PlayMode/`
+  - `App/AppRootPlayTests.cs`
+  - `Fish/FishSpawnerPlayTests.cs`
+  - `Visitors/SchoolCoordinatorVisitorTests.cs`
+  - Assembly definition: `Assets/Art/Tests/PlayMode/PlayModeTests.asmdef`.
+- `Assets/Tests/TestData/`
+  - `fish/sample_payload.json`
+  - `fish/updated_payload.json`
+  - `textures/fallback.png`
+  - `visitors/frame_*.png`
+  - Ensure `.meta` files accompany all assets for Unity import.
+- Documentation:
+  - `docs/testing.md` (new) summarising commands and suite scope.
+  - Update `README.md` with quickstart testing/build instructions.
 
-## Deliverables
-- Edit mode tests covering repository diff logic, TTL behaviour, visitor detection algorithms (with deterministic inputs).
-- Play mode tests validating `AppRoot` bootstrap, fish spawn/despawn flows, and visitor-to-boids integration.
-- Test data assets stored with `.meta` files and referenced by scenes/scripts.
-- Documentation updates describing how to run tests locally (Unity Test Runner UI + CLI) and how to configure builds for different environments.
+## Test Coverage Expectations
+- **Fish Domain**
+  - `FishRepositoryTests`: TTL enforcement, add/update/remove diffing, snapshot consistency.
+  - `FishPollingControllerTests`: interval clamping, error backoff, DTO parsing using stub HTTP layer.
+- **Spawning & Textures**
+  - `FishSpawnerPlayTests`: prefab lifecycle triggered by simulated repository events, placeholder vs final texture handling.
+  - `FishTextureCacheTests` (edit mode) for disk caching behaviour.
+- **Visitor Detection**
+  - `VisitorDetectorTests`: process recorded frames, validate centroid counts & smoothing, verify calibration transform.
+  - `SchoolCoordinatorVisitorTests`: confirm visitor attractors alter agent velocity using stub agents.
+- **Rare & Telemetry**
+  - Rare spawn probability, single-active enforcement, telemetry event emission.
+  - `TelemetryLoggerTests`: DSN/no-DSN behaviours, breadcrumb formatting, exception capture.
+- **Bootstrap**
+  - `AppRootPlayTests`: ensures `Initialize` is called on controllers, coroutines start/stop, missing references produce clear errors.
 
-## Implementation Steps
-1. Scaffold test assembly definitions (`asmdef`) around `Assets/Art/Tests` to isolate dependencies.
-2. Create deterministic fixtures (JSON payloads, PNGs, recorded frames) and ensure they are accessible via tests.
-3. Implement edit mode tests leveraging mocks/stubs for HTTP and texture clients.
-4. Implement play mode tests that exercise runtime wiring with lightweight scenes or the main scene in test mode.
-5. Update repo docs (README or dedicated section) with testing/build commands and expected pre-commit checklist.
+## Tooling & Automation
+1. **Test Assemblies**
+   - Create `.asmdef` files for edit/play mode tests referencing required runtime assemblies (e.g., `UnityEngine`, `UnityEngine.TestRunner`, project runtime asmdef).
+   - Enable `overrideReferences` to keep dependencies minimal.
 
-## Dependencies & Notes
-- Depends on functionality from Tasks 1–5 to provide concrete behaviours for testing.
-- Coordinate with automation owners to align test execution with Unity CLI in CI.
-- Ensure large binary fixtures use Git LFS if they exceed repository limits; document storage strategy if required.
+2. **Command-Line Hooks**
+   - Add Unity CLI commands to `README.md`:
+     - `Unity -batchmode -projectPath "$(pwd)" -runTests -testPlatform EditMode`
+     - `Unity -batchmode -projectPath "$(pwd)" -runTests -testPlatform PlayMode`
+   - Document `dotnet restore` and `./lint.sh` invocation order.
+
+3. **CI Integration**
+   - Provide sample GitHub Actions snippet (if repo uses GH) or note for internal CI covering:
+     - Restore, lint, edit-mode tests, play-mode tests.
+   - Ensure caching of `Library/` is optional to keep pipelines deterministic.
+
+4. **Fixture Management**
+   - For recorded visitor frames, store low-resolution PNGs (<512 KB) to avoid repo bloat; consider Git LFS if larger.
+   - Add README in `Assets/Tests/TestData` outlining provenance and usage.
+
+5. **Configuration Docs**
+   - Extend `docs/testing.md` with:
+     - Table of `AppConfig` fields (backend URL, API key, poll cadence, TTL, rare spawn odds).
+     - Steps for swapping between staging/production configs.
+     - Reminder to exclude real API keys from version control.
+   - Provide release checklist: confirm correct `AppConfig` asset, run tests, run `./lint.sh`, build via Unity Build Settings outputting to `Builds/`.
+
+6. **Local Developer Experience**
+   - Add editor script (optional) `Assets/Art/Editor/TestUtilities.cs` with menu items for running tests or spawning sample fish/visitors.
+   - Document how to enable visitor detection debug overlay and telemetry test event (ties to Task 5).
+
+## Dependencies
+- Requires implementations from Tasks 1–5 to exist for meaningful tests.
+- Feeds into release readiness for kiosk builds; automation should run before packaging.
+
+## Risks & Mitigations
+- **Flaky Play Mode Tests**: keep scenes minimal, use synthetic data instead of real network/webcam where possible.
+- **Large Test Assets**: compress textures and frames; adopt Git LFS for anything substantial.
+- **CI Runtime**: batch mode play tests can be slow; parallelise edit/play or run nightly if pipeline budgets limited.
+
+## Acceptance Criteria
+- Both edit mode and play mode test suites run green locally and via documented CLI commands.
+- `docs/testing.md` (or equivalent README section) clearly states testing + build expectations.
+- Sample fixtures checked in with `.meta` files and referenced by tests.
+- Developers can execute a full validation loop (restore, lint, test) without manual scene tweaks.

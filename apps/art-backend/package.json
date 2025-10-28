@@ -12,7 +12,8 @@
 	},
 	"dependencies": {
 		"@hono/node-server": "^1.19.5",
-		"hono": "^4.10.3"
+		"hono": "^4.10.3",
+		"firebase-admin": "^13.5.0"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.17",

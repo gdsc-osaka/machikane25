@@ -47,7 +47,9 @@ const generationActionMocks = vi.hoisted(() => ({
 	),
 }));
 
-vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
+vi.mock("@/hooks/useBoothState", () => ({
+	useBoothState: hookMocks.useBoothState,
+}));
 
 vi.mock("@/hooks/useUploadedPhotos", () => ({
 	useUploadedPhotos: hookMocks.useUploadedPhotos,
@@ -181,7 +183,8 @@ describe("Remaining Page Components", () => {
 	});
 
 	describe("DownloadPage", () => {
-		const mockGetGeneratedPhotoAction = generationActionMocks.getGeneratedPhotoAction;
+		const mockGetGeneratedPhotoAction =
+			generationActionMocks.getGeneratedPhotoAction;
 		const params = { boothId: "booth-id", photoId: "photo-id" };
 
 		beforeEach(() => {

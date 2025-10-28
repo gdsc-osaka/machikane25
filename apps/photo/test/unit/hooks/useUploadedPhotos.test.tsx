@@ -7,9 +7,12 @@ const queryMock = vi.fn();
 const orderByMock = vi.fn();
 const onSnapshotMock = vi.fn();
 const ensureAnonymousSignInMock = vi.fn();
+const refMock = vi.fn();
+const getDownloadURLMock = vi.fn();
 
 vi.mock("@/lib/firebase/client", () => ({
 	getFirebaseFirestore: () => ({ name: "firestore" }),
+	getFirebaseStorage: () => ({ name: "storage" }),
 	initializeFirebaseClient: vi.fn(),
 	ensureAnonymousSignIn: ensureAnonymousSignInMock,
 }));
@@ -21,6 +24,11 @@ vi.mock("firebase/firestore", () => ({
 	onSnapshot: onSnapshotMock,
 }));
 
+vi.mock("firebase/storage", () => ({
+	ref: refMock,
+	getDownloadURL: getDownloadURLMock,
+}));
+
 describe("useUploadedPhotos", () => {
 	beforeEach(() => {
 		unsubscribeMock.mockClear();
@@ -28,8 +36,16 @@ describe("useUploadedPhotos", () => {
 		queryMock.mockReset();
 		orderByMock.mockReset();
 		onSnapshotMock.mockReset();
+		refMock.mockReset();
+		getDownloadURLMock.mockReset();
 		ensureAnonymousSignInMock.mockReset();
 		ensureAnonymousSignInMock.mockResolvedValue({ uid: "anon-user" });
+
+		// デフォルトの動作: imagePathをそのままimageUrlとして返す
+		refMock.mockImplementation((storage, path) => ({ path }));
+		getDownloadURLMock.mockImplementation((storageRef) =>
+			Promise.resolve(`http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/${encodeURIComponent(storageRef.path)}?alt=media`)
+		);
 	});
 
 	it("subscribes to uploaded photos collection and maps data", async () => {
@@ -55,11 +71,13 @@ describe("useUploadedPhotos", () => {
 			return queryRef;
 		});
 
-		onSnapshotMock.mockImplementation((ref: unknown, listener: (snapshot: unknown) => void) => {
-			expect(ref).toBe(queryRef);
-			snapshotListeners.push(listener);
-			return unsubscribeMock;
-		});
+		onSnapshotMock.mockImplementation(
+			(ref: unknown, listener: (snapshot: unknown) => void) => {
+				expect(ref).toBe(queryRef);
+				snapshotListeners.push(listener);
+				return unsubscribeMock;
+			},
+		);
 
 		const { useUploadedPhotos } = await import("@/hooks/useUploadedPhotos");
 		let state: ReturnType<typeof useUploadedPhotos> | undefined;
@@ -82,14 +100,16 @@ describe("useUploadedPhotos", () => {
 				{
 					id: "photo-1",
 					data: () => ({
-						imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-1%2Fphoto.png?alt=media",
+						imageUrl:
+							"http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-1%2Fphoto.png?alt=media",
 						imagePath: "photos/photo-1/photo.png",
 					}),
 				},
 				{
 					id: "photo-2",
 					data: () => ({
-						imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-2%2Fphoto.png?alt=media",
+						imageUrl:
+							"http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-2%2Fphoto.png?alt=media",
 						imagePath: "photos/photo-2/photo.png",
 					}),
 				},
@@ -109,12 +129,14 @@ describe("useUploadedPhotos", () => {
 			expect(state?.photos).toEqual([
 				{
 					photoId: "photo-1",
-					imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-1%2Fphoto.png?alt=media",
+					imageUrl:
+						"http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-1%2Fphoto.png?alt=media",
 					imagePath: "photos/photo-1/photo.png",
 				},
 				{
 					photoId: "photo-2",
-					imageUrl: "http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-2%2Fphoto.png?alt=media",
+					imageUrl:
+						"http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/photos%2Fphoto-2%2Fphoto.png?alt=media",
 					imagePath: "photos/photo-2/photo.png",
 				},
 			]);

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	ensureGeneratedPhoto,
-	ensureUploadedPhoto,
-} from "@/domain/photo";
+import { ensureGeneratedPhoto, ensureUploadedPhoto } from "@/domain/photo";
 
 describe("photo domain schemas", () => {
 	it("parses valid uploaded photo", () => {

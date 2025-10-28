@@ -12,29 +12,29 @@ import { findGeneratedPhoto } from "@/infra/firebase/photoRepository";
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 type GeneratedPhoto = {
-  id: string;
-  imageUrl: string;
+	id: string;
+	imageUrl: string;
 };
 
 const createNamedError = (name: string, message: string): Error => {
-  const error = new Error(message);
-  error.name = name;
-  return error;
+	const error = new Error(message);
+	error.name = name;
+	return error;
 };
 
 const isNamedError = (value: unknown, expectedName: string): boolean => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const name = Reflect.get(value, "name");
-  return name === expectedName;
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+	const name = Reflect.get(value, "name");
+	return name === expectedName;
 };
 
 export const isPhotoNotFoundError = (value: unknown): boolean =>
-  isNamedError(value, "PhotoNotFoundError");
+	isNamedError(value, "PhotoNotFoundError");
 
 export const isPhotoExpiredError = (value: unknown): boolean =>
-  isNamedError(value, "PhotoExpiredError");
+	isNamedError(value, "PhotoExpiredError");
 
 /**
  * Get all generation options grouped by typeId
@@ -44,48 +44,48 @@ export const isPhotoExpiredError = (value: unknown): boolean =>
  *          Example: { location: [...], outfit: [...], style: [...] }
  */
 export const getOptions = async (): Promise<GroupedGenerationOptions> => {
-  const options = await fetchAllOptions();
+	const options = await fetchAllOptions();
 
-  // Group options by typeId using reduce (AGENTS.md: prefer functional programming)
-  const grouped = options.reduce<GroupedGenerationOptions>(
-    (accumulator, option) => {
-      const typeId = option.typeId;
-      const existingGroup = accumulator[typeId] ?? [];
-      return {
-        ...accumulator,
-        [typeId]: [...existingGroup, option],
-      };
-    },
-    {},
-  );
+	// Group options by typeId using reduce (AGENTS.md: prefer functional programming)
+	const grouped = options.reduce<GroupedGenerationOptions>(
+		(accumulator, option) => {
+			const typeId = option.typeId;
+			const existingGroup = accumulator[typeId] ?? [];
+			return {
+				...accumulator,
+				[typeId]: [...existingGroup, option],
+			};
+		},
+		{},
+	);
 
-  return grouped;
+	return grouped;
 };
 
 /**
  * Placeholder for Gemini generation (implemented in later tasks).
  */
 export const generateImage = async (
-  boothId: string,
-  uploadedPhotoId: string,
-  options: Record<string, string>,
+	boothId: string,
+	uploadedPhotoId: string,
+	options: Record<string, string>,
 ): Promise<void> => {
-  const apiKey = process.env.GEMINI_API_KEY ?? "";
-  const endpoint =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+	const apiKey = process.env.GEMINI_API_KEY ?? "";
+	const endpoint =
+		"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
-  await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-    },
-    body: JSON.stringify({
-      boothId,
-      uploadedPhotoId,
-      options,
-    }),
-  });
+	await fetch(endpoint, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"X-Goog-Api-Key": apiKey,
+		},
+		body: JSON.stringify({
+			boothId,
+			uploadedPhotoId,
+			options,
+		}),
+	});
 };
 
 /**
@@ -93,23 +93,26 @@ export const generateImage = async (
  * Throws PhotoNotFoundError when document is missing and PhotoExpiredError when older than 24 hours.
  */
 export const getGeneratedPhoto = async (
-  boothId: string,
-  photoId: string,
+	boothId: string,
+	photoId: string,
 ): Promise<GeneratedPhoto> => {
-  const photo = await findGeneratedPhoto(boothId, photoId);
+	const photo = await findGeneratedPhoto(boothId, photoId);
 
-  if (!photo) {
-    throw createNamedError("PhotoNotFoundError", "Generated photo not found");
-  }
+	if (!photo) {
+		throw createNamedError("PhotoNotFoundError", "Generated photo not found");
+	}
 
-  const ageInMs = Date.now() - photo.createdAt.getTime();
+	const ageInMs = Date.now() - photo.createdAt.getTime();
 
-  if (ageInMs > ONE_DAY_IN_MS) {
-    throw createNamedError("PhotoExpiredError", "Generated photo download expired");
-  }
+	if (ageInMs > ONE_DAY_IN_MS) {
+		throw createNamedError(
+			"PhotoExpiredError",
+			"Generated photo download expired",
+		);
+	}
 
-  return {
-    id: photo.photoId,
-    imageUrl: photo.imageUrl,
-  };
+	return {
+		id: photo.photoId,
+		imageUrl: photo.imageUrl,
+	};
 };

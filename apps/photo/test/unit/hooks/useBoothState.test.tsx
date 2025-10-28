@@ -72,7 +72,11 @@ describe("useBoothState", () => {
 			) => {
 				expect(firestore).toEqual({ name: "firestore" });
 
-				if (segmentOne === "booths" && segmentTwo === "booth-123" && rest.length === 0) {
+				if (
+					segmentOne === "booths" &&
+					segmentTwo === "booth-123" &&
+					rest.length === 0
+				) {
 					return boothDocRef;
 				}
 
@@ -89,10 +93,12 @@ describe("useBoothState", () => {
 			},
 		);
 
-		onSnapshotMock.mockImplementation((_ref: unknown, listener: (snapshot: unknown) => void) => {
-			boothSnapshotListeners.push(listener);
-			return unsubscribeMock;
-		});
+		onSnapshotMock.mockImplementation(
+			(_ref: unknown, listener: (snapshot: unknown) => void) => {
+				boothSnapshotListeners.push(listener);
+				return unsubscribeMock;
+			},
+		);
 
 		getDocMock.mockResolvedValue({
 			exists: () => true,
@@ -143,8 +149,12 @@ describe("useBoothState", () => {
 		await waitFor(() => {
 			expect(currentState?.isLoading).toBe(false);
 			expect(currentState?.booth?.state).toBe("menu");
-			expect(currentState?.booth?.lastTakePhotoAt?.toISOString()).toBe("2025-01-01T00:00:00.000Z");
-			expect(currentState?.latestGeneratedPhotoUrl).toBe("https://example.com/generated.png");
+			expect(currentState?.booth?.lastTakePhotoAt?.toISOString()).toBe(
+				"2025-01-01T00:00:00.000Z",
+			);
+			expect(currentState?.latestGeneratedPhotoUrl).toBe(
+				"https://example.com/generated.png",
+			);
 		});
 
 		expect(getDocMock).toHaveBeenCalledWith(generatedDocRef);

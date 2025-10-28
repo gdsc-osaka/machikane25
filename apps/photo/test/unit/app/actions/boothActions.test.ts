@@ -32,7 +32,9 @@ describe("boothActions", () => {
 	it("startSession rejects empty boothId", async () => {
 		const { startSession } = await import("@/app/actions/boothActions");
 
-		await expect(startSession({ boothId: "" })).rejects.toBeInstanceOf(ZodError);
+		await expect(startSession({ boothId: "" })).rejects.toBeInstanceOf(
+			ZodError,
+		);
 		expect(mockStartSession).not.toHaveBeenCalled();
 	});
 
@@ -92,7 +94,11 @@ describe("boothActions", () => {
 		const { completeGeneration } = await import("@/app/actions/boothActions");
 
 		await expect(
-			completeGeneration({ boothId: "", generatedPhotoId: "", usedUploadedPhotoId: "" }),
+			completeGeneration({
+				boothId: "",
+				generatedPhotoId: "",
+				usedUploadedPhotoId: "",
+			}),
 		).rejects.toBeInstanceOf(ZodError);
 		expect(mockCompleteGeneration).not.toHaveBeenCalled();
 	});

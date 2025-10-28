@@ -312,18 +312,14 @@ describe("Firestore Security Rules", () => {
 			const unauthContext = testEnv.unauthenticatedContext();
 			const unauthDb = unauthContext.firestore();
 
-			await assertSucceeds(
-				getDoc(doc(unauthDb, "generatedPhotos", "photo-1")),
-			);
+			await assertSucceeds(getDoc(doc(unauthDb, "generatedPhotos", "photo-1")));
 		});
 
 		it("should allow anonymous user to read generated photos", async () => {
 			const anonContext = testEnv.authenticatedContext("anon-user");
 			const anonDb = anonContext.firestore();
 
-			await assertSucceeds(
-				getDoc(doc(anonDb, "generatedPhotos", "photo-1")),
-			);
+			await assertSucceeds(getDoc(doc(anonDb, "generatedPhotos", "photo-1")));
 		});
 
 		it("should deny anonymous user to create generated photos", async () => {

@@ -8,7 +8,8 @@
       "Bash(cat:*)",
       "Bash(grep:*)",
       "Bash(pnpm test:photo:boothSessionFlow:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []

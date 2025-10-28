@@ -1,7 +1,7 @@
+import * as Sentry from "@sentry/nextjs";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import GlobalError from "@/app/global-error";
-import * as Sentry from "@sentry/nextjs";
 
 // Mock Sentry
 vi.mock("@sentry/nextjs", () => ({

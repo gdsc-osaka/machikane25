@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import Home from "@/app/page";
-import NotFoundPage from "@/app/404/page";
 import LoginPage from "@/app/(booth)/login/page";
+import NotFoundPage from "@/app/404/page";
+import Home from "@/app/page";
 
 describe("Page Components", () => {
 	describe("Home Page", () => {

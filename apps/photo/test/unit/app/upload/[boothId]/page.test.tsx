@@ -126,10 +126,10 @@ describe("[RED] UploadPage", () => {
 			target: { files: [invalidFile] },
 		});
 
-	await waitFor(() => {
-		expect(uploadButton).toBeDisabled();
-	});
-	await screen.findByText(/対応していないファイル形式/);
+		await waitFor(() => {
+			expect(uploadButton).toBeDisabled();
+		});
+		await screen.findByText(/対応していないファイル形式/);
 		expect(mockUploadUserPhoto).not.toHaveBeenCalled();
 	});
 

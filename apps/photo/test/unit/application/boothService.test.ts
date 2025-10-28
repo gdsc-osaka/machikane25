@@ -77,10 +77,13 @@ describe("BoothService", () => {
 
 		expect(collectionMock).toHaveBeenCalledWith("booths");
 		expect(docMock).toHaveBeenCalledWith("booth-1");
-		expect(setMock).toHaveBeenCalledWith({
-			state: "menu",
-			updatedAt: "server-timestamp",
-		}, { merge: true });
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "menu",
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
 	});
 
 	it("startCapture updates booth state to capturing with timestamp", async () => {
@@ -88,11 +91,14 @@ describe("BoothService", () => {
 
 		await startCapture("booth-2");
 
-		expect(setMock).toHaveBeenCalledWith({
-			state: "capturing",
-			lastTakePhotoAt: "server-timestamp",
-			updatedAt: "server-timestamp",
-		}, { merge: true });
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "capturing",
+				lastTakePhotoAt: "server-timestamp",
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
 		expect(serverTimestampMock).toHaveBeenCalled();
 	});
 
@@ -101,10 +107,13 @@ describe("BoothService", () => {
 
 		await completeCapture("booth-3");
 
-		expect(setMock).toHaveBeenCalledWith({
-			state: "menu",
-			updatedAt: "server-timestamp",
-		}, { merge: true });
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "menu",
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
 	});
 
 	it("startGeneration toggles state and triggers GenerationService", async () => {
@@ -112,10 +121,13 @@ describe("BoothService", () => {
 
 		await startGeneration("booth-4", "uploaded-1", { style: "style-1" });
 
-		expect(setMock).toHaveBeenCalledWith({
-			state: "generating",
-			updatedAt: "server-timestamp",
-		}, { merge: true });
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "generating",
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
 		expect(generateImageMock).toHaveBeenCalledWith("booth-4", "uploaded-1", {
 			style: "style-1",
 		});
@@ -129,11 +141,14 @@ describe("BoothService", () => {
 		// Verify booth state update
 		expect(collectionMock).toHaveBeenCalledWith("booths");
 		expect(docMock).toHaveBeenCalledWith("booth-5");
-		expect(setMock).toHaveBeenCalledWith({
-			state: "completed",
-			latestPhotoId: "generated-1",
-			updatedAt: "server-timestamp",
-		}, { merge: true });
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "completed",
+				latestPhotoId: "generated-1",
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
 
 		// Verify storage file save
 		expect(storageFileMock).toHaveBeenCalledWith(

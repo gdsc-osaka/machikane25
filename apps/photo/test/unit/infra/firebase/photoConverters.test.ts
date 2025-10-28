@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
+import { describe, expect, it } from "vitest";
 import {
-	uploadedPhotoConverter,
 	generatedPhotoConverter,
+	uploadedPhotoConverter,
 } from "@/infra/firebase/photoConverters";
 
 const createSnapshot = (data: Record<string, unknown>, id: string) =>
@@ -12,7 +12,7 @@ const createSnapshot = (data: Record<string, unknown>, id: string) =>
 		ref: {
 			path: `booths/${data.boothId || "booth-unknown"}/generatedPhotos/${id}`,
 		},
-	} as unknown);
+	}) as unknown;
 
 describe("photoConverters", () => {
 	it("should convert uploaded photo snapshot to domain model", () => {
@@ -98,9 +98,7 @@ describe("photoConverters", () => {
 		const firestoreData = generatedPhotoConverter.toFirestore(domainPhoto);
 		expect(firestoreData.boothId).toBe("booth-10");
 		expect(firestoreData.photoId).toBe("photo-10");
-		expect(firestoreData.imagePath).toBe(
-			"generated_photos/photo-10/photo.png",
-		);
+		expect(firestoreData.imagePath).toBe("generated_photos/photo-10/photo.png");
 		expect(firestoreData.imageUrl).toBe(
 			"https://example.com/generated/photo-10.png",
 		);

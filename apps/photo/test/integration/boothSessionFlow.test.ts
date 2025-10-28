@@ -5,13 +5,13 @@
  * and Gemini API (mocked via MSW). Covers upload, capture, generation, and cleanup (FR-001, FR-002, FR-003, FR-006, FR-011, FR-012).
  */
 
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
 import { collection, getDocs } from "firebase/firestore";
 import type { Firestore as AdminFirestore } from "firebase-admin/firestore";
 import type { Storage as AdminStorage } from "firebase-admin/storage";
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { randomUUID } from "node:crypto";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
 	completeCapture,
 	completeGeneration,
@@ -19,9 +19,7 @@ import {
 	startGeneration,
 	startSession,
 } from "@/app/actions/boothActions";
-import {
-	uploadCapturedPhoto,
-} from "@/app/actions/photoActions";
+import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import {
 	ensureAnonymousSignIn,
 	getFirebaseFirestore,
@@ -34,7 +32,8 @@ type SeededOption = {
 };
 
 const ensureEmulatorEnvironment = (): void => {
-	process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "test-gemini-api-key";
+	process.env.GEMINI_API_KEY =
+		process.env.GEMINI_API_KEY ?? "test-gemini-api-key";
 	process.env.FIREBASE_AUTH_EMULATOR_HOST =
 		process.env.FIREBASE_AUTH_EMULATOR_HOST ?? "localhost:11000";
 	process.env.FIRESTORE_EMULATOR_HOST =
@@ -54,7 +53,7 @@ const ensureAdminEnvironment = (): void => {
 	const adminConfig = {
 		project_id: "photo-test",
 		client_email: "integration-tests@photo-test.firebaseapp.com",
-		private_key:   //これはテスト用のダミーキーです。
+		private_key: //これはテスト用のダミーキーです。
 			"-----BEGIN PRIVATE KEY-----\n" +
 			"MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC2M51f5zqQuXrt\n" +
 			"ZomCkx0+ovL+yRtfFmbD/fka4Phjb512GK6Hyd348nh9gUWcniyCuVcQ7KWYn56C\n" +
@@ -118,52 +117,61 @@ const geminiRequests: unknown[] = [];
 const storageObjects = new Set<string>();
 
 const geminiServer = setupServer(
-	http.post("https://generativelanguage.googleapis.com/**", async ({ request }) => {
-		const requestBody = await request.json();
-		geminiRequests.push(requestBody);
+	http.post(
+		"https://generativelanguage.googleapis.com/**",
+		async ({ request }) => {
+			const requestBody = await request.json();
+			geminiRequests.push(requestBody);
 
-		const base64Pixel =
-			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGBgAAAABAABJzQnCgAAAABJRU5ErkJggg==";
+			const base64Pixel =
+				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGBgAAAABAABJzQnCgAAAABJRU5ErkJggg==";
 
-		return HttpResponse.json({
-			candidates: [
-				{
-					content: {
-						parts: [
-							{
-								inlineData: {
-									mimeType: "image/png",
-									data: base64Pixel,
+			return HttpResponse.json({
+				candidates: [
+					{
+						content: {
+							parts: [
+								{
+									inlineData: {
+										mimeType: "image/png",
+										data: base64Pixel,
+									},
 								},
-							},
-						],
+							],
+						},
 					},
-				},
-			],
-		});
-	}),
-	http.post("http://localhost:11004/upload/storage/v1/b/:bucket/o", async ({ params, request }) => {
-		const url = new URL(request.url);
-		const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-		const bucket = String(params.bucket ?? "photo-test.appspot.com");
-		storageObjects.add(objectName);
-		return HttpResponse.json({
-			name: objectName,
-			bucket,
-			contentType: "image/png",
-		});
-	}),
-	http.post("http://localhost:11004/v0/b/:bucket/o", async ({ params, request }) => {
-		const url = new URL(request.url);
-		const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-		const bucket = String(params.bucket ?? "photo-test.appspot.com");
-		storageObjects.add(objectName);
-		return HttpResponse.json({
-			name: objectName,
-			bucket,
-			contentType: "image/png",
-		});
-	}),
+				],
+			});
+		},
+	),
+	http.post(
+		"http://localhost:11004/upload/storage/v1/b/:bucket/o",
+		async ({ params, request }) => {
+			const url = new URL(request.url);
+			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			storageObjects.add(objectName);
+			return HttpResponse.json({
+				name: objectName,
+				bucket,
+				contentType: "image/png",
+			});
+		},
+	),
+	http.post(
+		"http://localhost:11004/v0/b/:bucket/o",
+		async ({ params, request }) => {
+			const url = new URL(request.url);
+			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			storageObjects.add(objectName);
+			return HttpResponse.json({
+				name: objectName,
+				bucket,
+				contentType: "image/png",
+			});
+		},
+	),
 	http.put("http://localhost:11004/:bucket/:object*", async ({ params }) => {
 		const objectName = String(params.object ?? "");
 		const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -174,88 +182,106 @@ const geminiServer = setupServer(
 			contentType: "image/png",
 		});
 	}),
-http.get("http://localhost:11004/storage/v1/b/:bucket/o/:object*", async ({ params, request }) => {
-	const objectName = decodeURIComponent(String(params.object ?? ""));
-	const bucket = String(params.bucket ?? "photo-test.appspot.com");
-	if (storageObjects.has(objectName)) {
-		if (request.url.includes("alt=media")) {
-			return HttpResponse.text("MOCK_IMAGE_DATA", {
-				status: 200,
-					headers: {
-						"Content-Type": "image/png",
-					},
+	http.get(
+		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
+		async ({ params, request }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			if (storageObjects.has(objectName)) {
+				if (request.url.includes("alt=media")) {
+					return HttpResponse.text("MOCK_IMAGE_DATA", {
+						status: 200,
+						headers: {
+							"Content-Type": "image/png",
+						},
+					});
+				}
+				return HttpResponse.json({
+					name: objectName,
+					bucket,
+					size: `${SAMPLE_IMAGE_BYTES.length}`,
+					contentType: "image/png",
 				});
 			}
-			return HttpResponse.json({
-				name: objectName,
-				bucket,
-				size: `${SAMPLE_IMAGE_BYTES.length}`,
-				contentType: "image/png",
-			});
-		}
-		return HttpResponse.json(
-			{
-				error: {
-					code: 404,
-					message: "Not Found",
-				},
-			},
-		{ status: 404 },
-	);
-}),
-http.get("http://localhost:11004/v0/b/:bucket/o/:object*", async ({ params, request }) => {
-	const objectName = decodeURIComponent(String(params.object ?? ""));
-	const bucket = String(params.bucket ?? "photo-test.appspot.com");
-	if (storageObjects.has(objectName)) {
-		if (request.url.includes("alt=media")) {
-			return HttpResponse.text("MOCK_IMAGE_DATA", {
-				status: 200,
-					headers: {
-						"Content-Type": "image/png",
+			return HttpResponse.json(
+				{
+					error: {
+						code: 404,
+						message: "Not Found",
 					},
+				},
+				{ status: 404 },
+			);
+		},
+	),
+	http.get(
+		"http://localhost:11004/v0/b/:bucket/o/:object*",
+		async ({ params, request }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			if (storageObjects.has(objectName)) {
+				if (request.url.includes("alt=media")) {
+					return HttpResponse.text("MOCK_IMAGE_DATA", {
+						status: 200,
+						headers: {
+							"Content-Type": "image/png",
+						},
+					});
+				}
+				return HttpResponse.json({
+					name: objectName,
+					bucket,
+					size: `${SAMPLE_IMAGE_BYTES.length}`,
+					contentType: "image/png",
 				});
 			}
-			return HttpResponse.json({
-				name: objectName,
-				bucket,
-				size: `${SAMPLE_IMAGE_BYTES.length}`,
-				contentType: "image/png",
-			});
-		}
-		return HttpResponse.json(
-			{
-				error: {
-					code: 404,
-					message: "Not Found",
+			return HttpResponse.json(
+				{
+					error: {
+						code: 404,
+						message: "Not Found",
+					},
 				},
-			},
-		{ status: 404 },
-	);
-}),
-http.head("http://localhost:11004/storage/v1/b/:bucket/o/:object*", async ({ params }) => {
-	const objectName = decodeURIComponent(String(params.object ?? ""));
-	if (storageObjects.has(objectName)) {
-		return HttpResponse.text("", { status: 200 });
-	}
-	return HttpResponse.text("", { status: 404 });
-}),
-http.head("http://localhost:11004/v0/b/:bucket/o/:object*", async ({ params }) => {
-	const objectName = decodeURIComponent(String(params.object ?? ""));
-	if (storageObjects.has(objectName)) {
-		return HttpResponse.text("", { status: 200 });
-	}
-	return HttpResponse.text("", { status: 404 });
-}),
-http.delete("http://localhost:11004/storage/v1/b/:bucket/o/:object*", async ({ params }) => {
-	const objectName = decodeURIComponent(String(params.object ?? ""));
-		storageObjects.delete(objectName);
-		return HttpResponse.json({});
-	}),
-	http.delete("http://localhost:11004/v0/b/:bucket/o/:object*", async ({ params }) => {
-		const objectName = decodeURIComponent(String(params.object ?? ""));
-		storageObjects.delete(objectName);
-		return HttpResponse.json({});
-	}),
+				{ status: 404 },
+			);
+		},
+	),
+	http.head(
+		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
+		async ({ params }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			if (storageObjects.has(objectName)) {
+				return HttpResponse.text("", { status: 200 });
+			}
+			return HttpResponse.text("", { status: 404 });
+		},
+	),
+	http.head(
+		"http://localhost:11004/v0/b/:bucket/o/:object*",
+		async ({ params }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			if (storageObjects.has(objectName)) {
+				return HttpResponse.text("", { status: 200 });
+			}
+			return HttpResponse.text("", { status: 404 });
+		},
+	),
+	http.delete(
+		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
+		async ({ params }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			storageObjects.delete(objectName);
+			return HttpResponse.json({});
+		},
+	),
+	http.delete(
+		"http://localhost:11004/v0/b/:bucket/o/:object*",
+		async ({ params }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			storageObjects.delete(objectName);
+			return HttpResponse.json({});
+		},
+	),
 );
 
 const seedGenerationOptions = async (
@@ -315,11 +341,16 @@ const cleanupSeedData = async (
 	await Promise.all(
 		uploadedDocs.map(async (snapshot) => {
 			const data = snapshot.data();
-			const imagePath = typeof data.imagePath === "string" ? data.imagePath : null;
+			const imagePath =
+				typeof data.imagePath === "string" ? data.imagePath : null;
 
 			await snapshot.ref.delete();
 			if (imagePath) {
-				await storage.bucket().file(imagePath).delete().catch(() => undefined);
+				await storage
+					.bucket()
+					.file(imagePath)
+					.delete()
+					.catch(() => undefined);
 			}
 		}),
 	);
@@ -332,20 +363,32 @@ const cleanupSeedData = async (
 	await Promise.all(
 		generatedSnapshots.docs.map(async (snapshot) => {
 			const data = snapshot.data();
-			const imagePath = typeof data.imagePath === "string" ? data.imagePath : null;
+			const imagePath =
+				typeof data.imagePath === "string" ? data.imagePath : null;
 
 			await snapshot.ref.delete();
 			if (imagePath) {
-				await storage.bucket().file(imagePath).delete().catch(() => undefined);
+				await storage
+					.bucket()
+					.file(imagePath)
+					.delete()
+					.catch(() => undefined);
 			}
 		}),
 	);
 
-	await firestore.doc(`booths/${boothId}`).delete().catch(() => undefined);
+	await firestore
+		.doc(`booths/${boothId}`)
+		.delete()
+		.catch(() => undefined);
 
 	await Promise.all(
 		seeds.map(async (seed) => {
-			await firestore.collection("options").doc(seed.id).delete().catch(() => undefined);
+			await firestore
+				.collection("options")
+				.doc(seed.id)
+				.delete()
+				.catch(() => undefined);
 		}),
 	);
 };
@@ -368,7 +411,7 @@ describe("[RED] boothSessionFlow integration", () => {
 		geminiServer.close();
 	});
 
-it("should orchestrate upload, capture, and generation lifecycle with Firebase Emulator and Gemini mock", async () => {
+	it("should orchestrate upload, capture, and generation lifecycle with Firebase Emulator and Gemini mock", async () => {
 		const adminModule = await adminModulePromise;
 		const adminFirestore = adminModule.getAdminFirestore();
 		const adminStorage = adminModule.getAdminStorage();
@@ -376,7 +419,10 @@ it("should orchestrate upload, capture, and generation lifecycle with Firebase E
 
 		const boothId = `booth-${randomUUID()}`;
 		const optionSuffix = randomUUID();
-		const generationSeeds = await seedGenerationOptions(adminFirestore, optionSuffix);
+		const generationSeeds = await seedGenerationOptions(
+			adminFirestore,
+			optionSuffix,
+		);
 
 		const boothRef = adminFirestore.collection("booths").doc(boothId);
 
@@ -388,7 +434,9 @@ it("should orchestrate upload, capture, and generation lifecycle with Firebase E
 			createdAt: new Date(),
 		});
 
-		const locationSeed = generationSeeds.find((seed) => seed.typeId === "location");
+		const locationSeed = generationSeeds.find(
+			(seed) => seed.typeId === "location",
+		);
 		const outfitSeed = generationSeeds.find((seed) => seed.typeId === "outfit");
 		const styleSeed = generationSeeds.find((seed) => seed.typeId === "style");
 
@@ -397,7 +445,12 @@ it("should orchestrate upload, capture, and generation lifecycle with Firebase E
 		}
 
 		const cleanup = async () => {
-			await cleanupSeedData(adminFirestore, adminStorage, boothId, generationSeeds);
+			await cleanupSeedData(
+				adminFirestore,
+				adminStorage,
+				boothId,
+				generationSeeds,
+			);
 		};
 
 		try {
@@ -457,10 +510,13 @@ it("should orchestrate upload, capture, and generation lifecycle with Firebase E
 
 			const boothAfterGenerationComplete = await boothRef.get();
 			expect(boothAfterGenerationComplete.data()?.state).toBe("completed");
-			expect(boothAfterGenerationComplete.data()?.latestPhotoId).toBe(generatedPhotoId);
+			expect(boothAfterGenerationComplete.data()?.latestPhotoId).toBe(
+				generatedPhotoId,
+			);
 
-			const generatedDocRef = adminFirestore
-				.doc(`booths/${boothId}/generatedPhotos/${generatedPhotoId}`);
+			const generatedDocRef = adminFirestore.doc(
+				`booths/${boothId}/generatedPhotos/${generatedPhotoId}`,
+			);
 			const generatedDoc = await generatedDocRef.get();
 			expect(generatedDoc.exists).toBe(true);
 

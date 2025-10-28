@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from "react";
 import {
 	doc,
+	type Firestore,
 	getDoc,
 	onSnapshot,
 	Timestamp,
-	type Firestore,
 } from "firebase/firestore";
-import { ref, getDownloadURL } from "firebase/storage";
-import { boothStateSchema, type BoothState } from "@/domain/booth";
+import { getDownloadURL, ref } from "firebase/storage";
+import { useEffect, useRef, useState } from "react";
+import { type BoothState, boothStateSchema } from "@/domain/booth";
 import {
+	ensureAnonymousSignIn,
 	getFirebaseFirestore,
 	getFirebaseStorage,
 	initializeFirebaseClient,
-	ensureAnonymousSignIn,
 } from "@/lib/firebase/client";
 
 type BoothSnapshot = {
@@ -147,12 +147,12 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 						setBooth(boothSnapshot);
 						setError(null);
 
-				if (boothSnapshot.latestPhotoId) {
-					void fetchGeneratedPhotoUrl(
-						firestore,
-						boothSnapshot.id,
-						boothSnapshot.latestPhotoId,
-					)
+						if (boothSnapshot.latestPhotoId) {
+							void fetchGeneratedPhotoUrl(
+								firestore,
+								boothSnapshot.id,
+								boothSnapshot.latestPhotoId,
+							)
 								.then((url) => {
 									if (isMountedRef.current) {
 										setLatestUrl(url);

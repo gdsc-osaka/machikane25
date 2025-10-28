@@ -19,7 +19,7 @@ export type GenerationOptionTypeId =
  * GenerationOption entity
  */
 export interface GenerationOption {
-	id: string;  //location, outfit, person, style, pose
+	id: string; //location, outfit, person, style, pose
 	typeId: GenerationOptionTypeId;
 	value: string;
 	displayName: string;

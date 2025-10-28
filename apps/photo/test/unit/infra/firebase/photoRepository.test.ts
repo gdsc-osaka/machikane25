@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FieldValue } from "firebase-admin/firestore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const setMock = vi.fn();
 const getMock = vi.fn();
@@ -125,12 +125,12 @@ describe("photoRepository", () => {
 			};
 		});
 
-	const { queryUploadedPhotosByPhotoId } = await import(
-		"@/infra/firebase/photoRepository"
-	);
+		const { queryUploadedPhotosByPhotoId } = await import(
+			"@/infra/firebase/photoRepository"
+		);
 
-	queryUploadedPhotosByPhotoId("photo-group");
-	expect(collectionGroupMock).toHaveBeenCalledWith("uploadedPhotos");
-	expect(whereMock).toHaveBeenCalledWith("photoId", "==", "photo-group");
-});
+		queryUploadedPhotosByPhotoId("photo-group");
+		expect(collectionGroupMock).toHaveBeenCalledWith("uploadedPhotos");
+		expect(whereMock).toHaveBeenCalledWith("photoId", "==", "photo-group");
+	});
 });

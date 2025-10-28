@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
+import { useEffect, useRef, useState } from "react";
 import {
 	getFirebaseFirestore,
 	initializeFirebaseClient,
@@ -42,25 +42,27 @@ export const useGenerationOptions = (): GenerationOptionsResult => {
 				}
 				setIsLoading(false);
 
-				const mapped = snapshot.docs.map<GenerationOptionItem>((docSnapshot) => {
-					const data = docSnapshot.data();
+				const mapped = snapshot.docs.map<GenerationOptionItem>(
+					(docSnapshot) => {
+						const data = docSnapshot.data();
 
-					const typeIdValue = Reflect.get(data, "typeId");
-					const displayNameValue = Reflect.get(data, "displayName");
-					const imageUrlValue = Reflect.get(data, "imageUrl");
-					const imagePathValue = Reflect.get(data, "imagePath");
+						const typeIdValue = Reflect.get(data, "typeId");
+						const displayNameValue = Reflect.get(data, "displayName");
+						const imageUrlValue = Reflect.get(data, "imageUrl");
+						const imagePathValue = Reflect.get(data, "imagePath");
 
-					return {
-						id: docSnapshot.id,
-						typeId: typeof typeIdValue === "string" ? typeIdValue : "unknown",
-						displayName:
-							typeof displayNameValue === "string" ? displayNameValue : "",
-						imageUrl:
-							typeof imageUrlValue === "string" ? imageUrlValue : null,
-						imagePath:
-							typeof imagePathValue === "string" ? imagePathValue : null,
-					};
-				});
+						return {
+							id: docSnapshot.id,
+							typeId: typeof typeIdValue === "string" ? typeIdValue : "unknown",
+							displayName:
+								typeof displayNameValue === "string" ? displayNameValue : "",
+							imageUrl:
+								typeof imageUrlValue === "string" ? imageUrlValue : null,
+							imagePath:
+								typeof imagePathValue === "string" ? imagePathValue : null,
+						};
+					},
+				);
 
 				const grouped = mapped.reduce<GenerationOptionsState>((acc, option) => {
 					const current = acc[option.typeId] ?? [];

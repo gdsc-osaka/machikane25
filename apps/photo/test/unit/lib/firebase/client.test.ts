@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Firebase modules
 vi.mock("firebase/app", () => ({
@@ -97,13 +97,18 @@ describe("Firebase Client", () => {
 	describe("ensureAnonymousSignIn", () => {
 		it("should resolve with existing user if already signed in", async () => {
 			const { onAuthStateChanged } = await import("firebase/auth");
-			vi.mocked(onAuthStateChanged).mockImplementation(
-				(_auth, callback) => {
-					// Use setTimeout to ensure unsubscribe is assigned before callback is called
-					setTimeout(() => (callback as (user: unknown) => void)({ uid: "existing-user", isAnonymous: true }), 0);
-					return vi.fn();
-				},
-			);
+			vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
+				// Use setTimeout to ensure unsubscribe is assigned before callback is called
+				setTimeout(
+					() =>
+						(callback as (user: unknown) => void)({
+							uid: "existing-user",
+							isAnonymous: true,
+						}),
+					0,
+				);
+				return vi.fn();
+			});
 
 			vi.resetModules();
 			const { ensureAnonymousSignIn } = await import("@/lib/firebase/client");
@@ -118,13 +123,11 @@ describe("Firebase Client", () => {
 			const { onAuthStateChanged, signInAnonymously } = await import(
 				"firebase/auth"
 			);
-			vi.mocked(onAuthStateChanged).mockImplementation(
-				(_auth, callback) => {
-					// Use setTimeout to ensure unsubscribe is assigned before callback is called
-					setTimeout(() => (callback as (user: unknown) => void)(null), 0);
-					return vi.fn();
-				},
-			);
+			vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
+				// Use setTimeout to ensure unsubscribe is assigned before callback is called
+				setTimeout(() => (callback as (user: unknown) => void)(null), 0);
+				return vi.fn();
+			});
 			vi.mocked(signInAnonymously).mockResolvedValue({
 				user: { uid: "new-anonymous-user", isAnonymous: true },
 			} as never);
@@ -143,13 +146,11 @@ describe("Firebase Client", () => {
 			const { onAuthStateChanged, signInAnonymously } = await import(
 				"firebase/auth"
 			);
-			vi.mocked(onAuthStateChanged).mockImplementation(
-				(_auth, callback) => {
-					// Use setTimeout to ensure unsubscribe is assigned before callback is called
-					setTimeout(() => (callback as (user: unknown) => void)(null), 0);
-					return vi.fn();
-				},
-			);
+			vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
+				// Use setTimeout to ensure unsubscribe is assigned before callback is called
+				setTimeout(() => (callback as (user: unknown) => void)(null), 0);
+				return vi.fn();
+			});
 			vi.mocked(signInAnonymously).mockRejectedValue(
 				new Error("Sign in failed"),
 			);

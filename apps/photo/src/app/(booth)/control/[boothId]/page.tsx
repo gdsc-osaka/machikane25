@@ -1,21 +1,28 @@
-'use client';
+"use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { useCallback, useMemo, useState, useTransition } from "react";
-import QRCode from "react-qr-code";
 import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	useTransition,
+} from "react";
+import QRCode from "react-qr-code";
 import {
 	completeCapture,
 	startCapture,
 	startGeneration,
 	startSession,
 } from "@/app/actions/boothActions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useBoothState } from "@/hooks/useBoothState";
-import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
+import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
 
 type SelectedOptions = Record<string, string>;
 
@@ -39,7 +46,10 @@ const resolveBaseUrl = (): string => {
 		return sanitizeBaseUrl(envBaseUrl);
 	}
 
-	if (typeof window !== "undefined" && typeof window.location?.origin === "string") {
+	if (
+		typeof window !== "undefined" &&
+		typeof window.location?.origin === "string"
+	) {
 		return sanitizeBaseUrl(window.location.origin);
 	}
 
@@ -56,6 +66,8 @@ export default function ControlPage() {
 	const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
 	const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
 	const [isPending, startTransition] = useTransition();
+	const [countdown, setCountdown] = useState<number | null>(null);
+	const [isCapturing, setIsCapturing] = useState(false);
 
 	const { booth, latestGeneratedPhotoUrl, isLoading, error } =
 		useBoothState(boothId);
@@ -64,6 +76,27 @@ export default function ControlPage() {
 
 	const boothState = getBoothState(booth?.state);
 
+	// カウントダウンロジック（Display Pageと同期）
+	useEffect(() => {
+		if (boothState === "capturing" && !isCapturing) {
+			setIsCapturing(true);
+			setCountdown(5);
+		} else if (boothState !== "capturing") {
+			setIsCapturing(false);
+			setCountdown(null);
+		}
+	}, [boothState, isCapturing]);
+
+	// カウントダウンタイマー
+	useEffect(() => {
+		if (countdown === null || countdown < 0) return;
+
+		const timer = setTimeout(() => {
+			setCountdown(countdown - 1);
+		}, 1000);
+
+		return () => clearTimeout(timer);
+	}, [countdown]);
 
 	const handleStartSession = useCallback(() => {
 		startSession({ boothId });
@@ -223,9 +256,27 @@ export default function ControlPage() {
 	);
 
 	const renderCapturing = () => (
-		<div className="flex flex-col items-center gap-4">
+		<div className="flex flex-col items-center gap-6">
 			<p className="text-xl font-semibold">{CAPTURING_MESSAGE}</p>
-			<p className="text-sm text-muted-foreground">カウントダウン表示と同期中…</p>
+			<p className="text-sm text-muted-foreground">
+				ディスプレイ（大画面）を見てください
+			</p>
+			<AnimatePresence mode="wait">
+				{countdown !== null && countdown >= 0 && (
+					<motion.div
+						key={countdown}
+						initial={{ opacity: 0, scale: 0.5 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: 1.5 }}
+						transition={{ duration: 0.3 }}
+						className="flex items-center justify-center"
+					>
+						<span className="text-[120px] font-bold text-primary">
+							{countdown > 0 ? countdown : "📸"}
+						</span>
+					</motion.div>
+				)}
+			</AnimatePresence>
 			<Button
 				variant="secondary"
 				onClick={() => {
@@ -260,7 +311,9 @@ export default function ControlPage() {
 			: null;
 		const baseUrl = resolveBaseUrl();
 		const qrValue =
-			downloadPath && baseUrl.length > 0 ? `${baseUrl}${downloadPath}` : downloadPath;
+			downloadPath && baseUrl.length > 0
+				? `${baseUrl}${downloadPath}`
+				: downloadPath;
 
 		return (
 			<div className="flex flex-col items-center gap-6">

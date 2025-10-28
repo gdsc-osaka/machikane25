@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
+import { useParams } from "next/navigation";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { uploadUserPhoto } from "@/app/actions/photoActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ensureAnonymousSignIn } from "@/lib/firebase/client";
-import { uploadUserPhoto } from "@/app/actions/photoActions";
 
 const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -44,15 +44,15 @@ export default function UploadPage() {
 
 		setSelectedFile(null);
 
-	if (!file) {
-		setErrorMessage(null);
-		return;
-	}
+		if (!file) {
+			setErrorMessage(null);
+			return;
+		}
 
-	if (!isAllowedType(file.type)) {
-		setErrorMessage("対応していないファイル形式です。(PNG/JPEGのみ)");
-		return;
-	}
+		if (!isAllowedType(file.type)) {
+			setErrorMessage("対応していないファイル形式です。(PNG/JPEGのみ)");
+			return;
+		}
 
 		if (!isWithinSize(file.size)) {
 			setErrorMessage("ファイルサイズは20MB以下にしてください。");
@@ -98,7 +98,8 @@ export default function UploadPage() {
 			<header className="flex flex-col items-center gap-2 text-center">
 				<h1 className="text-3xl font-bold">Upload</h1>
 				<p className="text-sm text-muted-foreground">
-					ブースID: {boothId || "準備中"} / 写真ファイルを選択してアップロードしてください。
+					ブースID: {boothId || "準備中"} /
+					写真ファイルを選択してアップロードしてください。
 				</p>
 			</header>
 			<section className="w-full max-w-md space-y-6">

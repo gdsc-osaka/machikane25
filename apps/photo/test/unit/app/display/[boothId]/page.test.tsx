@@ -8,12 +8,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DisplayPage from "@/app/(booth)/display/[boothId]/page";
 
-type BoothState =
-	| "idle"
-	| "menu"
-	| "capturing"
-	| "generating"
-	| "completed";
+type BoothState = "idle" | "menu" | "capturing" | "generating" | "completed";
 
 type MockBooth = {
 	id: string;
@@ -30,7 +25,9 @@ const hookMocks = vi.hoisted(() => ({
 	useParams: vi.fn(),
 }));
 
-vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
+vi.mock("@/hooks/useBoothState", () => ({
+	useBoothState: hookMocks.useBoothState,
+}));
 
 vi.mock("@/app/actions/photoActions", () => ({
 	uploadCapturedPhoto: vi.fn(),

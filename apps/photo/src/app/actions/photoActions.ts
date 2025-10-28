@@ -1,9 +1,9 @@
-'use server';
+"use server";
 
 import { z } from "zod";
 import {
-	uploadUserPhoto as uploadUserPhotoService,
 	uploadCapturedPhoto as uploadCapturedPhotoService,
+	uploadUserPhoto as uploadUserPhotoService,
 } from "@/application/photoService";
 
 const uploadSchema = z.object({

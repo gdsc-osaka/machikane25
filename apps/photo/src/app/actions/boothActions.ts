@@ -1,12 +1,12 @@
-'use server';
+"use server";
 
 import { z } from "zod";
 import {
-	startSession as startSessionService,
-	startCapture as startCaptureService,
 	completeCapture as completeCaptureService,
-	startGeneration as startGenerationService,
 	completeGeneration as completeGenerationService,
+	startCapture as startCaptureService,
+	startGeneration as startGenerationService,
+	startSession as startSessionService,
 } from "@/application/boothService";
 
 const boothIdSchema = z.object({
@@ -28,9 +28,9 @@ const completeGenerationSchema = z.object({
 export const startSession = async (input: { boothId: string }) => {
 	console.log("startSession called with input:", input);
 	try {
-	const { boothId } = boothIdSchema.parse(input);
-	console.log(`Starting session for boothId: ${boothId}`);
-	await startSessionService(boothId);
+		const { boothId } = boothIdSchema.parse(input);
+		console.log(`Starting session for boothId: ${boothId}`);
+		await startSessionService(boothId);
 	} catch (error) {
 		console.error("Error in startSession:", error);
 		throw error;
@@ -64,5 +64,9 @@ export const completeGeneration = async (input: {
 }) => {
 	const { boothId, generatedPhotoId, usedUploadedPhotoId } =
 		completeGenerationSchema.parse(input);
-	await completeGenerationService(boothId, generatedPhotoId, usedUploadedPhotoId);
+	await completeGenerationService(
+		boothId,
+		generatedPhotoId,
+		usedUploadedPhotoId,
+	);
 };

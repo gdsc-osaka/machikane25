@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { photoCopyEn, type PhotoCopy } from "@/libs/i18n/photo.en";
+import { type PhotoCopy, photoCopyEn } from "@/libs/i18n/photo.en";
 import { photoCopyJa } from "@/libs/i18n/photo.ja";
 
 describe("Photo i18n", () => {

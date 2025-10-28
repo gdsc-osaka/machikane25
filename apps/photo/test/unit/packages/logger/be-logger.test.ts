@@ -40,7 +40,9 @@ describe("beLogger", () => {
 	describe("info", () => {
 		it("should call console.info with provided arguments", () => {
 			beLogger.info("info message", { data: 123 });
-			expect(consoleInfoSpy).toHaveBeenCalledWith("info message", { data: 123 });
+			expect(consoleInfoSpy).toHaveBeenCalledWith("info message", {
+				data: 123,
+			});
 		});
 
 		it("should handle single argument", () => {
@@ -75,7 +77,11 @@ describe("beLogger", () => {
 
 		it("should handle multiple arguments", () => {
 			beLogger.error("error:", { code: 500 }, "details");
-			expect(consoleErrorSpy).toHaveBeenCalledWith("error:", { code: 500 }, "details");
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				"error:",
+				{ code: 500 },
+				"details",
+			);
 		});
 	});
 });

@@ -1,16 +1,11 @@
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { getDownloadURL, ref } from "firebase/storage";
 import { useEffect, useRef, useState } from "react";
 import {
-	collection,
-	onSnapshot,
-	orderBy,
-	query,
-} from "firebase/firestore";
-import { ref, getDownloadURL } from "firebase/storage";
-import {
+	ensureAnonymousSignIn,
 	getFirebaseFirestore,
 	getFirebaseStorage,
 	initializeFirebaseClient,
-	ensureAnonymousSignIn,
 } from "@/lib/firebase/client";
 
 type UploadedPhotoItem = {
@@ -71,7 +66,8 @@ export const useUploadedPhotos = (boothId: string): UploadedPhotosResult => {
 						const photoPromises = snapshot.docs.map(async (docSnapshot) => {
 							const data = docSnapshot.data();
 							const imagePath = Reflect.get(data, "imagePath");
-							const imagePathStr = typeof imagePath === "string" ? imagePath : "";
+							const imagePathStr =
+								typeof imagePath === "string" ? imagePath : "";
 
 							let imageUrl = "";
 							if (imagePathStr) {
@@ -79,7 +75,10 @@ export const useUploadedPhotos = (boothId: string): UploadedPhotosResult => {
 									const storageRef = ref(storage, imagePathStr);
 									imageUrl = await getDownloadURL(storageRef);
 								} catch (urlError) {
-									console.error(`[useUploadedPhotos] Failed to get download URL for ${imagePathStr}:`, urlError);
+									console.error(
+										`[useUploadedPhotos] Failed to get download URL for ${imagePathStr}:`,
+										urlError,
+									);
 								}
 							}
 

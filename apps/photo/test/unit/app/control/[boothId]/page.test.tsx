@@ -6,15 +6,10 @@
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import ControlPage from "@/app/(booth)/control/[boothId]/page";
 
-type BoothState =
-	| "idle"
-	| "menu"
-	| "capturing"
-	| "generating"
-	| "completed";
+type BoothState = "idle" | "menu" | "capturing" | "generating" | "completed";
 
 type MockBooth = {
 	id: string;
@@ -43,7 +38,9 @@ const hookMocks = vi.hoisted(() => ({
 	useParams: vi.fn(),
 }));
 
-vi.mock("@/hooks/useBoothState", () => ({ useBoothState: hookMocks.useBoothState }));
+vi.mock("@/hooks/useBoothState", () => ({
+	useBoothState: hookMocks.useBoothState,
+}));
 
 vi.mock("@/hooks/useUploadedPhotos", () => ({
 	useUploadedPhotos: hookMocks.useUploadedPhotos,
@@ -74,9 +71,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 const mockStartSession = boothActionMocks.startSession;
-const mockStartCapture = boothActionMocks.startCapture;
-const mockStartGeneration = boothActionMocks.startGeneration;
-const mockCompleteCapture = boothActionMocks.completeCapture;
 const mockEnsureAnonymousSignIn = clientMocks.ensureAnonymousSignIn;
 
 const mockUseBoothState = hookMocks.useBoothState;
@@ -84,7 +78,10 @@ const mockUseUploadedPhotos = hookMocks.useUploadedPhotos;
 const mockUseGenerationOptions = hookMocks.useGenerationOptions;
 const mockUseParams = hookMocks.useParams;
 
-const createBooth = (state: BoothState, overrides?: Partial<MockBooth>): MockBooth => ({
+const createBooth = (
+	state: BoothState,
+	overrides?: Partial<MockBooth>,
+): MockBooth => ({
 	id: boothId,
 	state,
 	latestPhotoId: null,
@@ -124,7 +121,9 @@ describe("[RED] ControlPage", () => {
 		const booth = createBooth("idle");
 		renderControlPage(booth);
 
-		const startButton = screen.getByRole("button", { name: "フォトブースを始める" });
+		const startButton = screen.getByRole("button", {
+			name: "フォトブースを始める",
+		});
 		expect(startButton).toBeInTheDocument();
 
 		const user = userEvent.setup();
@@ -176,7 +175,9 @@ describe("[RED] ControlPage", () => {
 
 		render(<ControlPage />);
 
-		expect(screen.getByRole("button", { name: "撮影開始" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "撮影開始" }),
+		).toBeInTheDocument();
 		expect(screen.getByText("ロケーションA")).toBeInTheDocument();
 		expect(screen.getByText("ロケーションB")).toBeInTheDocument();
 		expect(screen.getByText("ビビッド")).toBeInTheDocument();
@@ -191,7 +192,7 @@ describe("[RED] ControlPage", () => {
 		renderControlPage(booth);
 
 		expect(screen.getByText("撮影中...")).toBeInTheDocument();
-		expect(screen.getByText(/カウントダウン/)).toBeInTheDocument();
+		expect(screen.getByText("ディスプレイ（大画面）を見てください")).toBeInTheDocument();
 	});
 
 	it("shows generating state progress message", () => {
@@ -209,7 +210,9 @@ describe("[RED] ControlPage", () => {
 
 		const links = screen.getAllByRole("link");
 		const downloadLink = links.find((link) =>
-			link.getAttribute("href")?.includes(`/download/${boothId}/${latestPhotoId}`),
+			link
+				.getAttribute("href")
+				?.includes(`/download/${boothId}/${latestPhotoId}`),
 		);
 
 		expect(downloadLink).toBeDefined();

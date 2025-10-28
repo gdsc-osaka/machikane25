@@ -89,11 +89,13 @@ export const getAdminStorage = (): Storage => {
 	const storage = admin.storage(app);
 
 	// Connect to Storage Emulator if environment variable is set
-	const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST || process.env.STORAGE_EMULATOR_HOST;
+	const storageEmulatorHost =
+		process.env.FIREBASE_STORAGE_EMULATOR_HOST ||
+		process.env.STORAGE_EMULATOR_HOST;
 
 	if (storageEmulatorHost) {
 		// Parse host and port from the emulator host string
-		const [host, portStr] = storageEmulatorHost.split(':');
+		const [host, portStr] = storageEmulatorHost.split(":");
 		const port = portStr ? parseInt(portStr, 10) : 9199;
 
 		// Set the emulator host for the storage instance

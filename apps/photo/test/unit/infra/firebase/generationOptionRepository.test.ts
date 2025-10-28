@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 import type { GenerationOption } from "@/domain/generationOption";
+import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 
 // Mock Firebase Admin
 const mockCollection = vi.fn();

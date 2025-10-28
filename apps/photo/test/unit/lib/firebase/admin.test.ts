@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as admin from "firebase-admin";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock firebase-admin
 vi.mock("firebase-admin", () => {

@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [photo, photo-cleaner, stamp]
+        app: [art-backend, photo, photo-cleaner, stamp]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,6 +44,7 @@ jobs:
       - name: Create .env.local file for ${{ matrix.app }}
         shell: bash
         env:
+          DOT_ENV_ART_BACKEND: ${{ secrets.DOT_ENV_ART_BACKEND }}
           DOT_ENV_PHOTO: ${{ secrets.DOT_ENV_PHOTO }}
           DOT_ENV_PHOTO_CLEANER: ${{ secrets.DOT_ENV_PHOTO_CLEANER }}
           DOT_ENV_STAMP: ${{ secrets.DOT_ENV_STAMP }}
@@ -174,6 +175,13 @@ jobs:
         with:
           path: coverage
           pattern: coverage-report-*
+      - name: Report Art backend coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: "Art backend"
+          json-summary-path: 'coverage/coverage-report-art-backend/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-art-backend/coverage-final.json'
       - name: Report Photo booth coverage
         uses: davelosert/vitest-coverage-report-action@v2
         if: always()

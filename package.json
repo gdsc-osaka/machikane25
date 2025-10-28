@@ -15,6 +15,7 @@
 		"start:stamp": "pnpm --filter stamp start",
 		"lint": "pnpm --recursive lint && pnpm exec biome check *.ts *.json",
 		"lint:fix": "pnpm --recursive lint:fix && pnpm exec biome check --write *.ts *.json",
+		"test:art-backend": "pnpm --filter art-backend test",
 		"test:photo": "pnpm --filter photo test",
 		"test:photo-cleaner": "pnpm --filter photo-cleaner test",
 		"test:stamp": "pnpm --filter stamp test",

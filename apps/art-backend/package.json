@@ -1,0 +1,26 @@
+{
+	"name": "art-backend",
+	"type": "commonjs",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"lint": "pnpm exec biome check src test *.json",
+		"lint:fix": "pnpm exec biome check --write src test *.json",
+		"test": "vitest --config ../../vitest.config.ts",
+		"coverage": "vitest --config ../../vitest.config.ts --coverage"
+	},
+	"dependencies": {
+		"@hono/node-server": "^1.19.5",
+		"env-var": "^7.4.1",
+		"firebase-admin": "^13.5.0",
+		"hono": "^4.10.3",
+		"neverthrow": "^8.2.0",
+		"zod": "^4.1.12"
+	},
+	"devDependencies": {
+		"@types/node": "^20.11.17",
+		"tsx": "^4.7.1",
+		"typescript": "^5.8.3"
+	}
+}

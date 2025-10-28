@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"module": "commonjs",
+		"experimentalDecorators": true /* Enable experimental support for legacy experimental decorators. */,
+		"emitDecoratorMetadata": true /* Emit design-type metadata for decorated declarations in source files. */, // "jsxFactory": "",                                 /* Specify the JSX factory function used when targeting React JSX emit, e.g. 'React.createElement' or 'h'. */
+		"types": ["@types/node"],
+		"esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */, // "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
+		"forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */ /* Type Checking */,
+		"strict": true /* Enable all strict type-checking options. */, // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
+		"outDir": "./dist",
+		"strictNullChecks": true,
+		"declaration": true
+	},
+	"references": [
+		{
+			"path": "tsconfig.test.json"
+		}
+	],
+	"include": ["src/**/*.ts"],
+	"exclude": ["**/*.test.ts", "node_modules"]
+}

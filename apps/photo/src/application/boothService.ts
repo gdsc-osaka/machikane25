@@ -11,7 +11,6 @@ import { createGeneratedPhoto } from "@/infra/firebase/photoRepository";
 import { getAdminFirestore, getAdminStorage } from "@/lib/firebase/admin";
 import { generateImage } from "./generationService";
 import { deleteUsedPhoto } from "./photoService";
-import {useGenerationOptions } from "@/hooks/useGenerationOptions";
 
 type BoothStateUpdate = {
 	state?: BoothState;
@@ -63,8 +62,8 @@ export const startGeneration = async (
 ): Promise<void> => {
 	await updateBoothState(boothId, { state: "generating" });
 
-	// Kick off generation asynchronously (non-blocking for caller)
-	void generateImage(boothId, uploadedPhotoId, options).catch(() => undefined);
+	// Generate image and wait for completion
+	await generateImage(boothId, uploadedPhotoId, options);
 };
 
 export const completeGeneration = async (

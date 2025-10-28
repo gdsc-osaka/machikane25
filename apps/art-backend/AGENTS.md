@@ -10,6 +10,13 @@
 - Polling is deliberate: the renderer fetches updates about every 30 seconds; do not replace this with WebSockets without revisiting the spec.
 - A separate Firebase Function (`Fish Refresher`) prunes stale fish from Firestore—coordinate its schedule with backend retention rules.
 
+## Development Workflow
+1. Read `ARCHITECTURE.md` to understand the high-level structure and directory layout.
+2. Read `TASKS.md` and pick a pending item.
+3. Open the corresponding `docs/*.md` playbook referenced by that task.
+4. Implement the code and unit tests following the detailed instructions.
+5. Mark the task complete in `TASKS.md` by changing `[ ]` to `[x]`, then proceed to the next item.
+
 ## API Surface
 - `POST /upload-photo` accepts a multipart form with a single `photo` binary part and requires the `X-API-KEY` header. On success it stores the image in Firebase Storage, blurs faces before saving, extracts the dominant hue in HSV space, and persists the fish entry.
 - `GET /get-fish` returns the list of fish records for the renderer. Responses must stay compatible with the `Fish` schema defined in the design doc.

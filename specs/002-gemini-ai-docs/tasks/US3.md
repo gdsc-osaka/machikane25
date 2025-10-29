@@ -1,5 +1,6 @@
 # **Tasks: AI Photo Booth Experience (User Story 3 Detailed)**
 
+
 Input: Design docs from /specs/002-gemini-ai-docs/  
 Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md  
 **Organization**: Tasks follow TDD and DDD layering.
@@ -27,7 +28,7 @@ Prerequisites: plan.md, spec.md, data-model.md, Design Doc.md
   * loginWithAdminTokenAction (T505) がエラーを返すようモック。エラーメッセージがUIに表示されることを検証。  
 * \[ \] T503 \[P\] \[US3\] **RTL Spec (Photos Page)**: apps/photo/test/unit/app/photos/page.test.tsx  
   * useBoothsWithLatestPhoto (T508) フックをモックし、複数のブースとそれぞれの最新画像データ（GeneratedPhoto）を返すよう設定。  
-  * 各ブースID（例: Booth 1）と対応する\<img\>タグ（latestPhotoIdのimageUrl）が表示されることを検証 (FR-009)。  
+  * 各ブースID（例: Booth 1）と対応する\<image\>タグ（latestPhotoIdのimageUrl）が表示されることを検証 (FR-009)。  
   * 「印刷用（ダウンロード）」ボタンが各画像に付随していることを検証。  
 * \[ \] T504 \[P\] \[US3\] **RTL Spec (Admin Page \- Monitoring)**: apps/photo/test/unit/app/admin/page.test.tsx  
   * Design Doc.mdに基づき、boothId入力欄とControl/Display/Photosへのリンクが表示されることを検証。  

@@ -46,7 +46,7 @@ const resolveBucket = () => {
 	return storage.bucket();
 };
 
-const fetchFromStorage = async (
+export const fetchFromStorage = async (
 	path: string,
 ): Promise<StorageDownloadResult> => {
 	const bucket = resolveBucket();

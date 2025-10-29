@@ -300,26 +300,33 @@ describe("Firestore Security Rules", () => {
 				createdAt: serverTimestamp(),
 			});
 
-			await setDoc(doc(adminDb, "generatedPhotos", "photo-1"), {
-				imageUrl: "https://storage.example.com/generated.png",
-				imagePath: "generated_photos/photo-1/photo.png",
-				boothId: "booth-1",
-				createdAt: serverTimestamp(),
-			});
+			await setDoc(
+				doc(adminDb, "booths/booth-1/generatedPhotos", "photo-1"),
+				{
+					imageUrl: "https://storage.example.com/generated.png",
+					imagePath: "generated_photos/photo-1/photo.png",
+					boothId: "booth-1",
+					createdAt: serverTimestamp(),
+				},
+			);
 		});
 
 		it("should allow unauthenticated user to read generated photos", async () => {
 			const unauthContext = testEnv.unauthenticatedContext();
 			const unauthDb = unauthContext.firestore();
 
-			await assertSucceeds(getDoc(doc(unauthDb, "generatedPhotos", "photo-1")));
+			await assertSucceeds(
+				getDoc(doc(unauthDb, "booths/booth-1/generatedPhotos", "photo-1")),
+			);
 		});
 
 		it("should allow anonymous user to read generated photos", async () => {
 			const anonContext = testEnv.authenticatedContext("anon-user");
 			const anonDb = anonContext.firestore();
 
-			await assertSucceeds(getDoc(doc(anonDb, "generatedPhotos", "photo-1")));
+			await assertSucceeds(
+				getDoc(doc(anonDb, "booths/booth-1/generatedPhotos", "photo-1")),
+			);
 		});
 
 		it("should deny anonymous user to create generated photos", async () => {
@@ -327,7 +334,7 @@ describe("Firestore Security Rules", () => {
 			const anonDb = anonContext.firestore();
 
 			await assertFails(
-				setDoc(doc(anonDb, "generatedPhotos", "photo-2"), {
+				setDoc(doc(anonDb, "booths/booth-1/generatedPhotos", "photo-2"), {
 					imageUrl: "https://storage.example.com/new.png",
 					imagePath: "generated_photos/photo-2/photo.png",
 					boothId: "booth-1",
@@ -344,7 +351,7 @@ describe("Firestore Security Rules", () => {
 
 			// Create
 			await assertSucceeds(
-				setDoc(doc(adminDb, "generatedPhotos", "photo-2"), {
+				setDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-2"), {
 					imageUrl: "https://storage.example.com/new.png",
 					imagePath: "generated_photos/photo-2/photo.png",
 					boothId: "booth-1",
@@ -354,7 +361,7 @@ describe("Firestore Security Rules", () => {
 
 			// Delete
 			await assertSucceeds(
-				deleteDoc(doc(adminDb, "generatedPhotos", "photo-2")),
+				deleteDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-2")),
 			);
 		});
 	});

@@ -103,7 +103,7 @@ describe("useBoothState", () => {
 		getDocMock.mockResolvedValue({
 			exists: () => true,
 			data: () => ({
-				imagePath: "generated_photos/photo-555/photo.png",
+				imageUrl: "https://example.com/generated.png",
 			}),
 		});
 

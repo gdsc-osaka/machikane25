@@ -3,15 +3,18 @@
  *
  * Verifies the end-to-end booth session lifecycle across Firebase Emulator (Auth, Firestore, Storage)
  * and Gemini API (mocked via MSW). Covers upload, capture, generation, and cleanup (FR-001, FR-002, FR-003, FR-006, FR-011, FR-012).
+ *
+ * @vitest-environment jsdom
  */
 
+import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import { collection, getDocs } from "firebase/firestore";
 import type { Firestore as AdminFirestore } from "firebase-admin/firestore";
 import type { Storage as AdminStorage } from "firebase-admin/storage";
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
 	completeCapture,
 	startCapture,
@@ -25,9 +28,28 @@ import {
 	initializeFirebaseClient,
 } from "@/lib/firebase/client";
 
+// Mock imageData module to avoid Admin SDK Storage download issues in tests
+vi.mock("@/infra/gemini/imageData", () => {
+	// Using a simple PNG image base64
+	const mockImageData = {
+		mimeType: "image/png",
+		data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+	};
+
+	return {
+		getImageDataFromId: vi.fn().mockResolvedValue(mockImageData),
+		fetchFromStorage: vi.fn(),
+	};
+});
+
 type SeededOption = {
 	id: string;
 	typeId: string;
+};
+
+type TestContext = {
+	boothId: string;
+	generationSeeds: SeededOption[];
 };
 
 const ensureEmulatorEnvironment = (): void => {
@@ -116,13 +138,38 @@ const createSampleFile = (name: string): File => {
 const storageObjects = new Set<string>();
 
 const geminiServer = setupServer(
+	// Mock Gemini API to prevent actual API calls and charges
+	http.post(
+		"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+		async () => {
+			// Return mock generated image data
+			const mockGeneratedImageBase64 =
+				Buffer.from(SAMPLE_IMAGE_BYTES).toString("base64");
+			return HttpResponse.json({
+				candidates: [
+					{
+						content: {
+							parts: [
+								{
+									inlineData: {
+										mimeType: "image/png",
+										data: mockGeneratedImageBase64,
+									},
+								},
+							],
+						},
+					},
+				],
+			});
+		},
+	),
 	// HTTP handlers
 	http.post(
 		"http://localhost:11004/upload/storage/v1/b/:bucket/o",
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			storageObjects.add(objectName);
 			return HttpResponse.json({
 				name: objectName,
@@ -137,7 +184,7 @@ const geminiServer = setupServer(
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			storageObjects.add(objectName);
 			return HttpResponse.json({
 				name: objectName,
@@ -151,7 +198,7 @@ const geminiServer = setupServer(
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			storageObjects.add(objectName);
 			return HttpResponse.json({
 				name: objectName,
@@ -174,7 +221,7 @@ const geminiServer = setupServer(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
 		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
-			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
 					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
@@ -206,7 +253,7 @@ const geminiServer = setupServer(
 		"http://localhost:11004/v0/b/:bucket/o/:object*",
 		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
-			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
 					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
@@ -238,7 +285,40 @@ const geminiServer = setupServer(
 		"http://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
 		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
-			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			if (storageObjects.has(objectName)) {
+				if (request.url.includes("alt=media")) {
+					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+						status: 200,
+						headers: {
+							"Content-Type": "image/png",
+						},
+					});
+				}
+				return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+					status: 200,
+					headers: {
+						"Content-Type": "image/png",
+					},
+				});
+			}
+			return HttpResponse.json(
+				{
+					error: {
+						code: 404,
+						message: "Not Found",
+					},
+				},
+				{ status: 404 },
+			);
+		},
+	),
+	// HTTPS handler for Admin SDK download
+	http.get(
+		"https://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
+		async ({ params, request }) => {
+			const objectName = decodeURIComponent(String(params.object ?? ""));
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
 					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
@@ -332,12 +412,7 @@ const seedGenerationOptions = async (
 		seeds.map(async (seed) => {
 			const imagePath = `options/${seed.id}/photo.png`;
 
-			// Upload mock image to storage
-			await bucket.file(imagePath).save(Buffer.from(SAMPLE_IMAGE_BYTES), {
-				resumable: false,
-				contentType: "image/png",
-				validation: false,
-			});
+			// Track the file without actually uploading (MSW will mock the download)
 			storageObjects.add(imagePath);
 
 			const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
@@ -443,64 +518,84 @@ const cleanupSeedData = async (
 	);
 };
 
-describe("[RED] boothSessionFlow integration", () => {
-	const adminModulePromise = loadAdminModule();
+describe("boothSessionFlow integration", () => {
+	let adminModulePromise: ReturnType<typeof loadAdminModule>;
+	const testContexts: TestContext[] = [];
 
 	beforeAll(async () => {
 		ensureEmulatorEnvironment();
+		adminModulePromise = loadAdminModule();
 		initializeFirebaseClient();
 		await ensureAnonymousSignIn();
 		geminiServer.listen({ onUnhandledRequest: "warn" });
+	});
+
+	afterEach(async () => {
+		// Clean up all test contexts created during the test
+		if (testContexts.length > 0) {
+			const adminModule = await adminModulePromise;
+			const adminFirestore = adminModule.getAdminFirestore();
+			const adminStorage = adminModule.getAdminStorage();
+
+			await Promise.all(
+				testContexts.map(async (context) => {
+					await cleanupSeedData(
+						adminFirestore,
+						adminStorage,
+						context.boothId,
+						context.generationSeeds,
+					).catch(() => undefined);
+				}),
+			);
+
+			// Clear the test contexts array
+			testContexts.length = 0;
+		}
 	});
 
 	afterAll(async () => {
 		geminiServer.close();
 	});
 
-	it("should orchestrate upload, capture, and generation lifecycle with Firebase Emulator and real Gemini API", async () => {
-		const adminModule = await adminModulePromise;
-		const adminFirestore = adminModule.getAdminFirestore();
-		const adminStorage = adminModule.getAdminStorage();
-		const firestore = getFirebaseFirestore();
+	it(
+		"should orchestrate upload, capture, and generation lifecycle with Firebase Emulator and mocked Gemini API",
+		async () => {
+			const adminModule = await adminModulePromise;
+			const adminFirestore = adminModule.getAdminFirestore();
+			const adminStorage = adminModule.getAdminStorage();
+			const firestore = getFirebaseFirestore();
 
-		const boothId = `booth-${randomUUID()}`;
-		const optionSuffix = randomUUID();
-		const generationSeeds = await seedGenerationOptions(
-			adminFirestore,
-			optionSuffix,
-			adminStorage,
-		);
-
-		const boothRef = adminFirestore.collection("booths").doc(boothId);
-
-		await boothRef.set({
-			id: boothId,
-			state: "idle",
-			latestPhotoId: null,
-			lastTakePhotoAt: null,
-			createdAt: new Date(),
-		});
-
-		const locationSeed = generationSeeds.find(
-			(seed) => seed.typeId === "location",
-		);
-		const outfitSeed = generationSeeds.find((seed) => seed.typeId === "outfit");
-		const styleSeed = generationSeeds.find((seed) => seed.typeId === "style");
-
-		if (!locationSeed || !outfitSeed || !styleSeed) {
-			throw new Error("Generation option seeds missing required types");
-		}
-
-		const cleanup = async () => {
-			await cleanupSeedData(
+			const boothId = `booth-${randomUUID()}`;
+			const optionSuffix = randomUUID();
+			const generationSeeds = await seedGenerationOptions(
 				adminFirestore,
+				optionSuffix,
 				adminStorage,
-				boothId,
-				generationSeeds,
 			);
-		};
 
-		try {
+			// Register test context for cleanup in afterEach
+			testContexts.push({ boothId, generationSeeds });
+
+			const boothRef = adminFirestore.collection("booths").doc(boothId);
+
+			await boothRef.set({
+				id: boothId,
+				state: "idle",
+				latestPhotoId: null,
+				lastTakePhotoAt: null,
+				createdAt: new Date(),
+			});
+
+			const locationSeed = generationSeeds.find(
+				(seed) => seed.typeId === "location",
+			);
+			const outfitSeed = generationSeeds.find((seed) => seed.typeId === "outfit");
+			const styleSeed = generationSeeds.find((seed) => seed.typeId === "style");
+
+			if (!locationSeed || !outfitSeed || !styleSeed) {
+				throw new Error("Generation option seeds missing required types");
+			}
+
 			await startSession({ boothId });
 
 			const boothAfterSession = await boothRef.get();
@@ -537,62 +632,47 @@ describe("[RED] boothSessionFlow integration", () => {
 				style: styleSeed.id,
 			};
 
-			// Try to start generation with real Gemini API
-			// Note: Gemini API may reject test images, which is expected
-			let geminiGenerationSucceeded = false;
-			try {
-				await startGeneration({
-					boothId,
-					uploadedPhotoId: capturedResult.photoId,
-					options: generationSelection,
-				});
-				geminiGenerationSucceeded = true;
-			} catch (error) {
-				// Gemini API may reject simple test images
-				// This is expected behavior - the test validates the workflow, not Gemini's image acceptance
-				console.log(
-					"[Test] Gemini API rejected test images (expected):",
-					error instanceof Error ? error.message : String(error),
-				);
+			// Start generation with mocked Gemini API (no actual API calls or charges)
+			await startGeneration({
+				boothId,
+				uploadedPhotoId: capturedResult.photoId,
+				options: generationSelection,
+			});
+
+			// Verify state automatically changed to completed
+			const boothAfterGeneration = await boothRef.get();
+			const boothData = boothAfterGeneration.data();
+
+			expect(boothData?.state).toBe("completed");
+			expect(boothData?.latestPhotoId).toBeTruthy();
+
+			const generatedPhotoId = boothData?.latestPhotoId;
+
+			const generatedDocRef = adminFirestore.doc(
+				`booths/${boothId}/generatedPhotos/${generatedPhotoId}`,
+			);
+			const generatedDoc = await generatedDocRef.get();
+			expect(generatedDoc.exists).toBe(true);
+
+			const generatedDocData = generatedDoc.data();
+			const generatedImagePath =
+				generatedDocData && typeof generatedDocData.imagePath === "string"
+					? generatedDocData.imagePath
+					: null;
+
+			if (generatedImagePath) {
+				// Check if the file was tracked in storageObjects (MSW mock)
+				expect(storageObjects.has(generatedImagePath)).toBe(true);
 			}
 
-			// If Gemini succeeded, verify state automatically changed to completed
-			if (geminiGenerationSucceeded) {
-				const boothAfterGeneration = await boothRef.get();
-				const boothData = boothAfterGeneration.data();
+			// Note: uploaded photo deletion happens in background (void deleteUsedPhoto),
+			// so we cannot reliably test it in this synchronous test
 
-				expect(boothData?.state).toBe("completed");
-				expect(boothData?.latestPhotoId).toBeTruthy();
-
-				const generatedPhotoId = boothData?.latestPhotoId;
-
-				const generatedDocRef = adminFirestore.doc(
-					`booths/${boothId}/generatedPhotos/${generatedPhotoId}`,
-				);
-				const generatedDoc = await generatedDocRef.get();
-				expect(generatedDoc.exists).toBe(true);
-
-				const generatedDocData = generatedDoc.data();
-				const generatedImagePath =
-					generatedDocData && typeof generatedDocData.imagePath === "string"
-						? generatedDocData.imagePath
-						: null;
-
-				if (generatedImagePath) {
-					// Check if the file was tracked in storageObjects (MSW mock)
-					expect(storageObjects.has(generatedImagePath)).toBe(true);
-				}
-
-				// Note: uploaded photo deletion happens in background (void deleteUsedPhoto),
-				// so we cannot reliably test it in this synchronous test
-
-				const remainingUploadsSnapshot = await getDocs(
-					collection(firestore, `booths/${boothId}/uploadedPhotos`),
-				);
-				expect(remainingUploadsSnapshot.empty).toBe(true);
-			}
-		} finally {
-			await cleanup().catch(() => undefined);
-		}
-	});
+			const remainingUploadsSnapshot = await getDocs(
+				collection(firestore, `booths/${boothId}/uploadedPhotos`),
+			);
+			expect(remainingUploadsSnapshot.empty).toBe(true);
+		},
+		15000, // 15 second timeout for integration test
+	);
 });

@@ -71,7 +71,7 @@ This project uses a functional approach. **Classes are strictly forbidden.** Use
 ### Repositories
 - A Repository is a collection-like interface for accessing domain objects.
 - The **interface** is defined in the Domain Layer.
-    - *Domain Layer:* `interface IOrderRepository { findById(id: OrderId): Promise<Result<Order, Error>>; save(order: Order): Promise<Result<void, Error>>; }`
+    - *Domain Layer:* `interface IOrderRepository { findById(id: OrderId): Promise<Order>; save(order: Order): Promise<void>; } // throws domain errors on failure`
 - The **implementation** resides in the Infrastructure Layer and uses the Firebase Client SDK.
     - *Infrastructure Layer:* `const orderRepository: IOrderRepository = { async findById(id) { /* ... getDoc logic ... */ }, /* ... */ };`
 
@@ -102,10 +102,9 @@ Do not mutate objects. When a state change is required, create and return a new 
 - **Good:** `const shippedOrder = shipOrder(order); // shipOrder returns a new order object`
 
 ### 【CRITICAL】 Explicit & Structured Error Handling
-All operations that can fail must explicitly declare their failure cases in their return type. Do not throw exceptions for predictable errors.
-- **Use `neverthrow`:** All functions in the Application, Domain, and Infrastructure layers that can fail must return a `Result<SuccessType, ErrorType>`.
-- **Use `ts-pattern`:** When handling a `Result` in the Presentation or Application layer, use `ts-pattern`'s `match` function to exhaustively handle both the `ok` and `err` cases.
-- **Use `obj-err`:** All errors returned in the `err` part of a `Result` must be created using `obj-err` to ensure they are structured, serializable, and contain useful context.
+All operations that can fail must explicitly declare their failure cases in their function signature. Throw domain-specific errors for predictable failures and catch them at the call site.
+- **Prefer `try/catDRch`:** Sequence potentially failing operations with `async/await` and wrap the orchestration in `try/catch` blocks. Convert low-level errors into domain errors before rethrowing.
+- **Exhaustive handling:** When catching errors in the Presentation or Application layer, use `ts-pattern`'s `match` (or exhaustive `switch`) on an error's discriminant to ensure every case is handled.
 
 ## 6. Coding Conventions ✍️
 ### Functional Dependency Injection
@@ -125,10 +124,15 @@ All dependencies (database connections, other services, etc.) MUST be injected u
   ```
 - **Infrastructure Layer:** Repository functions accept the database transaction/connection as the first argument.
   ```typescript
-  export const findDBCustomerById: FindDBCustomerById = 
-    (db) => // 1. Inject dependency
-    (id) => // 2. Return the function that uses it
-      ResultAsync.fromPromise(/* ... use db and id ... */);
+    export const findDBCustomerById: FindDBCustomerById =
+      (db) => // 1. Inject dependency
+      async (id) => { // 2. Return the function that uses it
+        try {
+          return await readCustomerDocument(db, id);
+        } catch (error) {
+          throw mapToCustomerRepositoryError(error);
+        }
+      };
   ```
 
 ### Domain Layer Logic
@@ -137,29 +141,35 @@ All dependencies (database connections, other services, etc.) MUST be injected u
   export const CustomerId = z.string().brand<"CUSTOMER_ID">();
   export type CustomerId = z.infer<typeof CustomerId>;
   ```
-- **Business Rules as Pure Functions:** Business logic is implemented as small, pure functions that take a domain object as input and return a `Result`. A success (`Ok`) contains the valid object, and a failure (`Err`) contains a specific domain error.
+- **Business Rules as Pure Functions:** Business logic is implemented as small, pure functions that operate on domain objects and throw domain-specific errors when invariants are violated.
   ```typescript
-  export const checkTosNotAccepted = (
-    customer: DBCustomer
-  ): Result<DBCustomer, CustomerTosAlreadyAcceptedError> => {
+  export const ensureTosNotAccepted = (customer: DBCustomer) => {
     if (customer.tosAcceptedAt !== null) {
-      return err(CustomerTosAlreadyAcceptedError("..."));
+      throw CustomerTosAlreadyAcceptedError("...", {
+        extra: { customerId: customer.id },
+      });
     }
-    return ok(customer);
+    return customer;
   };
   ```
 - **Custom Errors with `errorBuilder`:** Every business rule violation should have its own specific error type created with the `errorBuilder`. This allows for precise error handling in the application layer.
 
 ### Application & Infrastructure Layer Orchestration
-- **Chain Operations with `.andThen()`:** Use `neverthrow`'s `.andThen()` to create a clear, sequential pipeline of operations. The entire chain will short-circuit if any step returns an `Err`.
-- **Run Operations in Parallel with `ResultAsync.combine()`:** For independent asynchronous tasks, use `ResultAsync.combine()` to execute them in parallel. The operation only succeeds if all combined tasks succeed.
+- **Compose with `async/await`:** Combine asynchronous steps using ordinary control flow. Inside orchestration functions, wrap the sequence in `try/catch` and throw domain errors when validation fails.
+- **Handle parallelism explicitly:** For independent asynchronous tasks, use `Promise.all` (wrapped in `try/catch`) so that shared error handling logic can surface the first thrown domain error.
   ```typescript
   // Example from the `registerCustomer` use case
-  return ResultAsync.combine([
-    getFaceEmbedding(image), // Task 1
-    fetchDBStoreByPublicId(db)(storeId).andThen(createCustomer), // Task 2
-  ]).andThen(([embedding, customer]) =>
+  try {
+    const [embedding, store] = await Promise.all([
+      getFaceEmbedding(image), // Task 1
+      fetchDBStoreByPublicId(db)(storeId),
+    ]);
+    const customer = createCustomer(store);
     // ... logic continues if both tasks succeed
-  );
+    return customer;
+  } catch (error) {
+    // Translate infrastructure errors into domain errors before rethrowing
+    throw mapToRegisterCustomerError(error);
+  }
   ```
-- **Handling Complexity:** For complex use cases with multiple branches or conditional logic, a single, long `.andThen()` chain can become unreadable. In such cases, it is acceptable to use a more imperative style within a `ResultAsync` block. This combines the readability of `async/await` with the safety of the `Result` type.
+- **Handling Complexity:** For complex use cases with multiple branches or conditional logic, rely on `async/await` with nested helper functions. Use local `try/catch` blocks to translate low-level failures into the domain errors expected by callers.

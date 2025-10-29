@@ -120,9 +120,9 @@ Rel(generation_service, gemini, "Use Gemini API to generate photos")
 ### Code Diagram (C4)
 ```typescript
 interface AuthService {
-	verifyIdToken(idToken: string): ResultAsync<User, FirebaseAuthException>;
-	verifyAdminToken(token: string): ResultAsync<void, AuthException>;
-	signInWithAdminToken(token: string): ResultAsync<SignInResult, AuthException>;
+	verifyIdToken(idToken: string): Promise<User>; // throws FirebaseAuthException
+	verifyAdminToken(token: string): Promise<void>; // throws AuthException
+	signInWithAdminToken(token: string): Promise<SignInResult>; // throws AuthException
 }
 
 interface SignInResult {
@@ -132,24 +132,24 @@ interface SignInResult {
 
 ```typescript
 interface PhotoService {
-	uploadUserPhoto(file: File): ResultAsync<UploadedPhoto, PhotoUploadException>;
-	getUploadedPhotos(boothId: string): ResultAsync<UploadedPhoto[], PhotoNotFoundException>;
+	uploadUserPhoto(file: File): Promise<UploadedPhoto>; // throws PhotoUploadException
+	getUploadedPhotos(boothId: string): Promise<UploadedPhoto[]>; // throws PhotoNotFoundException
 }
 ```
 
 ```typescript
 interface BoothService {
-	getBoothById(boothId: string): ResultAsync<Booth, BoothNotFoundException>;
-	updateBooth(boothId: string, data: Partial<Booth>): ResultAsync<void, BoothUpdateException>;
+	getBoothById(boothId: string): Promise<Booth>; // throws BoothNotFoundException
+	updateBooth(boothId: string, data: Partial<Booth>): Promise<void>; // throws BoothUpdateException
 	streamBoothState(boothId: string, callback: (state: BoothState) => void): Unsubscribe;
 }
 ```
 
 ```typescript
 interface GenerationService {
-	getOptions(): ResultAsync<GenerationOption[], GenerationOptionException>;
-	startGeneration(boothId: string, photo: Photo, options: SelectedOptions): ResultAsync<GeneratedPhoto, GenerationException>;
-	getGeneratedPhoto(photoId: string): ResultAsync<GeneratedPhoto, PhotoNotFoundException>;
+	getOptions(): Promise<GenerationOption[]>; // throws GenerationOptionException
+	startGeneration(boothId: string, photo: Photo, options: SelectedOptions): Promise<GeneratedPhoto>; // throws GenerationException
+	getGeneratedPhoto(photoId: string): Promise<GeneratedPhoto>; // throws PhotoNotFoundException
 }
 ```
 ## Data Model
@@ -193,7 +193,7 @@ generated_photos:
 ```
 ## Tech Stack
 * Frontend: Next.js, shadcn/ui, Tailwind CSS, jotai
-* Backend: Next.js API Routes + Server Actions, neverthrow
+* Backend: Next.js API Routes + Server Actions with structured `try/catch` error handling
 * BaaS: Firebase Auth, Firestore, Firebase Storage, Firebase App Hosting, Firebase Functions, Firebase Analytics
 ## UI
 用語集

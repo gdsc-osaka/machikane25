@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [photo, photo-cleaner, stamp]
+        app: [art-backend, fish-cleaner, photo, photo-cleaner, stamp]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,9 +32,19 @@ jobs:
         with:
           version: 9
           run_install: true
+      - name: Install Firebase emulator
+        run: |
+          npm install -g firebase-tools
+          echo "FIREBASE_VIRSION=$(firebase --version)" >> $GITHUB_ENV
+      - name: Cache firebase emulators
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ env.FIREBASE_VIRSION }}
       - name: Create .env.local file for ${{ matrix.app }}
         shell: bash
         env:
+          DOT_ENV_ART_BACKEND: ${{ secrets.DOT_ENV_ART_BACKEND }}
           DOT_ENV_PHOTO: ${{ secrets.DOT_ENV_PHOTO }}
           DOT_ENV_PHOTO_CLEANER: ${{ secrets.DOT_ENV_PHOTO_CLEANER }}
           DOT_ENV_STAMP: ${{ secrets.DOT_ENV_STAMP }}
@@ -56,6 +66,10 @@ jobs:
             echo "Writing to apps/${{ matrix.app }}/.env"
             echo "${!SECRET_ENV_VAR}" > apps/${{ matrix.app }}/.env
           fi
+      - name: Start Firebase emulators
+        run: |
+          pnpm --filter ${{ matrix.app }} run emulator &
+          sleep 10
       - name: Run linting for ${{ matrix.app }}
         run: pnpm --filter ${{ matrix.app }} lint
       - name: Run tests and generate coverage for ${{ matrix.app }}
@@ -92,6 +106,62 @@ jobs:
       - name: Check Firebase deployment
         shell: bash
         run: pnpm run deploy:fire:check
+  ci-art:
+    name: CI (art)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+#      - name: Activate Unity License
+#        uses: game-ci/unity-activate@v2
+#        env:
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      - name: Cache Unity Library
+        uses: actions/cache@v3
+        with:
+          path: apps/art/Library
+          key: Library-apps-art-${{ hashFiles('apps/art/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            Library-apps-art-
+      - name: Restore .NET tools
+        run: dotnet tool restore
+        working-directory: ./apps/art
+      - name: Run dotnet format for art
+        run: |
+          chmod +x lint.sh
+          ./lint.sh
+        working-directory: ./apps/art
+      # TODO: Unity test は時間がかかる & 現在はテストを書いていない & docker image が巨大で runner の容量が不足するのでスキップ
+#      - name: Run Unity Tests for art
+#        uses: game-ci/unity-test-runner@v4
+#        env:
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#        with:
+#          projectPath: apps/art
+      # TODO: Build はライセンス認証後にエラーが発生するのでスキップ
+#      - name: Build Unity Project for art
+#        id: builder
+#        uses: game-ci/unity-builder@v4
+#        env:
+#          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+#        with:
+#          projectPath: apps/art
+#          # WebGL, StandaloneWindows64, Android, iOS
+#          targetPlatform: WebGL
+#          unityVersion: 'auto'
+#          allowDirtyBuild: true
+#      - name: Upload Build Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: build-art-${{ steps.builder.outputs.targetPlatform }}
+#          path: ${{ steps.builder.outputs.buildPath }}
+#          retention-days: 1
   # すべてのCIジョブが成功した後に、カバレッジレポートを投稿するジョブ
   report-coverage:
     name: Report Coverage
@@ -105,6 +175,20 @@ jobs:
         with:
           path: coverage
           pattern: coverage-report-*
+      - name: Report Art backend coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: "Art backend"
+          json-summary-path: 'coverage/coverage-report-art-backend/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-art-backend/coverage-final.json'
+      - name: Report Fish cleaner coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: "Fish cleaner"
+          json-summary-path: 'coverage/coverage-report-fish-cleaner/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-fish-cleaner/coverage-final.json'
       - name: Report Photo booth coverage
         uses: davelosert/vitest-coverage-report-action@v2
         if: always()

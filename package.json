@@ -8,20 +8,25 @@
 		"dev:stamp": "pnpm --filter stamp dev",
 		"build:photo": "pnpm --filter photo build",
 		"build:photo-cleaner": "pnpm --filter photo-cleaner build",
+		"build:fish-cleaner": "pnpm --filter fish-cleaner build",
 		"build:stamp": "pnpm --filter stamp build",
 		"build": "pnpm --recursive build",
 		"start:photo": "pnpm --filter photo start",
 		"start:photo-cleaner": "pnpm --filter photo-cleaner start",
+		"start:fish-cleaner": "pnpm --filter fish-cleaner start",
 		"start:stamp": "pnpm --filter stamp start",
 		"lint": "pnpm --recursive lint && pnpm exec biome check *.ts *.json",
 		"lint:fix": "pnpm --recursive lint:fix && pnpm exec biome check --write *.ts *.json",
+		"test:art-backend": "pnpm --filter art-backend test",
 		"test:photo": "pnpm --filter photo test",
 		"test:photo-cleaner": "pnpm --filter photo-cleaner test",
+		"test:fish-cleaner": "pnpm --filter fish-cleaner test",
 		"test:stamp": "pnpm --filter stamp test",
 		"test": "pnpm --recursive test",
 		"coverage": "pnpm --recursive coverage",
-		"prebuild": "pnpm run build:photo-cleaner",
+		"prebuild": "pnpm run build:photo-cleaner && pnpm run build:fish-cleaner",
 		"emulator": "pnpm run prebuild && firebase emulators:start",
+		"emulator:bg": "pnpm run prebuild && firebase emulators:start &",
 		"deploy:fire": "pnpm exec firebase deploy && pnpm --recursive deploy:fire",
 		"deploy:fire:check": "pnpm run prebuild && pnpm exec firebase deploy --dry-run"
 	},
@@ -30,9 +35,9 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.12.4",
 	"devDependencies": {
-		"@firebase/rules-unit-testing": "^5.0.0",
 		"@biomejs/biome": "2.2.6",
 		"@eslint/eslintrc": "^3",
+		"@firebase/rules-unit-testing": "^5.0.0",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.0",
 		"@vitejs/plugin-react": "^5.0.4",
@@ -46,5 +51,8 @@
 		"typescript": "^5",
 		"vite-tsconfig-paths": "^5.1.4",
 		"vitest": "^3.2.4"
+	},
+	"dependencies": {
+		"@sentry/nextjs": "^10.20.0"
 	}
 }

@@ -1,0 +1,28 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"globalDependencies": [
+		"pnpm-lock.yaml",
+		"package.json",
+		"pnpm-workspace.yaml"
+	],
+	"pipeline": {
+		"dev": {
+			"cache": false
+		},
+		"build": {
+			"dependsOn": ["^build"],
+			"outputs": ["apps/*/.next/**", "apps/*/build/**", "apps/*/dist/**"]
+		},
+		"lint": {
+			"outputs": []
+		},
+		"test": {
+			"dependsOn": ["^build"],
+			"outputs": []
+		},
+		"coverage": {
+			"dependsOn": ["test"],
+			"outputs": ["apps/*/coverage/**"]
+		}
+	}
+}

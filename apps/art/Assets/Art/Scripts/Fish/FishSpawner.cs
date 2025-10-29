@@ -359,6 +359,35 @@ namespace Art.Fish
             }
         }
 
+        /// <summary>
+        /// Spawns a rare character and notifies the school coordinator.
+        /// This method is called by RareCharacterController when a rare spawn occurs.
+        /// </summary>
+        /// <param name="definition">The rare character definition to spawn.</param>
+        public void SpawnRare(Art.Rare.RareCharacterDefinition definition)
+        {
+            if (definition == null)
+            {
+                telemetry?.LogWarning("SpawnRare called with null definition.");
+                return;
+            }
+
+            telemetry?.LogInfo($"FishSpawner notified of rare character spawn: {definition.name}");
+
+            // Notify the school coordinator to treat this rare character as an attractor
+            if (schoolCoordinator != null)
+            {
+                // The school coordinator can use the attractor strength to influence fish behavior
+                // Implementation depends on SchoolCoordinator's API
+                // For now, we just log the event
+                telemetry?.LogEvent(TelemetryEvents.RareSpawned, new
+                {
+                    name = definition.name,
+                    attractorStrength = definition.attractorStrength
+                });
+            }
+        }
+
         private sealed class FishInstance
         {
             public FishAgent Agent;

@@ -135,7 +135,21 @@ namespace Art.Fish
                 consecutiveFailures = 0;
                 currentInterval = defaultInterval;
 
-                telemetry?.LogInfo($"fish_poll_success source={dataProvider?.SourceTag ?? "unknown"} added={diff.Added.Count} updated={diff.Updated.Count} removed={diff.Removed.Count} durationMs={success.DurationMs:F1}");
+                telemetry?.LogEvent(TelemetryEvents.FishPollSuccess, new
+                {
+                    source = dataProvider?.SourceTag ?? "unknown",
+                    added = diff.Added.Count,
+                    updated = diff.Updated.Count,
+                    removed = diff.Removed.Count,
+                    durationMs = success.DurationMs
+                });
+
+                // Add breadcrumb for debugging
+                telemetry?.LogBreadcrumb("http", "Fish poll succeeded", new
+                {
+                    source = dataProvider?.SourceTag ?? "unknown",
+                    fishCount = success.States?.Count ?? 0
+                });
             }
             catch (Exception ex)
             {
@@ -149,7 +163,20 @@ namespace Art.Fish
             consecutiveFailures++;
             BackoffInterval();
 
-            telemetry?.LogWarning($"fish_poll_failed source={dataProvider?.SourceTag ?? "unknown"} attempts={consecutiveFailures} reason={failure.Reason} durationMs={failure.DurationMs:F1}");
+            telemetry?.LogEvent(TelemetryEvents.FishPollFailure, new
+            {
+                source = dataProvider?.SourceTag ?? "unknown",
+                attempts = consecutiveFailures,
+                reason = failure.Reason,
+                durationMs = failure.DurationMs
+            });
+
+            // Add breadcrumb for debugging
+            telemetry?.LogBreadcrumb("http", "Fish poll failed", new
+            {
+                reason = failure.Reason,
+                consecutiveFailures
+            });
 
             if (consecutiveFailures >= FailureWarningThreshold)
             {

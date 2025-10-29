@@ -1,6 +1,6 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { PhotoValidationError } from "../domain/fish/photo.js";
 import type { AppError } from "./app-error.js";
-import {ContentfulStatusCode} from "hono/utils/http-status";
 
 export type LogSeverity = "info" | "warn" | "error";
 

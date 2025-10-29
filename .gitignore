@@ -145,7 +145,6 @@ vite.config.ts.timestamp-*
 
 # Environment files
 .env
-.env.*
 apps/*/.env.local
 !**/.env.local.sample
 !**/.env.local.example

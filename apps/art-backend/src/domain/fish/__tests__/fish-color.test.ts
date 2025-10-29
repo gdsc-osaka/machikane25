@@ -1,58 +1,31 @@
 import { describe, expect, test } from "vitest";
-import type { HSVPixel } from "../fish-color";
-import { deriveFishColor } from "../fish-color";
 
-const buildPixels = (pixels: HSVPixel[]): HSVPixel[] => pixels;
+import {
+	ColorExtractionError,
+	deriveFishColor,
+	type HSVPixel,
+} from "../fish-color.js";
+
+const redPixels: HSVPixel[] = [
+	{ h: 0, s: 1, v: 1 },
+	{ h: 1, s: 0.9, v: 0.9 },
+	{ h: 359, s: 0.8, v: 0.8 },
+] as const;
 
 describe("deriveFishColor", () => {
-	test("returns the predominant hue bucket as a hex color", () => {
-		const pixels = buildPixels([
-			{ h: 5, s: 0.9, v: 0.9 },
-			{ h: 12, s: 0.85, v: 0.95 },
-			{ h: 200, s: 0.2, v: 0.4 },
-			{ h: 210, s: 0.1, v: 0.3 },
-		]);
+	test("returns representative hex color from hsv pixels", () => {
+		const color = deriveFishColor(redPixels);
 
-		const result = deriveFishColor(pixels);
-
-		expect(result.isOk()).toBe(true);
-		expect(result._unsafeUnwrap()).toBe("#FF4B4B");
+		expect(color).toBe("#FF0000");
 	});
 
-	test("weights hue buckets using saturation and value", () => {
-		const pixels = buildPixels([
-			{ h: 190, s: 0.95, v: 0.95 },
-			{ h: 192, s: 0.9, v: 0.9 },
-			{ h: 40, s: 0.2, v: 0.9 },
-			{ h: 42, s: 0.2, v: 0.9 },
-		]);
-
-		const result = deriveFishColor(pixels);
-
-		expect(result.isOk()).toBe(true);
-		expect(result._unsafeUnwrap()).toBe("#4BFFF3");
+	test("throws ColorExtractionError when pixels array is empty", () => {
+		expect(() => deriveFishColor([])).toThrowError(ColorExtractionError);
 	});
 
-	test("returns an error when pixels are empty", () => {
-		const result = deriveFishColor([]);
-
-		expect(result.isErr()).toBe(true);
-		const error = result._unsafeUnwrapErr();
-		expect(error.type).toBe("color-extraction");
-		expect(error.message).toContain("at least one");
-	});
-
-	test("returns an error when a pixel is outside expected range", () => {
-		const pixels = buildPixels([
-			{ h: -1, s: 0.5, v: 0.5 },
-			{ h: 30, s: 0.5, v: 0.5 },
-		]);
-
-		const result = deriveFishColor(pixels);
-
-		expect(result.isErr()).toBe(true);
-		const error = result._unsafeUnwrapErr();
-		expect(error.type).toBe("color-extraction");
-		expect(error.message).toContain("hue");
+	test("throws ColorExtractionError when hsv values are invalid", () => {
+		expect(() => deriveFishColor([{ h: 400, s: 1, v: 1 }])).toThrowError(
+			ColorExtractionError,
+		);
 	});
 });

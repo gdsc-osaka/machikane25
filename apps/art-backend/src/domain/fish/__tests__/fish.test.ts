@@ -1,62 +1,62 @@
 import { describe, expect, test } from "vitest";
-import type { CreateFishInput, Fish } from "../fish";
-import { createFish, fishSchema, isExpired } from "../fish";
 
-const buildValidInput = (): CreateFishInput => ({
+import { createFish, FishValidationError, isExpired } from "../fish.js";
+
+const validInput = {
 	id: "fish-123",
-	imageUrl: "https://storage.googleapis.com/fish_images/fish-123/fish.png",
+	imageUrl: "https://storage/fish.png",
 	imagePath: "fish_images/fish-123/fish.png",
-	color: "#00FF88",
-	createdAt: new Date("2024-03-01T10:00:00.000Z"),
-});
-
-const unwrapFish = (fishResult: ReturnType<typeof createFish>): Fish =>
-	fishResult._unsafeUnwrap();
+	color: "#FFAA11",
+	createdAt: new Date("2024-01-01T00:00:00.000Z"),
+} as const;
 
 describe("createFish", () => {
-	test("returns ok result for a valid fish", () => {
-		const input = buildValidInput();
-		const result = createFish(input);
+	test("returns immutable fish when input is valid", () => {
+		const fish = createFish(validInput);
 
-		expect(result.isOk()).toBe(true);
-		const fish = unwrapFish(result);
-		expect(fish).toStrictEqual({
-			id: input.id,
-			imageUrl: input.imageUrl,
-			imagePath: input.imagePath,
-			color: input.color,
-			createdAt: input.createdAt,
-		});
-		expect(fishSchema.safeParse(input).success).toBe(true);
+		expect(fish).toEqual(validInput);
+		expect(Object.isFrozen(fish)).toBe(true);
 	});
 
-	test("returns validation error when color is not a hex string", () => {
-		const input = {
-			...buildValidInput(),
-			color: "00FF88",
-		};
+	test("throws FishValidationError when color is invalid", () => {
+		expect(() =>
+			createFish({
+				...validInput,
+				color: "123456",
+			}),
+		).toThrowError(FishValidationError);
+	});
 
-		const result = createFish(input);
-
-		expect(result.isErr()).toBe(true);
-		const error = result._unsafeUnwrapErr();
-		expect(error.type).toBe("validation");
-		expect(error.message).toContain("color");
+	test("throws FishValidationError when createdAt is invalid date", () => {
+		expect(() =>
+			createFish({
+				...validInput,
+				createdAt: new Date("invalid date"),
+			}),
+		).toThrowError(FishValidationError);
 	});
 });
 
 describe("isExpired", () => {
-	test("returns false while within TTL window", () => {
-		const fish = unwrapFish(createFish(buildValidInput()));
-		const now = new Date(fish.createdAt.getTime() + 29 * 60 * 1000);
+	test("returns false when fish age is below TTL threshold", () => {
+		const fish = createFish(validInput);
+		const result = isExpired({
+			fish,
+			now: new Date("2024-01-01T00:10:00.000Z"),
+			ttlMinutes: 15,
+		});
 
-		expect(isExpired({ fish, now, ttlMinutes: 30 })).toBe(false);
+		expect(result).toBe(false);
 	});
 
-	test("returns true when fish creation exceeds TTL", () => {
-		const fish = unwrapFish(createFish(buildValidInput()));
-		const now = new Date(fish.createdAt.getTime() + 31 * 60 * 1000);
+	test("returns true when fish age equals TTL threshold", () => {
+		const fish = createFish(validInput);
+		const result = isExpired({
+			fish,
+			now: new Date("2024-01-01T00:15:00.000Z"),
+			ttlMinutes: 15,
+		});
 
-		expect(isExpired({ fish, now, ttlMinutes: 30 })).toBe(true);
+		expect(result).toBe(true);
 	});
 });

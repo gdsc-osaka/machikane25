@@ -8,7 +8,7 @@
 ## Deliverables
 - `src/domain/fish/fish.ts`
   - Define `Fish` type with fields: `id`, `imageUrl`, `imagePath`, `color`, `createdAt`.
-  - Provide a zod schema for runtime validation and a `createFish` constructor returning `Result`.
+  - Provide a zod schema for runtime validation and a `createFish` constructor that throws `FishValidationError` when invariants break.
   - Include `isExpired(fish, now, ttlMinutes)` utility for TTL checks.
 - `src/domain/fish/fish-color.ts`
   - Implement HSV histogram calculation over provided pixel data.
@@ -25,14 +25,22 @@
 - `type FishDocument = Readonly<{ id: string; imageUrl: string; imagePath: string; color: string; createdAt: FirebaseFirestore.Timestamp }>`
 - `type CreateFishInput = Readonly<{ id: string; imageUrl: string; imagePath: string; color: string; createdAt: Date }>`
 - `type HSVPixel = Readonly<{ h: number; s: number; v: number }>`
-- `type ColorExtractionError = Readonly<{ type: 'color-extraction'; message: string; cause?: unknown }>`
 - `type Photo = Readonly<{ buffer: Buffer; mimeType: string; size: number }>`
 - `type PhotoMeta = Readonly<{ mimeType: string; size: number }>`
 - `type PhotoLimits = Readonly<{ maxSizeBytes: number }>`
-- `createFish(input: CreateFishInput): Result<Fish, ValidationError>` — constructs a validated fish entity.
+- `createFish(input: CreateFishInput): Fish` — throws `FishValidationError` if any invariant fails.
 - `isExpired(args: { fish: Fish; now: Date; ttlMinutes: number }): boolean` — determines TTL expiry.
-- `deriveFishColor(pixels: HSVPixel[]): Result<string, ColorExtractionError>` — returns representative hex color.
-- `createPhoto(buffer: Buffer, meta: PhotoMeta, limits: PhotoLimits): Result<Photo, ValidationError>` — validates photobooth upload metadata.
+- `deriveFishColor(pixels: HSVPixel[]): string` — throws `ColorExtractionError` when hue cannot be derived.
+- `createPhoto(buffer: Buffer, meta: PhotoMeta, limits: PhotoLimits): Photo` — throws `PhotoValidationError` when limits are violated.
+
+## Error Contracts
+- `createFish`
+  - Throws `FishValidationError` with `code = 'FISH_INVALID'` and `context.invalidFields` when id, color, or timestamps fail validation.
+- `createPhoto`
+  - Throws `PhotoValidationError` with codes such as `PHOTO_TOO_LARGE` or `PHOTO_UNSUPPORTED_TYPE`.
+- `deriveFishColor`
+  - Throws `ColorExtractionError` with code `COLOR_EXTRACTION_FAILED` when HSV data lacks usable pixels.
+- Domain helpers must only throw synchronous errors and must not catch-and-log; application services take responsibility for logging.
 
 ## Steps
 1. Establish core types and zod schemas to validate domain invariants.

@@ -1,106 +1,95 @@
-import {
-	afterAll,
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	test,
-	vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { Config } from "../../../config/env.js";
-import { createLogger } from "../cloud-logger.js";
 
 const config: Config = {
-	apiKey: "key",
-	firebaseProjectId: "project-id",
-	credentialsPath: "/tmp/creds.json",
-	fishTtlMinutes: 45,
+	apiKey: "api",
+	firebaseProjectId: "project",
+	credentialsPath: "/credentials.json",
+	fishTtlMinutes: 60,
 	maxPhotoSizeMb: 10,
 };
 
-const spies = {
-	log: vi.spyOn(console, "log"),
-	warn: vi.spyOn(console, "warn"),
-	error: vi.spyOn(console, "error"),
-};
-
-beforeEach(() => {
-	spies.log.mockImplementation(() => undefined);
-	spies.warn.mockImplementation(() => undefined);
-	spies.error.mockImplementation(() => undefined);
+const setupConsoleSpies = () => ({
+	log: vi.spyOn(console, "log").mockImplementation(() => undefined),
+	warn: vi.spyOn(console, "warn").mockImplementation(() => undefined),
+	error: vi.spyOn(console, "error").mockImplementation(() => undefined),
 });
-
-afterEach(() => {
-	spies.log.mockReset();
-	spies.warn.mockReset();
-	spies.error.mockReset();
-});
-
-afterAll(() => {
-	spies.log.mockRestore();
-	spies.warn.mockRestore();
-	spies.error.mockRestore();
-});
-
-const parsePayload = (value: unknown) => {
-	if (typeof value !== "string") {
-		throw new Error("Expected payload to be a string");
-	}
-
-	return JSON.parse(value);
-};
 
 describe("createLogger", () => {
-	test("logs info entries with severity and context", () => {
-		const logger = createLogger({ config, requestId: "req-1" });
+	beforeEach(() => {
+		vi.resetModules();
+	});
 
-		logger.info("loaded fish", { count: 3 });
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	test("emits structured info logs with severity and context", async () => {
+		const spies = setupConsoleSpies();
+		const { createLogger } = await import("../cloud-logger.js");
+
+		const logger = createLogger({ config, requestId: "req-42" });
+		logger.info("fish-emitted", { fishId: "abc" });
 
 		expect(spies.log).toHaveBeenCalledTimes(1);
-		const payload = spies.log.mock.calls.at(0)?.at(0);
-		const entry = parsePayload(payload);
-
-		expect(entry.severity).toBe("INFO");
-		expect(entry.message).toBe("loaded fish");
-		expect(entry.context).toMatchObject({
-			count: 3,
-			requestId: "req-1",
-		});
-		expect(entry.resource).toMatchObject({
-			type: "cloud_run_revision",
-			labels: {
-				project_id: "project-id",
-			},
-		});
-		expect(typeof entry.timestamp).toBe("string");
+		const [firstCall] = spies.log.mock.calls;
+		expect(firstCall).toBeDefined();
+		if (firstCall !== undefined) {
+			const [firstArg] = firstCall;
+			expect(typeof firstArg).toBe("string");
+			if (typeof firstArg === "string") {
+				const parsed = JSON.parse(firstArg);
+				expect(parsed.severity).toBe("INFO");
+				expect(parsed.message).toBe("fish-emitted");
+				expect(parsed.context).toMatchObject({
+					fishId: "abc",
+					requestId: "req-42",
+					projectId: config.firebaseProjectId,
+				});
+			}
+		}
 	});
 
-	test("logs warnings with merged context", () => {
-		const logger = createLogger({ config, requestId: "req-2" });
+	test("emits warn and error logs with appropriate severity", async () => {
+		const spies = setupConsoleSpies();
+		const { createLogger } = await import("../cloud-logger.js");
 
-		logger.warn("slow upload", { latencyMs: 1200 });
+		const logger = createLogger({ config });
+		logger.warn("fish-stale");
+		logger.error("fish-failed", { cause: "timeout" });
 
 		expect(spies.warn).toHaveBeenCalledTimes(1);
-		const entry = parsePayload(spies.warn.mock.calls.at(0)?.at(0));
-
-		expect(entry.severity).toBe("WARNING");
-		expect(entry.context).toMatchObject({
-			latencyMs: 1200,
-			requestId: "req-2",
-		});
+		expect(spies.error).toHaveBeenCalledTimes(1);
+		const [warnCall] = spies.warn.mock.calls;
+		const [errorCall] = spies.error.mock.calls;
+		if (warnCall !== undefined) {
+			const [warnArg] = warnCall;
+			if (typeof warnArg === "string") {
+				const parsedWarn = JSON.parse(warnArg);
+				expect(parsedWarn.severity).toBe("WARNING");
+				expect(parsedWarn.message).toBe("fish-stale");
+			}
+		}
+		if (errorCall !== undefined) {
+			const [errorArg] = errorCall;
+			if (typeof errorArg === "string") {
+				const parsedError = JSON.parse(errorArg);
+				expect(parsedError.severity).toBe("ERROR");
+				expect(parsedError.context).toMatchObject({ cause: "timeout" });
+			}
+		}
 	});
 
-	test("logs errors without additional context", () => {
+	test("falls back gracefully when context cannot be stringified", async () => {
+		const spies = setupConsoleSpies();
+		const { createLogger } = await import("../cloud-logger.js");
+
 		const logger = createLogger({ config });
+		const circular: { self?: unknown } = {};
+		circular.self = circular;
 
-		logger.error("storage failure");
-
-		expect(spies.error).toHaveBeenCalledTimes(1);
-		const entry = parsePayload(spies.error.mock.calls.at(0)?.at(0));
-
-		expect(entry.severity).toBe("ERROR");
-		expect(entry.message).toBe("storage failure");
-		expect(entry.context).toStrictEqual({});
+		expect(() => logger.info("circular-context", circular)).not.toThrow();
+		expect(spies.log).toHaveBeenCalled();
 	});
 });

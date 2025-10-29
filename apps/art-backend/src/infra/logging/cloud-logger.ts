@@ -1,7 +1,5 @@
 import type { Config } from "../../config/env.js";
 
-type Severity = "INFO" | "WARNING" | "ERROR";
-
 export type LogFn = (
 	message: string,
 	context?: Record<string, unknown>,
@@ -13,58 +11,69 @@ export type Logger = Readonly<{
 	error: LogFn;
 }>;
 
-type LoggerDeps = Readonly<{
-	config: Config;
-	requestId?: string;
-}>;
+type Severity = "INFO" | "WARNING" | "ERROR";
 
-const buildContext = (
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null;
+
+const safeStringify = (value: unknown) => {
+	const seen = new WeakSet<object>();
+	return JSON.stringify(value, (_, nested) => {
+		if (typeof nested === "bigint") {
+			return nested.toString();
+		}
+		if (isRecord(nested)) {
+			if (seen.has(nested)) {
+				return "[Circular]";
+			}
+			seen.add(nested);
+		}
+		return nested;
+	});
+};
+
+const sanitizeContext = (
+	config: Config,
 	requestId: string | undefined,
 	context: Record<string, unknown> | undefined,
 ) => {
-	const base = requestId === undefined ? {} : { requestId };
-	return context === undefined ? base : { ...context, ...base };
+	const combined = {
+		projectId: config.firebaseProjectId,
+		...(requestId === undefined ? {} : { requestId }),
+		...(context ?? {}),
+	};
+	return Object.fromEntries(
+		Object.entries(combined).filter(([, value]) => value !== undefined),
+	);
 };
 
-const buildEntry = (
+const createLogFunction = (
 	severity: Severity,
-	message: string,
-	context: Record<string, unknown>,
-	config: Config,
-) => ({
-	severity,
-	message,
-	timestamp: new Date().toISOString(),
-	resource: {
-		type: "cloud_run_revision",
-		labels: {
-			project_id: config.firebaseProjectId,
-		},
-	},
-	context,
-});
-
-const createLogFn = (
-	writer: (payload: string) => void,
-	severity: Severity,
-	deps: LoggerDeps,
+	writer: (line: string) => void,
+	deps: Readonly<{ config: Config; requestId?: string }>,
 ): LogFn => {
 	return (message, context) => {
-		const entry = buildEntry(
+		const entry = {
 			severity,
 			message,
-			buildContext(deps.requestId, context),
-			deps.config,
-		);
+			timestamp: new Date().toISOString(),
+			context: sanitizeContext(deps.config, deps.requestId, context),
+		};
 
-		writer(JSON.stringify(entry));
+		try {
+			writer(safeStringify(entry));
+		} catch {
+			writer(`[${severity}] ${message}`);
+		}
 	};
 };
 
-export const createLogger = (deps: LoggerDeps): Logger => {
-	const info = createLogFn(console.log, "INFO", deps);
-	const warn = createLogFn(console.warn, "WARNING", deps);
-	const error = createLogFn(console.error, "ERROR", deps);
+export const createLogger = (
+	deps: Readonly<{ config: Config; requestId?: string }>,
+): Logger => {
+	const info = createLogFunction("INFO", console.log, deps);
+	const warn = createLogFunction("WARNING", console.warn, deps);
+	const error = createLogFunction("ERROR", console.error, deps);
 
 	return Object.freeze({
 		info,

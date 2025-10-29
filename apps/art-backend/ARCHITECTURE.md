@@ -15,7 +15,7 @@ All code follows DDD-inspired functional layering without classes.
 | Layer | Responsibility | Direct Dependencies |
 | --- | --- | --- |
 | **Domain (`src/domain`)** | Pure modeling of fish entities, value objects (e.g., colors, timestamps), and domain-level operations such as `buildFishFromPhoto`. | None |
-| **Application (`src/application`)** | Use cases orchestrating domain logic and repositories (e.g., `addFishFromPhoto`, `listFish`). Handles transactions and neverthrow error composition. | Domain, `neverthrow` |
+| **Application (`src/application`)** | Use cases orchestrating domain logic and repositories (e.g., `addFishFromPhoto`, `listFish`). Handles transactions. | Domain |
 | **Infrastructure (`src/infra`)** | Gateways to Firestore, Storage, logging, configuration, and third-party SDK wiring. Implements repository contracts using Firebase Admin and Google clients. | Application interfaces, Firebase Admin SDK, Google Cloud Logging |
 | **Controller (`src/controller`)** | HTTP adapters: request validation, API key auth middleware, response serialization, and routing. | Application use cases, Hono |
 | **Config (`src/config`)** | Environment parsing, constants, and shared setup (Firebase admin initialization, logging wiring). | `env-var`, Firebase Admin SDK |
@@ -30,7 +30,7 @@ apps/art-backend/
 ├── src/
 │   ├── index.ts                # Bootstraps Hono app, wires global middleware, exports Cloud Run handler
 │   ├── config/
-│   │   ├── env.ts              # Validates required environment variables (env-var + neverthrow Result)
+│   │   ├── env.ts              # Validates required environment variables (env-var)
 │   │   └── firebase.ts         # Initializes Firebase Admin and registers FirestoreDataConverter instances
 │   ├── domain/
 │   │   └── fish/
@@ -56,9 +56,11 @@ apps/art-backend/
 │   │   │   └── get-fish.handler.ts      # Builds renderer response using list-fish use case
 │   │   └── middleware/
 │   │       ├── api-key.ts               # Validates X-API-KEY against env config and short-circuits on failure
-│   │       └── error-handler.ts         # Translates neverthrow Results into HTTP responses + log severity
-│   └── utils/
-│       └── result.ts                    # Result helpers and standardized error factory/guards
+│   │       └── error-handler.ts         # Translates error into HTTP responses + log severity
+│   ├── errors/
+│   │   ├── app-error.ts                 # Base AppError plus typed subclasses (validation, auth, infra, processing)
+│   │   └── http-error-map.ts            # Helpers mapping AppError codes to HTTP status + log metadata
+│   └── utils/                           # Shared pure helpers (e.g., correlation ID generation)
 └── test/
     └── integration/
         └── renderer-contract.test.ts    # High-level test covering API contract with Unity renderer
@@ -81,7 +83,7 @@ apps/art-backend/
    - Assemble `Fish` domain object with metadata (id, imageUrl, imagePath, color, createdAt).
    - Persist to Firestore via repository.
 4. On success, respond `200` with created fish descriptor (id, color, imageUrl).
-5. Errors mapped to HTTP using neverthrow: validation → `400`, storage/db → `500`.
+5. Errors mapped to HTTP: validation → `400`, storage/db → `500`.
 6. Structured logs emitted with correlation IDs for downstream analysis in Cloud Logging.
 
 ### `/get-fish` (Renderer → Backend)
@@ -92,8 +94,9 @@ apps/art-backend/
 5. Cache-control header (`no-store`) keeps renderer polling consistently.
 
 ## Error Handling & Logging
-- Wrap operations with `ResultAsync` from neverthrow.
-- Centralized error map (`src/utils/result.ts`) converts domain/infrastructure errors into HTTP-friendly codes and log levels.
+- Use try/catch blocks in controllers, application services, and infrastructure adapters to translate unexpected failures into typed `AppError` subclasses defined in `src/errors/app-error.ts`.
+- `ValidationError`, `AuthenticationError`, `ImageProcessingError`, `StorageError`, and `RepositoryError` all extend `AppError` and carry a `code` plus optional `context` for log enrichment.
+- The error-handling middleware inspects thrown `AppError` instances, looks up response metadata via `src/errors/http-error-map.ts`, and emits structured logs before serializing `{ error: code, message }`.
 - Google Cloud Logging captures structured logs with `severity`, `requestId`, and contextual metadata derived from controllers.
 
 ## Configuration & Secrets

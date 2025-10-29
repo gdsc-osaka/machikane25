@@ -1,102 +1,95 @@
-import { readFileSync } from "node:fs";
-import admin from "firebase-admin";
-
+import {
+	applicationDefault,
+	getApp,
+	getApps,
+	initializeApp,
+} from "firebase-admin/app";
+import {
+	type Firestore,
+	type FirestoreDataConverter,
+	getFirestore,
+} from "firebase-admin/firestore";
+import { getStorage, type Storage } from "firebase-admin/storage";
+import type { FishDocument } from "../domain/fish/fish.js";
+import { AppError } from "../errors/app-error.js";
 import type { Config } from "./env.js";
 
-export type FishDocument = Readonly<{
-	id: string;
-	imageUrl: string;
-	imagePath: string;
-	color: string;
-	createdAt: FirebaseFirestore.Timestamp;
-}>;
-
-type FirestoreInstance = ReturnType<typeof admin.firestore>;
-type StorageInstance = ReturnType<typeof admin.storage>;
-
 type FirebaseServices = Readonly<{
-	firestore: FirestoreInstance;
-	storage: StorageInstance;
+	firestore: Firestore;
+	storage: Storage;
 	converters: Readonly<{
-		fish: FirebaseFirestore.FirestoreDataConverter<FishDocument>;
+		fish: FirestoreDataConverter<FishDocument>;
 	}>;
 }>;
 
-const loadServiceAccount = (path: string) => {
-	const file = readFileSync(path, "utf8");
-	return JSON.parse(file);
+const fishConverter: FirestoreDataConverter<FishDocument> = {
+	toFirestore: (fish) => ({
+		imageUrl: fish.imageUrl,
+		imagePath: fish.imagePath,
+		color: fish.color,
+		createdAt: fish.createdAt,
+	}),
+	fromFirestore: (snapshot) => {
+		const data = snapshot.data() as Omit<FishDocument, "id">;
+		return Object.freeze({
+			id: snapshot.id,
+			imageUrl: data.imageUrl,
+			imagePath: data.imagePath,
+			color: data.color,
+			createdAt: data.createdAt,
+		});
+	},
 };
 
-const ensureAppInitialised = (config: Config) => {
-	if (admin.apps.length > 0) {
+export class FirebaseInitializationError extends AppError {
+	constructor(params: Readonly<{ cause: unknown; projectId: string }>) {
+		super({
+			message: "Unable to initialize Firebase Admin SDK",
+			code: "FIREBASE_INIT_FAILED",
+			name: "FirebaseInitializationError",
+			context: { projectId: params.projectId },
+			cause: params.cause,
+		});
+	}
+}
+
+const alignCredentialsPath = (path: string | undefined) => {
+	if (path === undefined || path.length === 0) {
 		return;
 	}
+	if (process.env.GOOGLE_APPLICATION_CREDENTIALS !== path) {
+		process.env.GOOGLE_APPLICATION_CREDENTIALS = path;
+	}
+};
 
-	const serviceAccount = loadServiceAccount(config.credentialsPath);
-	const credential = admin.credential.cert(serviceAccount);
-
-	admin.initializeApp({
-		credential,
+const resolveApp = (config: Config) => {
+	const existingApps = getApps();
+	if (existingApps.length > 0) {
+		return getApp();
+	}
+	return initializeApp({
+		credential: applicationDefault(),
 		projectId: config.firebaseProjectId,
-		storageBucket: `${config.firebaseProjectId}.appspot.com`,
 	});
 };
-
-const isTimestamp = (value: unknown): value is FirebaseFirestore.Timestamp => {
-	if (typeof value !== "object" || value === null) {
-		return false;
-	}
-
-	const toDate = Reflect.get(value, "toDate");
-	const toMillis = Reflect.get(value, "toMillis");
-
-	return typeof toDate === "function" && typeof toMillis === "function";
-};
-
-const isFishDocument = (value: unknown): value is FishDocument => {
-	if (typeof value !== "object" || value === null) {
-		return false;
-	}
-
-	const id = Reflect.get(value, "id");
-	const imageUrl = Reflect.get(value, "imageUrl");
-	const imagePath = Reflect.get(value, "imagePath");
-	const color = Reflect.get(value, "color");
-	const createdAt = Reflect.get(value, "createdAt");
-
-	return (
-		typeof id === "string" &&
-		typeof imageUrl === "string" &&
-		typeof imagePath === "string" &&
-		typeof color === "string" &&
-		isTimestamp(createdAt)
-	);
-};
-
-const createFishConverter =
-	(): FirebaseFirestore.FirestoreDataConverter<FishDocument> => ({
-		toFirestore: (fish) => fish,
-		fromFirestore: (snapshot) => {
-			const data = snapshot.data();
-
-			if (!isFishDocument(data)) {
-				throw new Error("Invalid fish document");
-			}
-
-			return data;
-		},
-	});
 
 export const getFirebaseServices = (config: Config): FirebaseServices => {
-	ensureAppInitialised(config);
-
-	const services: FirebaseServices = {
-		firestore: admin.firestore(),
-		storage: admin.storage(),
-		converters: {
-			fish: createFishConverter(),
-		},
-	};
-
-	return Object.freeze(services);
+	try {
+		alignCredentialsPath(config.credentialsPath);
+		const app = resolveApp(config);
+		const firestore = getFirestore(app);
+		const storage = getStorage(app);
+		return {
+			firestore,
+			storage,
+			converters: {
+				fish: fishConverter,
+			},
+		};
+	} catch (error) {
+		throw new FirebaseInitializationError({
+			cause: error,
+			projectId: config.firebaseProjectId,
+		});
+	}
 };

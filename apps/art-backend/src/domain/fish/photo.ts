@@ -1,5 +1,4 @@
-import { err, ok, type Result } from "neverthrow";
-import { createValidationError, type ValidationError } from "./errors";
+import { AppError } from "../../errors/app-error.js";
 
 export type Photo = Readonly<{
 	buffer: Buffer;
@@ -16,78 +15,80 @@ export type PhotoLimits = Readonly<{
 	maxSizeBytes: number;
 }>;
 
-const SUPPORTED_MIME_TYPES = Object.freeze([
-	"image/jpeg",
-	"image/png",
-	"image/webp",
-] as const);
+type PhotoValidationContext = Readonly<{
+	code: "PHOTO_TOO_LARGE" | "PHOTO_UNSUPPORTED_TYPE" | "PHOTO_SIZE_MISMATCH";
+	details?: Record<string, unknown>;
+}>;
 
-const normaliseMimeType = (mimeType: string) => mimeType.toLowerCase();
-
-const isSupportedMimeType = (mimeType: string) =>
-	SUPPORTED_MIME_TYPES.some((supported) => supported === mimeType);
-
-export const validatePhotoMeta = (
-	buffer: Buffer,
-	meta: PhotoMeta,
-	limits: PhotoLimits,
-): Result<PhotoMeta, ValidationError> => {
-	if (!Buffer.isBuffer(buffer)) {
-		return err(createValidationError("photo buffer must be a Node.js Buffer"));
+export class PhotoValidationError extends AppError {
+	constructor(context: PhotoValidationContext) {
+		super({
+			message: "Photo validation failed",
+			code: context.code,
+			name: "PhotoValidationError",
+			context: context.details ?? {},
+		});
 	}
+}
 
-	if (!Number.isFinite(limits.maxSizeBytes) || limits.maxSizeBytes <= 0) {
-		return err(
-			createValidationError("photo limits must include a positive max size"),
-		);
+const SUPPORTED_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+const normalizeMimeType = (mimeType: string) => mimeType.toLowerCase();
+
+const assertSupportedMimeType = (mimeType: string) => {
+	if (!SUPPORTED_MIME_TYPES.has(mimeType)) {
+		throw new PhotoValidationError({
+			code: "PHOTO_UNSUPPORTED_TYPE",
+			details: { mimeType },
+		});
 	}
-
-	if (meta.size !== buffer.byteLength) {
-		return err(
-			createValidationError("photo size mismatch between buffer and metadata"),
-		);
-	}
-
-	if (meta.size > limits.maxSizeBytes) {
-		return err(
-			createValidationError(
-				`photo size exceeds limit of ${limits.maxSizeBytes} bytes`,
-			),
-		);
-	}
-
-	const mimeType = normaliseMimeType(meta.mimeType);
-
-	if (!isSupportedMimeType(mimeType)) {
-		return err(
-			createValidationError(
-				`mime type "${meta.mimeType}" is not supported for photo uploads`,
-			),
-		);
-	}
-
-	return ok(
-		Object.freeze({
-			mimeType,
-			size: meta.size,
-		}),
-	);
 };
 
+const assertSizeWithinLimit = (size: number, limits: PhotoLimits) => {
+	if (size > limits.maxSizeBytes) {
+		throw new PhotoValidationError({
+			code: "PHOTO_TOO_LARGE",
+			details: { size, maxSizeBytes: limits.maxSizeBytes },
+		});
+	}
+};
+
+const assertBufferMatchesSize = (buffer: Buffer, size: number) => {
+	if (buffer.byteLength !== size) {
+		throw new PhotoValidationError({
+			code: "PHOTO_SIZE_MISMATCH",
+			details: { bufferBytes: buffer.byteLength, declaredSize: size },
+		});
+	}
+};
+
+type ValidatePhotoParams = Readonly<{
+	buffer: Buffer;
+	meta: PhotoMeta;
+	limits: PhotoLimits;
+}>;
+
+export const validatePhoto = (params: ValidatePhotoParams) => {
+	const mimeType = normalizeMimeType(params.meta.mimeType);
+	assertSupportedMimeType(mimeType);
+	assertSizeWithinLimit(params.meta.size, params.limits);
+	assertBufferMatchesSize(params.buffer, params.meta.size);
+};
+
+/**
+ * The provided buffer must contain a privacy-safe (blurred) rendition
+ * of the attendee photo before persistence.
+ */
 export const createPhoto = (
 	buffer: Buffer,
 	meta: PhotoMeta,
 	limits: PhotoLimits,
-): Result<Photo, ValidationError> =>
-	validatePhotoMeta(buffer, meta, limits).map((validatedMeta) =>
-		Object.freeze({
-			buffer,
-			mimeType: validatedMeta.mimeType,
-			size: validatedMeta.size,
-		}),
-	);
-
-export const photoLimits = (maxSizeBytes: number): PhotoLimits =>
-	Object.freeze({ maxSizeBytes });
-
-export const supportedPhotoMimeTypes = SUPPORTED_MIME_TYPES;
+): Photo => {
+	validatePhoto({ buffer, meta, limits });
+	const photo: Photo = {
+		buffer,
+		mimeType: normalizeMimeType(meta.mimeType),
+		size: meta.size,
+	};
+	return Object.freeze(photo);
+};

@@ -34,3 +34,4 @@
 ## Testing
 - Run `pnpm coverage --filter art-backend` to confirm coverage stays above 90%.
 - Document manual smoke testing steps for staging environment in README appendices.
+- When writing failure-path tests, assert the specific `AppError` subclass and `code` to protect the exception contract.

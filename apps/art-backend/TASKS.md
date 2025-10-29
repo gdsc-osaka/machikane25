@@ -5,25 +5,25 @@
 - [x] Implement structured Cloud Logging helper in `src/infra/logging/cloud-logger.ts` and expose logging factory (see `docs/setup-config.md`).
 
 ## Domain Layer
-- [ ] Model fish entity, color value logic, and photo value object under `src/domain/fish` (see `docs/domain-layer.md`).
-- [ ] Implement HSV hue extraction utilities and image blur policy as pure domain helpers (see `docs/domain-layer.md`).
+- [x] Model fish entity, color value logic, and photo value object under `src/domain/fish` (see `docs/domain-layer.md`).
+- [x] Implement HSV hue extraction utilities and image blur policy as pure domain helpers (see `docs/domain-layer.md`).
 
 ## Application Layer
-- [ ] Define repository and service ports in `src/application/ports.ts` (see `docs/application-layer.md`).
-- [ ] Implement `add-fish-from-photo` use case orchestrating photo ingestion, blur, color extraction, and persistence (see `docs/application-layer.md`).
-- [ ] Implement `list-fish` use case returning renderer-ready DTOs (see `docs/application-layer.md`).
+- [x] Define repository and service ports in `src/application/ports.ts` (see `docs/application-layer.md`).
+- [x] Implement `add-fish-from-photo` use case orchestrating photo ingestion, blur, color extraction, and persistence (see `docs/application-layer.md`).
+- [x] Implement `list-fish` use case returning renderer-ready DTOs (see `docs/application-layer.md`).
 
 ## Infrastructure Layer
-- [ ] Create Firestore repository using `FirestoreDataConverter` in `src/infra/repositories/firestore-fish-repo.ts` (see `docs/infrastructure-layer.md`).
-- [ ] Create Storage adapter uploading blurred textures in `src/infra/repositories/storage-photo-store.ts` (see `docs/infrastructure-layer.md`).
-- [ ] Implement `image-processor` service wrapping blur + HSV histogram logic in `src/infra/services/image-processor.ts` (see `docs/infrastructure-layer.md`).
+- [x] Create Firestore repository using `FirestoreDataConverter` in `src/infra/repositories/firestore-fish-repo.ts` (see `docs/infrastructure-layer.md`).
+- [x] Create Storage adapter uploading blurred textures in `src/infra/repositories/storage-photo-store.ts` (see `docs/infrastructure-layer.md`).
+- [x] Implement `image-processor` service wrapping blur + HSV histogram logic in `src/infra/services/image-processor.ts` (see `docs/infrastructure-layer.md`).
 
 ## Controller Layer
-- [ ] Build API key and error-handling middleware under `src/controller/middleware` (see `docs/controller-layer.md`).
-- [ ] Implement `upload-photo` and `get-fish` handlers plus route registration in `src/controller/http` (see `docs/controller-layer.md`).
+- [x] Build API key and error-handling middleware under `src/controller/middleware` (see `docs/controller-layer.md`).
+- [x] Implement `upload-photo` and `get-fish` handlers plus route registration in `src/controller/http` (see `docs/controller-layer.md`).
 
 ## Utilities
-- [ ] Add neverthrow result helpers and error mapping in `src/utils/result.ts` (see `docs/utilities.md`).
+- [ ] Introduce `AppError` hierarchy and shared error-to-response mapping in `src/errors/` (see `docs/utilities.md`).
 
 ## Quality & Operations
 - [ ] Write unit tests for domain/application/controller logic using infrastructure mocks (see `docs/quality-ops.md`).

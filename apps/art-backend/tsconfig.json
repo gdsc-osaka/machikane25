@@ -10,8 +10,7 @@
 		"strict": true /* Enable all strict type-checking options. */, // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
 		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
 		"outDir": "./dist",
-		"strictNullChecks": true,
-		"declaration": true
+		"strictNullChecks": true
 	},
 	"references": [
 		{

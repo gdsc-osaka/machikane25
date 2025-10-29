@@ -13,7 +13,6 @@ RUN pnpm install
 #RUN pnpm install -D typescript
 
 COPY tsconfig.* ./
-COPY *.ts ./
 COPY src ./src
 
 RUN npm run build

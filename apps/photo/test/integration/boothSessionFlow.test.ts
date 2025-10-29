@@ -14,7 +14,6 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
 	completeCapture,
-	completeGeneration,
 	startCapture,
 	startGeneration,
 	startSession,
@@ -41,9 +40,9 @@ const ensureEmulatorEnvironment = (): void => {
 	process.env.FIREBASE_STORAGE_EMULATOR_HOST =
 		process.env.FIREBASE_STORAGE_EMULATOR_HOST ?? "localhost:11004";
 	process.env.STORAGE_EMULATOR_HOST =
-		process.env.STORAGE_EMULATOR_HOST ?? "http://localhost:11004";
-	process.env.FIREBASE_STORAGE_BUCKET =
-		process.env.FIREBASE_STORAGE_BUCKET ?? "photo-test.appspot.com";
+		process.env.STORAGE_EMULATOR_HOST ?? "localhost:11004";
+	// Force test bucket name to override production bucket from .env.local
+	process.env.FIREBASE_STORAGE_BUCKET = "photo-test.appspot.com";
 };
 
 const ensureAdminEnvironment = (): void => {
@@ -117,8 +116,24 @@ const createSampleFile = (name: string): File => {
 const storageObjects = new Set<string>();
 
 const geminiServer = setupServer(
+	// HTTP handlers
 	http.post(
 		"http://localhost:11004/upload/storage/v1/b/:bucket/o",
+		async ({ params, request }) => {
+			const url = new URL(request.url);
+			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			storageObjects.add(objectName);
+			return HttpResponse.json({
+				name: objectName,
+				bucket,
+				contentType: "image/png",
+			});
+		},
+	),
+	// HTTPS handler for Admin SDK (which uses HTTPS even for emulator)
+	http.post(
+		"https://localhost:11004/upload/storage/v1/b/:bucket/o",
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
@@ -541,50 +556,41 @@ describe("[RED] boothSessionFlow integration", () => {
 				);
 			}
 
-			// If Gemini succeeded, verify state changed to generating
+			// If Gemini succeeded, verify state automatically changed to completed
 			if (geminiGenerationSucceeded) {
-				const boothAfterGenerationStart = await boothRef.get();
-				expect(boothAfterGenerationStart.data()?.state).toBe("generating");
+				const boothAfterGeneration = await boothRef.get();
+				const boothData = boothAfterGeneration.data();
+
+				expect(boothData?.state).toBe("completed");
+				expect(boothData?.latestPhotoId).toBeTruthy();
+
+				const generatedPhotoId = boothData?.latestPhotoId;
+
+				const generatedDocRef = adminFirestore.doc(
+					`booths/${boothId}/generatedPhotos/${generatedPhotoId}`,
+				);
+				const generatedDoc = await generatedDocRef.get();
+				expect(generatedDoc.exists).toBe(true);
+
+				const generatedDocData = generatedDoc.data();
+				const generatedImagePath =
+					generatedDocData && typeof generatedDocData.imagePath === "string"
+						? generatedDocData.imagePath
+						: null;
+
+				if (generatedImagePath) {
+					// Check if the file was tracked in storageObjects (MSW mock)
+					expect(storageObjects.has(generatedImagePath)).toBe(true);
+				}
+
+				// Note: uploaded photo deletion happens in background (void deleteUsedPhoto),
+				// so we cannot reliably test it in this synchronous test
+
+				const remainingUploadsSnapshot = await getDocs(
+					collection(firestore, `booths/${boothId}/uploadedPhotos`),
+				);
+				expect(remainingUploadsSnapshot.empty).toBe(true);
 			}
-
-			const generatedPhotoId = randomUUID();
-
-			await completeGeneration({
-				boothId,
-				generatedPhotoId,
-				usedUploadedPhotoId: capturedResult.photoId,
-			});
-
-			const boothAfterGenerationComplete = await boothRef.get();
-			expect(boothAfterGenerationComplete.data()?.state).toBe("completed");
-			expect(boothAfterGenerationComplete.data()?.latestPhotoId).toBe(
-				generatedPhotoId,
-			);
-
-			const generatedDocRef = adminFirestore.doc(
-				`booths/${boothId}/generatedPhotos/${generatedPhotoId}`,
-			);
-			const generatedDoc = await generatedDocRef.get();
-			expect(generatedDoc.exists).toBe(true);
-
-			const generatedDocData = generatedDoc.data();
-			const generatedImagePath =
-				generatedDocData && typeof generatedDocData.imagePath === "string"
-					? generatedDocData.imagePath
-					: null;
-
-			if (generatedImagePath) {
-				// Check if the file was tracked in storageObjects (MSW mock)
-				expect(storageObjects.has(generatedImagePath)).toBe(true);
-			}
-
-			// Note: uploaded photo deletion happens in background (void deleteUsedPhoto),
-			// so we cannot reliably test it in this synchronous test
-
-			const remainingUploadsSnapshot = await getDocs(
-				collection(firestore, `booths/${boothId}/uploadedPhotos`),
-			);
-			expect(remainingUploadsSnapshot.empty).toBe(true);
 		} finally {
 			await cleanup().catch(() => undefined);
 		}

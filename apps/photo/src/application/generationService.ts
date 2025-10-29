@@ -18,7 +18,9 @@ type GeminiInlineData = {
 	data: string;
 };
 
-type GeminiPart = { text: string } | { inlineData: GeminiInlineData };
+type GeminiPart =
+	| { text: string }
+	| { inline_data: { mime_type: string; data: string } };
 
 type GeneratedPhoto = {
 	id: string;
@@ -59,12 +61,17 @@ const toParts = (
 ): GeminiPart[] => {
 	const optionParts = optionEntries.flatMap<GeminiPart>((entry) => [
 		{ text: `This image is for the '${entry.key}':` },
-		{ inlineData: entry.inlineData },
+		{
+			inline_data: {
+				mime_type: entry.inlineData.mimeType,
+				data: entry.inlineData.data,
+			},
+		},
 	]);
 
 	return [
 		{ text: "This is the base 'reference_image' person:" },
-		{ inlineData: baseImage },
+		{ inline_data: { mime_type: baseImage.mimeType, data: baseImage.data } },
 		...optionParts,
 		{
 			text: "Generate an image using the 'reference_image' person. Beside the 'reference_image' person, add the 'person' to create a two-shot scene. The 'reference_image' person should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
@@ -96,18 +103,25 @@ const extractInlineData = (payload: unknown): GeminiInlineData | null => {
 		if (typeof part !== "object" || part === null) {
 			return false;
 		}
-		const inlineCandidate = Reflect.get(part, "inlineData");
+		// Try both camelCase and snake_case for compatibility
+		const inlineCandidate =
+			Reflect.get(part, "inline_data") ?? Reflect.get(part, "inlineData");
 		return typeof inlineCandidate === "object" && inlineCandidate !== null;
 	});
 	if (typeof targetPart !== "object" || targetPart === null) {
 		return null;
 	}
-	const inlineData = Reflect.get(targetPart, "inlineData");
+	// Try both camelCase and snake_case for compatibility
+	const inlineData =
+		Reflect.get(targetPart, "inline_data") ??
+		Reflect.get(targetPart, "inlineData");
 	if (typeof inlineData !== "object" || inlineData === null) {
 		return null;
 	}
+	// Try both camelCase and snake_case for compatibility
 	const data = Reflect.get(inlineData, "data");
-	const mimeType = Reflect.get(inlineData, "mimeType");
+	const mimeType =
+		Reflect.get(inlineData, "mime_type") ?? Reflect.get(inlineData, "mimeType");
 	if (typeof data !== "string" || typeof mimeType !== "string") {
 		return null;
 	}
@@ -176,7 +190,7 @@ export const generateImage = async (
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
-			"X-Goog-Api-Key": apiKey,
+			"x-goog-api-key": apiKey,
 		},
 		body: JSON.stringify({
 			contents: [

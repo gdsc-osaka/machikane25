@@ -96,22 +96,23 @@ const getUploadedPhotoImage = async (
 	}
 	const data = firstDoc.data();
 
-	// Try imageUrl first (works better with emulator and tests)
+	// Try imagePath first (works better with emulator and Storage SDK)
+	const imagePath = readStringField(data, "imagePath");
+	if (imagePath) {
+		const { buffer, mimeType } = await fetchFromStorage(imagePath);
+		return {
+			mimeType,
+			data: buffer.toString("base64"),
+		};
+	}
+
+	// Fallback to imageUrl
 	const imageUrl = readStringField(data, "imageUrl");
 	if (imageUrl) {
 		return fetchFromUrl(imageUrl);
 	}
 
-	// Fallback to imagePath
-	const imagePath = readStringField(data, "imagePath");
-	if (!imagePath) {
-		return null;
-	}
-	const { buffer, mimeType } = await fetchFromStorage(imagePath);
-	return {
-		mimeType,
-		data: buffer.toString("base64"),
-	};
+	return null;
 };
 
 const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
@@ -126,13 +127,7 @@ const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 		return null;
 	}
 
-	// Try imageUrl first (works better with emulator and tests)
-	const imageUrl = readStringField(data, "imageUrl");
-	if (imageUrl) {
-		return fetchFromUrl(imageUrl);
-	}
-
-	// Fallback to imagePath
+	// Try imagePath first (works better with emulator and Storage SDK)
 	const imagePath = readStringField(data, "imagePath");
 	if (imagePath) {
 		const { buffer, mimeType } = await fetchFromStorage(imagePath);
@@ -140,6 +135,12 @@ const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 			mimeType,
 			data: buffer.toString("base64"),
 		};
+	}
+
+	// Fallback to imageUrl
+	const imageUrl = readStringField(data, "imageUrl");
+	if (imageUrl) {
+		return fetchFromUrl(imageUrl);
 	}
 
 	return null;

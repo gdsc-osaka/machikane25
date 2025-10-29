@@ -103,7 +103,7 @@ describe("GenerationService.generateImage", () => {
 		expect(requestInit?.method).toBe("POST");
 		expect(requestInit?.headers).toMatchObject({
 			"Content-Type": "application/json",
-			"X-Goog-Api-Key": "test-api-key",
+			"x-goog-api-key": "test-api-key",
 		});
 
 		const requestBody =
@@ -115,22 +115,22 @@ describe("GenerationService.generateImage", () => {
 		expect(requestBody?.contents?.[0]?.parts).toEqual([
 			{ text: "This is the base 'reference_image' person:" },
 			{
-				inlineData: {
-					mimeType: "image/jpeg",
+				inline_data: {
+					mime_type: "image/jpeg",
 					data: "base-image-base64",
 				},
 			},
 			{ text: "This image is for the 'location':" },
 			{
-				inlineData: {
-					mimeType: "image/png",
+				inline_data: {
+					mime_type: "image/png",
 					data: "location-image-base64",
 				},
 			},
 			{ text: "This image is for the 'outfit':" },
 			{
-				inlineData: {
-					mimeType: "image/png",
+				inline_data: {
+					mime_type: "image/png",
 					data: "outfit-image-base64",
 				},
 			},

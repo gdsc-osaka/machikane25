@@ -9,7 +9,11 @@
       "Bash(grep:*)",
       "Bash(pnpm test:photo:boothSessionFlow:*)",
       "Bash(test:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(pnpm lint:*)",
+      "WebSearch",
+      "Bash(Select-String -Pattern \"FAIL|failed\" -Context 5,10)",
+      "Bash(pnpm test:photo:generateImage:*)"
     ],
     "deny": [],
     "ask": []

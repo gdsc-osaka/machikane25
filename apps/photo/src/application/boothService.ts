@@ -63,7 +63,21 @@ export const startGeneration = async (
 	await updateBoothState(boothId, { state: "generating" });
 
 	// Generate image and wait for completion
-	await generateImage(boothId, uploadedPhotoId, options);
+	const generatedPhotoId = await generateImage(
+		boothId,
+		uploadedPhotoId,
+		options,
+	);
+
+	// Automatically transition to completed state
+	await updateBoothState(boothId, {
+		state: "completed",
+		latestPhotoId: generatedPhotoId,
+	});
+
+	// Cleanup uploaded photo in the background
+	// FIXME: cleanerあるからこれ要らん
+	void deleteUsedPhoto(uploadedPhotoId).catch(() => undefined);
 };
 
 export const completeGeneration = async (

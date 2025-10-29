@@ -104,7 +104,9 @@
     <Compile Include="Assets/Art/Scripts/Fish/HttpFishDataProvider.cs" />
     <Compile Include="Assets/Art/Scripts/Visitors/VisitorDetector.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/IFishDataProvider.cs" />
+    <Compile Include="Assets/Art/Scripts/Telemetry/TelemetryEvents.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishController.cs" />
+    <Compile Include="Assets/Art/Scripts/Rare/RareCharacterDefinition.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishStateMapper.cs" />
     <Compile Include="Assets/Art/Scripts/Presentation/Schools/SchoolCoordinator.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishAgent.cs" />

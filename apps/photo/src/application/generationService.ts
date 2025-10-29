@@ -1,6 +1,8 @@
 import { Buffer } from "node:buffer";
+import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
+import type { GeneratedPhoto as GeneratedPhotoRecord } from "@/domain/photo";
 import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 import {
 	createGeneratedPhoto,
@@ -22,7 +24,7 @@ type GeminiPart =
 	| { text: string }
 	| { inline_data: { mime_type: string; data: string } };
 
-type GeneratedPhoto = {
+type GeneratedPhotoInfo = {
 	id: string;
 	imageUrl: string;
 };
@@ -231,6 +233,107 @@ export const generateImage = async (
 	return photoId;
 };
 
+type AquariumConfig = {
+	endpoint: string;
+	token: string;
+};
+
+const AQUARIUM_FEATURE_TAG = "aquarium-sync";
+
+const ensureAquariumConfig = (): AquariumConfig => {
+	const endpoint = process.env.AQUARIUM_SYNC_ENDPOINT ?? "";
+	const token = process.env.AQUARIUM_SYNC_TOKEN ?? "";
+
+	if (!endpoint) {
+		throw new Error("AQUARIUM_SYNC_ENDPOINT is not defined");
+	}
+
+	return { endpoint, token };
+};
+
+const buildAquariumHeaders = (token: string): Record<string, string> => {
+	const baseHeaders: Record<string, string> = {
+		"Content-Type": "application/json",
+	};
+
+	if (!token) {
+		return baseHeaders;
+	}
+
+	return {
+		...baseHeaders,
+		Authorization: `Bearer ${token}`,
+	};
+};
+
+const toAquariumPayload = (photo: GeneratedPhotoRecord) => ({
+	boothId: photo.boothId,
+	photoId: photo.photoId,
+	imageUrl: photo.imageUrl,
+});
+
+const createAquariumError = (message: string): Error => {
+	const error = new Error(message);
+	error.name = "AquariumSyncError";
+	return error;
+};
+
+const reportAquariumFailure = (
+	error: Error,
+	photo: GeneratedPhotoRecord,
+	additional: Record<string, unknown> = {},
+) => {
+	captureException(error, {
+		tags: { feature: AQUARIUM_FEATURE_TAG },
+		extra: {
+			boothId: photo.boothId,
+			photoId: photo.photoId,
+			...additional,
+		},
+	});
+};
+
+export const sendToAquarium = async (
+	photo: GeneratedPhotoRecord,
+): Promise<void> => {
+	const { endpoint, token } = ensureAquariumConfig();
+	const payload = toAquariumPayload(photo);
+
+	try {
+		const response = await fetch(endpoint, {
+			method: "POST",
+			headers: buildAquariumHeaders(token),
+			body: JSON.stringify(payload),
+		});
+
+		if (!response.ok) {
+			const responseText = await response.text().catch(() => "");
+			const error = createAquariumError(
+				`Aquarium sync failed with status ${response.status}`,
+			);
+			reportAquariumFailure(error, photo, {
+				responseText,
+				statusText: response.statusText,
+			});
+			throw error;
+		}
+	} catch (caughtError) {
+		if (caughtError instanceof Error) {
+			if (caughtError.name === "AquariumSyncError") {
+				throw caughtError;
+			}
+			reportAquariumFailure(caughtError, photo);
+			throw caughtError;
+		}
+
+		const unknownError = createAquariumError(
+			"Aquarium sync failed due to unknown error",
+		);
+		reportAquariumFailure(unknownError, photo, { error: caughtError });
+		throw unknownError;
+	}
+};
+
 /**
  * Retrieve generated photo metadata by id.
  * Throws PhotoNotFoundError when document is missing and PhotoExpiredError when older than 24 hours.
@@ -238,7 +341,7 @@ export const generateImage = async (
 export const getGeneratedPhoto = async (
 	boothId: string,
 	photoId: string,
-): Promise<GeneratedPhoto> => {
+): Promise<GeneratedPhotoInfo> => {
 	const photo = await findGeneratedPhoto(boothId, photoId);
 
 	if (!photo) {

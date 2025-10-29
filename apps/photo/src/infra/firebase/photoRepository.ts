@@ -96,3 +96,16 @@ export const findGeneratedPhoto = async (
 
 export const collectionGroupGeneratedPhotos = () =>
 	firestore().collectionGroup("generatedPhotos");
+
+export const findGeneratedPhotoByPhotoId = async (
+	photoId: string,
+): Promise<GeneratedPhoto | null> => {
+	const snapshot = await collectionGroupGeneratedPhotos()
+		.withConverter(generatedPhotoConverter)
+		.where("photoId", "==", photoId)
+		.limit(1)
+		.get();
+
+	const document = snapshot.docs.at(0);
+	return document ? document.data() : null;
+};

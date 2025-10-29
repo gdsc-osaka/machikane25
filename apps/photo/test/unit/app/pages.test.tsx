@@ -1,8 +1,14 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import LoginPage from "@/app/(booth)/login/page";
 import NotFoundPage from "@/app/404/page";
 import Home from "@/app/page";
+
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({
+		push: vi.fn(),
+	}),
+}));
 
 describe("Page Components", () => {
 	describe("Home Page", () => {
@@ -63,7 +69,7 @@ describe("Page Components", () => {
 
 			const heading = screen.getByRole("heading", { name: /login/i });
 			expect(heading).toBeInTheDocument();
-			expect(heading).toHaveClass("text-5xl", "font-bold", "mb-8");
+			expect(heading).toHaveClass("text-3xl", "font-semibold");
 		});
 
 		it("should have correct layout structure", () => {
@@ -77,8 +83,10 @@ describe("Page Components", () => {
 				"flex-col",
 				"items-center",
 				"justify-center",
-				"p-24",
+				"px-6",
+				"py-12",
 			);
 		});
 	});
 });
+

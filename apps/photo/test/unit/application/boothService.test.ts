@@ -42,8 +42,10 @@ vi.mock("firebase-admin/firestore", () => ({
 }));
 
 const generateImageMock = vi.fn(() => Promise.resolve());
+const sendToAquariumMock = vi.fn(() => Promise.resolve());
 vi.mock("@/application/generationService", () => ({
 	generateImage: generateImageMock,
+	sendToAquarium: sendToAquariumMock,
 }));
 
 const deleteUsedPhotoMock = vi.fn(() => Promise.resolve());
@@ -65,9 +67,10 @@ describe("BoothService", () => {
 		storageBucketMock.mockClear();
 		docMock.mockClear();
 		collectionMock.mockClear();
-		serverTimestampMock.mockClear();
-		generateImageMock.mockClear();
-		deleteUsedPhotoMock.mockClear();
+	serverTimestampMock.mockClear();
+	generateImageMock.mockClear();
+	deleteUsedPhotoMock.mockClear();
+	sendToAquariumMock.mockClear();
 	});
 
 	it("startSession updates booth state to menu", async () => {
@@ -164,16 +167,26 @@ describe("BoothService", () => {
 		});
 
 		// Verify generated photos stored via subcollection repository
-		expect(createGeneratedPhotoMock).toHaveBeenCalledWith({
-			boothId: "booth-5",
-			photoId: "generated-1",
-			imagePath: "generated_photos/generated-1/photo.png",
-			imageUrl:
-				"http://localhost:11004/v0/b/test-bucket/o/generated_photos%2Fgenerated-1%2Fphoto.png?alt=media",
-		});
-		expect(collectionMock).not.toHaveBeenCalledWith("generatedPhotos");
-
-		// Verify cleanup
-		expect(deleteUsedPhotoMock).toHaveBeenCalledWith("uploaded-2");
+	expect(createGeneratedPhotoMock).toHaveBeenCalledWith({
+		boothId: "booth-5",
+		photoId: "generated-1",
+		imagePath: "generated_photos/generated-1/photo.png",
+		imageUrl:
+			"http://localhost:11004/v0/b/test-bucket/o/generated_photos%2Fgenerated-1%2Fphoto.png?alt=media",
 	});
+	expect(collectionMock).not.toHaveBeenCalledWith("generatedPhotos");
+
+	expect(sendToAquariumMock).toHaveBeenCalledWith({
+		boothId: "booth-5",
+		photoId: "generated-1",
+		imagePath: "generated_photos/generated-1/photo.png",
+		imageUrl:
+			"http://localhost:11004/v0/b/test-bucket/o/generated_photos%2Fgenerated-1%2Fphoto.png?alt=media",
+		createdAt: expect.any(Date),
+	});
+
+	// Verify cleanup
+	expect(deleteUsedPhotoMock).toHaveBeenCalledWith("uploaded-2");
 });
+});
+

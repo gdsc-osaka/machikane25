@@ -9,7 +9,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { type BoothState, ensureValidBoothState } from "@/domain/booth";
 import { createGeneratedPhoto } from "@/infra/firebase/photoRepository";
 import { getAdminFirestore, getAdminStorage } from "@/lib/firebase/admin";
-import { generateImage } from "./generationService";
+import { generateImage, sendToAquarium } from "./generationService";
 import { deleteUsedPhoto } from "./photoService";
 
 type BoothStateUpdate = {
@@ -122,6 +122,14 @@ export const completeGeneration = async (
 		photoId: generatedPhotoId,
 		imagePath,
 		imageUrl,
+	});
+
+	await sendToAquarium({
+		boothId,
+		photoId: generatedPhotoId,
+		imagePath,
+		imageUrl,
+		createdAt: new Date(),
 	});
 
 	// Cleanup uploaded photo in the background

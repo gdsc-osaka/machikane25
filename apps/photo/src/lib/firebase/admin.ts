@@ -10,6 +10,7 @@ import type { App } from "firebase-admin/app";
 import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import type { Storage } from "firebase-admin/storage";
+import { getFirestore } from "firebase-admin/firestore";
 
 /**
  * Parse service account from environment variable
@@ -65,7 +66,7 @@ export const getAdminAuth = (): Auth => {
  */
 export const getAdminFirestore = (): Firestore => {
 	const app = initializeAdminApp();
-	const firestore = admin.firestore(app);
+	const firestore = getFirestore(app, 'photo');
 
 	// Connect to Firestore Emulator if not in production
 	if (process.env.NODE_ENV !== "production") {

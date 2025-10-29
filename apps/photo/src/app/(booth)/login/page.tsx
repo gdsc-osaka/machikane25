@@ -2,7 +2,8 @@
 
 import { FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, signInWithCustomToken } from "firebase/auth";
+import { initializeFirebaseClient } from "@/lib/firebase/client";
+import { getAuth,  signInWithCustomToken } from "firebase/auth";
 import { loginWithAdminTokenAction } from "@/app/actions/authActions";
 
 const LoginPage = () => {
@@ -18,6 +19,7 @@ const LoginPage = () => {
     startTransition(async () => {
       try {
         const { customToken } = await loginWithAdminTokenAction({ token });
+        await initializeFirebaseClient();
         const auth = getAuth();
         await signInWithCustomToken(auth, customToken);
         router.push("/admin");

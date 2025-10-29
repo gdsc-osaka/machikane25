@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getAdminCookieName, verifyAdminTokenEdge } from "@/application/authService.edge";
+import { getAdminCookieName, verifyAdminToken } from "@/application/authService";
 
 const redirectToLogin = (request: NextRequest) =>
 	NextResponse.redirect(new URL("/login", request.url));
@@ -13,7 +13,7 @@ export const middleware = async (request: NextRequest) => {
 		return redirectToLogin(request);
 	}
 
-	const isValid = await verifyAdminTokenEdge(token);
+	const isValid = await verifyAdminToken(token);
 
 	if (!isValid) {
 		return redirectToLogin(request);

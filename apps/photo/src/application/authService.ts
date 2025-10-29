@@ -1,5 +1,7 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-import { getAdminAuth } from "@/lib/firebase/admin";
+/**
+ * Authentication utilities for admin token verification
+ * Uses Web Crypto API for compatibility with both Node.js and Edge Runtime
+ */
 
 const ADMIN_COOKIE_NAME = "adminToken";
 const ADMIN_USER_ID = "photobooth-admin";
@@ -20,46 +22,53 @@ const ensureAdminEnv = (): AdminEnv => {
 	return { salt, hash };
 };
 
-const toHashBuffer = (hexValue: string): Buffer => Buffer.from(hexValue, "hex");
-
-const hashToken = (token: string, salt: string): string =>
-	createHash("sha256").update(`${token}${salt}`).digest("hex");
-
 const createAuthError = (message: string): Error => {
 	const error = new Error(message);
 	error.name = "AuthError";
 	return error;
 };
 
+/**
+ * Hash token using Web Crypto API (compatible with both Node.js and Edge Runtime)
+ */
+const hashToken = async (token: string, salt: string): Promise<string> => {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(`${token}${salt}`);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+	return Array.from(new Uint8Array(hashBuffer))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+};
+
 export const getAdminCookieName = (): string => ADMIN_COOKIE_NAME;
 
-export const verifyAdminToken = (token: string): boolean => {
+/**
+ * Verify admin token (compatible with both Node.js and Edge Runtime)
+ */
+export const verifyAdminToken = async (token: string): Promise<boolean> => {
 	const trimmed = token.trim();
 	if (!trimmed) {
 		return false;
 	}
 
 	const { salt, hash } = ensureAdminEnv();
-	const candidateHash = hashToken(trimmed, salt);
+	const candidateHash = await hashToken(trimmed, salt);
 
-	const expectedBuffer = toHashBuffer(hash);
-	const candidateBuffer = toHashBuffer(candidateHash);
-
-	if (expectedBuffer.length !== candidateBuffer.length) {
-		return false;
-	}
-
-	return timingSafeEqual(expectedBuffer, candidateBuffer);
+	return candidateHash === hash;
 };
 
-export const assertValidAdminToken = (token: string): void => {
-	const isValid = verifyAdminToken(token);
+export const assertValidAdminToken = async (token: string): Promise<void> => {
+	const isValid = await verifyAdminToken(token);
 	if (!isValid) {
 		throw createAuthError("Invalid admin token provided");
 	}
 };
 
+/**
+ * Create custom Firebase token (Node.js runtime only)
+ */
 export const createCustomToken = async (): Promise<string> => {
+	const { getAdminAuth } = await import("@/lib/firebase/admin");
 	const auth = getAdminAuth();
 	return auth.createCustomToken(ADMIN_USER_ID, {
 		role: "admin",

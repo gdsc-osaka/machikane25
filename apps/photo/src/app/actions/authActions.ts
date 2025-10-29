@@ -19,7 +19,7 @@ export const loginWithAdminTokenAction = async (input: {
 }) => {
 	const { token } = loginSchema.parse(input);
 
-	assertValidAdminToken(token);
+	await assertValidAdminToken(token);
 
 	const customToken = await createCustomToken();
 

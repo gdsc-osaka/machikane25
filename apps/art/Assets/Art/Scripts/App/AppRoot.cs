@@ -22,9 +22,13 @@ namespace Art.App
         [SerializeField] private RareCharacterController rareCharacters;
 
         [Header("Services")]
-        [SerializeReference] private FishRepository fishRepository = new FishRepository();
-        [SerializeReference] private FishTextureCache textureCache = new FishTextureCache();
-        [SerializeReference] private TelemetryLogger telemetry = new TelemetryLogger();
+        // FIXME: SerializeReference currently causes issues with Unity serialization
+        // [SerializeReference] 
+        private FishRepository fishRepository = new FishRepository();
+        // [SerializeReference] 
+        private FishTextureCache textureCache = new FishTextureCache();
+        // [SerializeReference] 
+        private TelemetryLogger telemetry = new TelemetryLogger();
 
         private Coroutine pollingRoutine;
         private Coroutine rareRoutine;

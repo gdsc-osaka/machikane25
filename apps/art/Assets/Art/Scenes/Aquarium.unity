@@ -1089,6 +1089,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f680fc5934e34ceca210483412d0b5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Art.Rare.RareCharacterController
+  definitions: []
 --- !u!1001 &1725836779
 PrefabInstance:
   m_ObjectHideFlags: 0

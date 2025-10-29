@@ -135,6 +135,8 @@ describe("[RED] DisplayPage", () => {
 
 		const generatedImage = screen.getByAltText("生成した写真");
 		expect(generatedImage).toBeInTheDocument();
-		expect(generatedImage.getAttribute("src")).toBe(generatedImageUrl);
+		expect(generatedImage.getAttribute("src")).toContain(
+			encodeURIComponent(generatedImageUrl),
+		);
 	});
 });

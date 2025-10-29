@@ -164,4 +164,18 @@ describe("[RED] UploadPage", () => {
 			expect(mockToastError).toHaveBeenCalled();
 		});
 	});
+	it("links the photo input label to a generated id", () => {
+		renderUploadPage();
+
+		const fileInput = screen.getByLabelText("写真ファイル");
+		const label = screen.getByText("写真ファイル");
+
+		const inputId = fileInput.getAttribute("id");
+		const labelFor = label.getAttribute("for");
+
+		expect(inputId).not.toBeNull();
+		expect(inputId).not.toBe("upload-file");
+		expect(labelFor).toBe(inputId);
+	});
+
 });

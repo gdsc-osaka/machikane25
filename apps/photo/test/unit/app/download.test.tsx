@@ -56,11 +56,11 @@ describe("[RED] DownloadPage", () => {
 		await renderDownloadPage();
 
 		const generatedImage = screen.getByRole("img", {
-			name: "Generated Photo",
+			name: "AI-generated result",
 		});
 		expect(generatedImage).toBeInTheDocument();
-		expect(generatedImage.getAttribute("src")).toBe(
-			"https://example.com/generated/photo.png",
+		expect(generatedImage.getAttribute("src")).toContain(
+			encodeURIComponent("https://example.com/generated/photo.png"),
 		);
 
 		const downloadLink = screen.getByRole("link", {

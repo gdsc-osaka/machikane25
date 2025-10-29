@@ -52,6 +52,7 @@
 - [ ] T302 [P] [US1] Create failing RTL spec `apps/photo/test/unit/app/control.test.tsx` (Control Page) asserting state-based UI (idle, menu, generating, completed) and interactions (start, option select, generate, QR display).
 - [ ] T303 [P] [US1] Create failing RTL spec `apps/photo/test/unit/app/display.test.tsx` (Display Page) asserting state-based UI (idle, menu (Upload QR), capturing (Webcam), generating, completed (Result)).
 - [ ] T304 [P] [US1] Create failing RTL spec `apps/photo/test/unit/app/upload.test.tsx` (Image Upload Page) asserting file input, validation, and upload submission (FR-002).
+- [x] T314 [P] [US1] Cover Upload Page accessibility contract (dynamic input id & label linking) in apps/photo/test/unit/app/upload/[boothId]/page.test.tsx.
 
 ### Implementation for User Story 1
 

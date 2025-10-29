@@ -18,9 +18,9 @@ Updated: 2025/10/11
 * AIフォトブースを開発する
 * インタラクティブアートを開発する
 * スタンプラリーシステムを開発する
+* 多言語対応 (日本語, 英語)
 ## Non-goals
 * 喋るロボットを開発する
-* Locallization (英語)
 # Architecture
 * 各展示ごとの簡易的なマイクロサービスで実装する.
   Next.js や Backend API を分割し、URLでアクセスするサービスを分ける.
@@ -96,6 +96,69 @@ Rel(photo_web_app, sentry, "ログ送信")
 Rel(art_be, art_db, "魚データ保存")
 Rel(webcam_b, art_renderer, "来場者映像を入力")
 Rel(art_renderer, projector, "映像出力")
+```
+## Coding Conventions
+### Next.js
+#### Data fetching and rendering
+* Firebase SDK に依存する部分は全て Client Side Rendering (CSR) とする.
+  例えば、認証が必要な部分, Firestore からデータを取得・送信する部分, Remote Config から設定を取得する部分など.
+* 逆に、ヘッダーやフッターなどデータ取得に依存しない部分は Server Side Rendering (SSR) とする.
+* Firestore のデータ取得は SWR を用いる. StampService などのサービス層を参照するフックを作成し、コンポーネントからはそのフックを呼び出す.
+* よって、 API Routes はデータ取得・送信には使用しない.
+  ただし, Web アプリ外からリクエストを受け付けたい場合は API Routes を使用する.
+* データベース等のデータ書き込みは Service 層で `async/await` と `try/catch` により実装し, それを `useSWRMutation` で呼び出す.
+#### Domain Driven Development
+* `domain/`, `infra/`, `application` の3層に分ける.
+	* `domain/`: ビジネスロジック, 型定義, infra層のインターフェース定義
+	* `infra/`: Firebase SDK など外部サービスの実装
+	* `application/`: React コンポーネントから呼び出すサービス層
+* DDD では `try/catch`, ts-pattern, obj-err を組み合わせてエラーハンドリングする.
+	* ts-pattern: パターンマッチング
+	* obj-err: classではなくobjectでエラーを定義できる自作ライブラリ. npm に公開している. 使い方は後述
+* class の代わりに interface と object で実装する.
+	* domain 層は interface + type で型定義し, 関数を持つ object で実装する.
+	* infra 層は domain 層で定義した interface の型の object を実装する.
+	* application 層は一つの機能ごとに関数を分けて実装する. 高階関数を用いる.
+	  e.g.
+```typescript
+// application/fooService.ts
+const createFoo = (fooRepository: UserRepository) => (bar: string, baz: number) => fooRepository.create(Foo.create(bar, baz));
+
+// infra/fooRepository.ts
+const fooRepository: FooRepository = {
+	create: (foo: Foo) => { ... }
+};
+
+// domain/foo.ts
+interface Foo {
+	bar: string;
+	baz: number;
+}
+
+const Foo = {
+	create: (bar: string, baz: number): Foo => ({ bar, baz })
+};
+
+interface FooRepository {
+	create(foo: Foo): ResultAsync<void, FooError>;
+}
+// Define error with obj-err
+import { errorBuilder, InferError } from 'obj-err';
+export const FooError = errorBuidler('FooError');
+export type FooError = InferError<typeof FooError>;
+// define error for each error type
+export const NotFounderror = errorBuidler('NotFoundError');
+export type NotFounderror = InferError<typeof NotFounderror>;
+// You can use zod schema for extra properties
+import { z } from 'zod';
+export const AnotherError = errorBuilder(
+		'AnotherError',
+		z.object({
+			reason: z.string(),
+			code: z.number(),
+		})
+);
+export type AnotherError = InferError<typeof AnotherError>;
 ```
 # Security Considerations
 * AIフォトブースのDBは匿名認証したユーザーのみそのユーザーのデータだけ読み書き可能にする。

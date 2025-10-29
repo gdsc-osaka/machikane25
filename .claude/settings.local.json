@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:photo:*)",
+      "Bash(pnpm test:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

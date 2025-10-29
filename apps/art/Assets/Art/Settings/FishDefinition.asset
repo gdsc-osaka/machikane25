@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c97c92d925ae4310845392d69998bf4, type: 3}
+  m_Name: FishDefinition
+  m_EditorClassIdentifier: Art::Art.Fish.FishDefinition
+  prefab: {fileID: 6013126866786127480, guid: 3800d496fc79e400585ae8d4e5fdeaec, type: 3}
+  baseMaterial: {fileID: 2100000, guid: 7d5118655f07b4220ba54d88b5902b80, type: 2}
+  placeholderTexture: {fileID: 2800000, guid: 906d55e8e8a66466eaf01939bfba967b, type: 3}
+  spawnScale: 1

@@ -2,6 +2,10 @@
 	"storage": {
 		"rules": "storage.rules"
 	},
+	"firestore": {
+		"rules": "apps/stamp/firestore.rules",
+		"indexes": "apps/stamp/firestore.indexes.json"
+	},
 	"emulators": {
 		"auth": {
 			"port": 11000
@@ -38,6 +42,18 @@
 				"*.local"
 			],
 			"predeploy": ["pnpm --filter photo-cleaner build"]
+		},
+		{
+			"source": "apps/fish-cleaner",
+			"codebase": "fish-cleaner",
+			"ignore": [
+				"node_modules",
+				".git",
+				"firebase-debug.log",
+				"firebase-debug.*.log",
+				"*.local"
+			],
+			"predeploy": ["pnpm --filter fish-cleaner build"]
 		}
 	]
 }

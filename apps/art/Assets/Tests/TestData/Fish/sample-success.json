@@ -1,0 +1,14 @@
+[
+  {
+    "id": "alpha",
+    "imageUrl": "https://example.com/fish/alpha.png",
+    "color": "#FF0000",
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "beta",
+    "imageUrl": "https://example.com/fish/beta.png",
+    "color": "#00FFAA",
+    "createdAt": "2024-01-02T12:34:56Z"
+  }
+]

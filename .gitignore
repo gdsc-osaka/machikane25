@@ -1,3 +1,4 @@
+.DS_Store
 .DS_Store/
 .idea/
 
@@ -137,3 +138,14 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Codex and Spec-kit
+.codex
+.specify/tmp/
+
+# Environment files
+.env
+.env.*
+apps/*/.env.local
+!**/.env.local.sample
+!**/.env.local.example

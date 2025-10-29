@@ -13,7 +13,8 @@ import { onRequest } from "firebase-functions/v2/https";
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 
-export const helloWorld = onRequest(
+// Sample HTTP function. Can be deleted
+export const fishCleanerExample = onRequest(
 	{ region: "asia-northeast2" },
 	(request, response) => {
 		logger.info("Hello logs!", { structuredData: true });

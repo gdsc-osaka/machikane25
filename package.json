@@ -24,7 +24,7 @@
 		"test:stamp": "pnpm --filter stamp test",
 		"test": "pnpm --recursive test",
 		"coverage": "pnpm --recursive coverage",
-		"prebuild": "pnpm run build:photo-cleaner",
+		"prebuild": "pnpm run build:photo-cleaner && pnpm run build:fish-cleaner",
 		"emulator": "pnpm run prebuild && firebase emulators:start",
 		"emulator:bg": "pnpm run prebuild && firebase emulators:start &",
 		"deploy:fire": "pnpm exec firebase deploy && pnpm --recursive deploy:fire",

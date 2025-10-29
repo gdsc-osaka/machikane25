@@ -1,10 +1,10 @@
 import * as functions from "firebase-functions-test";
-import { helloWorld } from "../index";
+import { fishCleanerExample } from "../index";
 
 // Initialize Firebase Functions Test SDK
 const testEnv = functions.default();
 
-describe("helloWorld Function", () => {
+describe("fishCleanerExample Function", () => {
 	afterAll(() => {
 		testEnv.cleanup();
 	});
@@ -15,7 +15,7 @@ describe("helloWorld Function", () => {
 			send: vi.fn(),
 		} as any; // Mock response object
 
-		helloWorld(mockRequest, mockResponse);
+		fishCleanerExample(mockRequest, mockResponse);
 
 		expect(mockResponse.send).toHaveBeenCalledWith("Hello from Firebase!");
 	});

@@ -87,6 +87,20 @@ describe("getFirebaseServices", () => {
 		);
 	});
 
+	test("does not override credentials env when path is unset", async () => {
+		const { getFirebaseServices } = await import("../firebase.js");
+		const minimalConfig: Config = {
+			apiKey: "api",
+			firebaseProjectId: "project",
+			fishTtlMinutes: 60,
+			maxPhotoSizeMb: 10,
+		};
+
+		getFirebaseServices(minimalConfig);
+
+		expect(process.env.GOOGLE_APPLICATION_CREDENTIALS).toBeUndefined();
+	});
+
 	test("reuses existing Firebase app without reinitializing", async () => {
 		apps.push(appInstance);
 		const { getFirebaseServices } = await import("../firebase.js");

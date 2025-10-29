@@ -5,19 +5,18 @@ import { AppError } from "../errors/app-error.js";
 export type Config = Readonly<{
 	apiKey: string;
 	firebaseProjectId: string;
-	credentialsPath: string;
+	credentialsPath?: string;
 	fishTtlMinutes: number;
 	maxPhotoSizeMb: number;
 }>;
 
-type RequiredStringKey =
-	| "API_KEY"
-	| "FIREBASE_PROJECT_ID"
-	| "GOOGLE_APPLICATION_CREDENTIALS";
+type RequiredStringKey = "API_KEY" | "FIREBASE_PROJECT_ID";
+
+type OptionalStringKey = "GOOGLE_APPLICATION_CREDENTIALS";
 
 type RequiredNumberKey = "FISH_TTL_MINUTES" | "MAX_PHOTO_SIZE_MB";
 
-type EnvKey = RequiredStringKey | RequiredNumberKey;
+type EnvKey = RequiredStringKey | OptionalStringKey | RequiredNumberKey;
 
 type ConfigErrorContext = Readonly<{
 	missingKeys: readonly string[];
@@ -63,6 +62,22 @@ const readString = (
 		registerIssue({ key, type: "missing" });
 		return null;
 	}
+};
+
+const readOptionalString = (
+	key: OptionalStringKey,
+	registerIssue: (issue: IssueRegistration) => void,
+) => {
+	const raw = process.env[key];
+	if (raw === undefined) {
+		return undefined;
+	}
+	const sanitized = sanitizeString(raw);
+	if (sanitized.length === 0) {
+		registerIssue({ key, type: "invalid" });
+		return undefined;
+	}
+	return sanitized;
 };
 
 const readPositiveMinutes = (
@@ -114,7 +129,7 @@ export const buildConfig = (): Config => {
 
 	const apiKey = readString("API_KEY", registerIssue);
 	const firebaseProjectId = readString("FIREBASE_PROJECT_ID", registerIssue);
-	const credentialsPath = readString(
+	const credentialsPath = readOptionalString(
 		"GOOGLE_APPLICATION_CREDENTIALS",
 		registerIssue,
 	);
@@ -129,7 +144,6 @@ export const buildConfig = (): Config => {
 		invalidKeys.length > 0 ||
 		apiKey === null ||
 		firebaseProjectId === null ||
-		credentialsPath === null ||
 		fishTtlMinutes === null ||
 		maxPhotoSizeMb === null
 	) {

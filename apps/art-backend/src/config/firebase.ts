@@ -53,7 +53,10 @@ export class FirebaseInitializationError extends AppError {
 	}
 }
 
-const alignCredentialsPath = (path: string) => {
+const alignCredentialsPath = (path: string | undefined) => {
+	if (path === undefined || path.length === 0) {
+		return;
+	}
 	if (process.env.GOOGLE_APPLICATION_CREDENTIALS !== path) {
 		process.env.GOOGLE_APPLICATION_CREDENTIALS = path;
 	}

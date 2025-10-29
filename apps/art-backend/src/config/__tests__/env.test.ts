@@ -52,6 +52,20 @@ describe("buildConfig", () => {
 		expect(Object.isFrozen(config)).toBe(true);
 	});
 
+	test("allows missing GOOGLE_APPLICATION_CREDENTIALS", async () => {
+		assignEnv({
+			API_KEY: baseEnv.API_KEY,
+			FIREBASE_PROJECT_ID: baseEnv.FIREBASE_PROJECT_ID,
+			FISH_TTL_MINUTES: baseEnv.FISH_TTL_MINUTES,
+			MAX_PHOTO_SIZE_MB: baseEnv.MAX_PHOTO_SIZE_MB,
+		});
+		const { buildConfig } = await import("../env.js");
+
+		const config = buildConfig();
+
+		expect(config.credentialsPath).toBeUndefined();
+	});
+
 	test("throws ConfigError when a required variable is missing", async () => {
 		assignEnv({
 			FIREBASE_PROJECT_ID: baseEnv.FIREBASE_PROJECT_ID,

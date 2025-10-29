@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dfba7f3d6da47a7bdec0c4e277a0402, type: 3}
   m_Name: MockFishDataProvider
   m_EditorClassIdentifier: Art::Art.Fish.MockFishDataProvider
-  dataset: {fileID: 0}
+  dataset: {fileID: 11400000, guid: d274bed43aa414fc1af97b1c64934aea, type: 2}
   latencyRangeMs: {x: 120, y: 420}
   randomiseTimestamps: 0

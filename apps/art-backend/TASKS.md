@@ -19,8 +19,8 @@
 - [x] Implement `image-processor` service wrapping blur + HSV histogram logic in `src/infra/services/image-processor.ts` (see `docs/infrastructure-layer.md`).
 
 ## Controller Layer
-- [ ] Build API key and error-handling middleware under `src/controller/middleware` (see `docs/controller-layer.md`).
-- [ ] Implement `upload-photo` and `get-fish` handlers plus route registration in `src/controller/http` (see `docs/controller-layer.md`).
+- [x] Build API key and error-handling middleware under `src/controller/middleware` (see `docs/controller-layer.md`).
+- [x] Implement `upload-photo` and `get-fish` handlers plus route registration in `src/controller/http` (see `docs/controller-layer.md`).
 
 ## Utilities
 - [ ] Introduce `AppError` hierarchy and shared error-to-response mapping in `src/errors/` (see `docs/utilities.md`).

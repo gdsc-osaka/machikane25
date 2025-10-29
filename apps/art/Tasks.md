@@ -4,4 +4,4 @@
 - [ ] Task 4 — docs/tasks/task-4-visitor-detection.md
 - [ ] Task 5 — docs/tasks/task-5-rare-and-telemetry.md
 - [ ] Task 6 — docs/tasks/task-6-testing-and-config.md
-- [ ] Task 7 — docs/tasks/task-7-mock-fish-polling.md
+- [x] Task 7 — docs/tasks/task-7-mock-fish-polling.md

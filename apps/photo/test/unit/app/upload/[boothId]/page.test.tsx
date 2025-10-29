@@ -177,5 +177,4 @@ describe("[RED] UploadPage", () => {
 		expect(inputId).not.toBe("upload-file");
 		expect(labelFor).toBe(inputId);
 	});
-
 });

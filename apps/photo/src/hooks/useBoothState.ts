@@ -5,13 +5,11 @@ import {
 	onSnapshot,
 	Timestamp,
 } from "firebase/firestore";
-import { getDownloadURL, ref } from "firebase/storage";
 import { useEffect, useRef, useState } from "react";
 import { type BoothState, boothStateSchema } from "@/domain/booth";
 import {
 	ensureAnonymousSignIn,
 	getFirebaseFirestore,
-	getFirebaseStorage,
 	initializeFirebaseClient,
 } from "@/lib/firebase/client";
 
@@ -69,21 +67,13 @@ const fetchGeneratedPhotoUrl = async (
 	}
 
 	const data = snapshot.data();
-	const imagePath = Reflect.get(data, "imagePath");
+	const imageUrl = Reflect.get(data, "imageUrl");
 
-	if (typeof imagePath !== "string") {
+	if (typeof imageUrl !== "string") {
 		return null;
 	}
 
-	try {
-		const storage = getFirebaseStorage();
-		const storageRef = ref(storage, imagePath);
-		const downloadUrl = await getDownloadURL(storageRef);
-		return downloadUrl;
-	} catch (error) {
-		console.error(`Failed to get download URL for ${imagePath}:`, error);
-		return null;
-	}
+	return imageUrl;
 };
 
 export const useBoothState = (boothId: string): BoothStateResult => {

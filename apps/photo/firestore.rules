@@ -34,11 +34,11 @@ service cloud.firestore {
         allow delete, update: if isAdmin();
       }
 
-    }
+      match /generatedPhotos/{photoId} {
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
+      }
 
-    match /generatedPhotos/{photoId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
     }
 
   }

@@ -14,7 +14,8 @@
       "WebSearch",
       "Bash(Select-String -Pattern \"FAIL|failed\" -Context 5,10)",
       "Bash(pnpm test:photo:generateImage:*)",
-      "Bash(pnpm lint:fix:*)"
+      "Bash(pnpm lint:fix:*)",
+      "Bash(pnpm exec biome:*)"
     ],
     "deny": [],
     "ask": []

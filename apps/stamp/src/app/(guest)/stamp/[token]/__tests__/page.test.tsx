@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { errAsync, okAsync } from "neverthrow";
 import { SWRConfig } from "swr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,11 +28,15 @@ const renderWithSWR = async (
 	token: string,
 ): Promise<ReturnType<typeof render>> => {
 	const Page = await importPage();
-	return render(
-		<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-			<Page params={{ token }} />
-		</SWRConfig>,
-	);
+	let result;
+	await act(async () => {
+		result = render(
+			<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+				<Page params={Promise.resolve({ token })} />
+			</SWRConfig>,
+		);
+	});
+	return result!;
 };
 
 describe("StampTokenPage", () => {

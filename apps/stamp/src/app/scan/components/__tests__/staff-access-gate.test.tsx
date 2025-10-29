@@ -2,6 +2,13 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { StaffAccessGate } from "../staff-access-gate";
 
+vi.mock("@/firebase", () => ({
+	getFirebaseAuth: () => ({
+		currentUser: { uid: "staff-123" },
+	}),
+	getFirebaseApp: () => ({}),
+}));
+
 describe("StaffAccessGate", () => {
 	it("renders loading spinner message", () => {
 		render(<StaffAccessGate state={{ status: "loading" }} />);

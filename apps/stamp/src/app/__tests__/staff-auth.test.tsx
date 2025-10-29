@@ -35,6 +35,13 @@ vi.mock("@/application/rewards/redeem-reward.client", () => ({
 	redeemReward: redeemRewardMock,
 }));
 
+vi.mock("@/firebase", () => ({
+	getFirebaseAuth: () => ({
+		currentUser: { uid: "staff-123" },
+	}),
+	getFirebaseApp: () => ({}),
+}));
+
 const importScanPage = async () => {
 	const module = await import("../scan/page");
 	return module.default;

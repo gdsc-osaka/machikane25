@@ -34,7 +34,7 @@ const surveyFormConfigSchema = z.object({
 	entryMap: entryMapSchema,
 });
 
-const SURVEY_FORM_CONFIG_ENV = "SURVEY_FORM_URL_MAP";
+const SURVEY_FORM_CONFIG_ENV = "NEXT_PUBLIC_SURVEY_FORM_URL_MAP";
 
 const SurveyFormConfigError = errorBuilder(
 	"SurveyFormConfigError",

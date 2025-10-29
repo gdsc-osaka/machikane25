@@ -5,6 +5,86 @@ import type {
 	SubmitSurveySuccess,
 } from "@/application/survey/submit-survey";
 
+process.env.NEXT_PUBLIC_FIREBASE_CONFIG = JSON.stringify({
+	apiKey: "test-key",
+	authDomain: "localhost",
+	projectId: "demo-project",
+	appId: "demo-app",
+});
+
+const authStub: { currentUser: { uid: string } | null } = { currentUser: null };
+const firestoreStub: Record<string, unknown> = {};
+
+const getAppsMock = vi.fn(() => []);
+const getAppMock = vi.fn(() => ({}));
+const initializeAppMock = vi.fn(() => ({}));
+
+vi.mock("firebase/app", () => ({
+	getApps: getAppsMock,
+	getApp: getAppMock,
+	initializeApp: initializeAppMock,
+}));
+
+const getAuthMock = vi.fn(() => authStub);
+const connectAuthEmulatorMock = vi.fn();
+const signInAnonymouslyMock = vi.fn<
+	() => Promise<{
+		user: { uid: string };
+	}>
+>(() => Promise.resolve({ user: { uid: "anon-user" } }));
+
+vi.mock("firebase/auth", () => ({
+	getAuth: getAuthMock,
+	connectAuthEmulator: connectAuthEmulatorMock,
+	signInAnonymously: signInAnonymouslyMock,
+}));
+
+const getFirestoreMock = vi.fn(() => firestoreStub);
+const connectFirestoreEmulatorMock = vi.fn();
+
+const withConverterMock = vi.fn((converter) => ({
+	converter,
+	doc: docMock,
+	getDoc: getDocMock,
+	setDoc: setDocMock,
+}));
+
+const collectionMock = vi.fn((firestore, path) => ({
+	firestore,
+	path,
+	withConverter: withConverterMock,
+}));
+
+const docMock = vi.fn();
+const getDocMock = vi.fn();
+const setDocMock = vi.fn();
+
+vi.mock("firebase/firestore", () => ({
+	getFirestore: getFirestoreMock,
+	connectFirestoreEmulator: connectFirestoreEmulatorMock,
+	collection: collectionMock,
+	doc: docMock,
+	getDoc: getDocMock,
+	setDoc: setDocMock,
+}));
+
+const getRemoteConfigMock = vi.fn(() => ({
+	settings: {},
+	defaultConfig: {},
+}));
+
+vi.mock("firebase/remote-config", () => ({
+	getRemoteConfig: getRemoteConfigMock,
+}));
+
+const getAnalyticsMock = vi.fn();
+const isSupportedMock = vi.fn(async () => false);
+
+vi.mock("firebase/analytics", () => ({
+	getAnalytics: getAnalyticsMock,
+	isSupported: isSupportedMock,
+}));
+
 type SurveyAnswers = {
 	ratingPhotobooth: number;
 	ratingAquarium: number;
@@ -68,7 +148,16 @@ describe("submitSurveyAction", () => {
 	};
 
 	beforeEach(() => {
-		delete process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
+		authStub.currentUser = null;
+		getAuthMock.mockClear();
+		signInAnonymouslyMock.mockReset();
+		signInAnonymouslyMock.mockResolvedValue({ user: { uid: "anon-user" } });
+		getFirestoreMock.mockClear();
+		collectionMock.mockClear();
+		withConverterMock.mockClear();
+		docMock.mockClear();
+		getDocMock.mockClear();
+		setDocMock.mockClear();
 		getSurveyFormConfigMock.mockReturnValue(ok(formConfig));
 		createSubmitSurveyServiceMock.mockClear();
 		submitMock.mockReset();

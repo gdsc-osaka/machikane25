@@ -1,6 +1,4 @@
-"use server";
-
-import { randomUUID } from "node:crypto";
+import { signInAnonymously } from "firebase/auth";
 import { errAsync, okAsync, Result, ResultAsync } from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
 import { match, P } from "ts-pattern";
@@ -12,6 +10,7 @@ import {
 	RewardRepositoryError,
 } from "@/domain/reward";
 import { SurveyLedgerError } from "@/domain/survey";
+import { getFirebaseAuth } from "@/firebase";
 import {
 	getSurveyFormConfig,
 	type SurveyFormConfig,
@@ -19,6 +18,7 @@ import {
 } from "@/infra/remote-config/survey";
 import { createRewardRepository } from "@/infra/reward/reward-repository";
 import { createSurveyLedger } from "@/infra/survey/survey-ledger";
+import { submitGoogleFormAction } from "./submit-google-form";
 
 const { createSubmitSurveyService } = submitSurveyModule;
 
@@ -152,27 +152,25 @@ const submitToGoogleForms = (
 	formData: FormData,
 ): ResultAsync<void, SubmitSurveyActionError> =>
 	ResultAsync.fromPromise(
-		fetch(formResponseUrl, {
-			method: "POST",
-			body: formData,
-		}),
+		submitGoogleFormAction(formResponseUrl, formData),
 		(cause) =>
-			SubmitSurveyActionError("Failed to submit survey to Google Forms.", {
+			SubmitSurveyActionError("Failed to execute the form submission action.", {
 				cause,
 				extra: { reason: "form_submission_failed" },
 			}),
-	).andThen((response) =>
-		response.ok
-			? okAsync(undefined)
-			: errAsync(
-					SubmitSurveyActionError("Failed to submit survey to Google Forms.", {
-						extra: {
-							reason: "form_submission_failed",
-							status: response.status,
-						},
-					}),
-				),
-	);
+	).andThen((result) => {
+		if (result.success) {
+			return okAsync(undefined);
+		}
+		return errAsync(
+			SubmitSurveyActionError(result.error.message, {
+				extra: {
+					reason: "form_submission_failed",
+					status: result.error.status,
+				},
+			}),
+		);
+	});
 
 const mapActionFailureToError = (
 	error: SubmitSurveyActionError | SubmitSurveyFailure,
@@ -230,6 +228,11 @@ const mapActionFailureToError = (
 const submitSurveyAction = async (
 	rawInput: SubmitSurveyActionInput,
 ): Promise<SubmitSurveySuccess> => {
+	const auth = getFirebaseAuth();
+	if (!auth.currentUser) {
+		await signInAnonymously(auth);
+	}
+
 	const parsedInput = Result.fromThrowable(
 		() => submitSurveyActionInputSchema.parse(rawInput),
 		(cause) =>
@@ -254,7 +257,7 @@ const submitSurveyAction = async (
 							service.submit({
 								attendeeId: input.attendeeId,
 								answers: input.answers,
-								responseId: `${input.attendeeId}:${randomUUID()}`,
+								responseId: `${input.attendeeId}:${window.crypto.randomUUID()}`,
 							}),
 						),
 					)

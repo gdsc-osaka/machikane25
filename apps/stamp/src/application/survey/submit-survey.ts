@@ -1,18 +1,12 @@
-import {
-	err,
-	errAsync,
-	ok,
-	okAsync,
-	Result,
-	type ResultAsync,
-} from "neverthrow";
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow";
 import { errorBuilder, type InferError } from "obj-err";
 import { z } from "zod";
+import { generateQrPayloadAction } from "@/app/(guest)/actions/generate-qr-payload-action";
 import {
 	createRewardQrPayloadGenerator,
 	createRewardRecord,
 	createRewardSnapshot,
-	type RewardQrEncodingError,
+	RewardQrEncodingError,
 	type RewardRecord,
 	type RewardRecordInvariantError,
 	type RewardRepository,
@@ -124,7 +118,6 @@ const mapValidationError = (cause: unknown): SubmitSurveyValidationError =>
 const createSubmitSurveyService = ({
 	surveyLedger,
 	rewards,
-	generateQrPayload = createRewardQrPayloadGenerator(),
 	clock = Date.now,
 }: CreateSubmitSurveyServiceDependencies): SubmitSurveyService => {
 	const toSuccess = (
@@ -139,9 +132,29 @@ const createSubmitSurveyService = ({
 		attendeeId: string,
 	): ResultAsync<SubmitSurveySuccess, SubmitSurveyFailure> => {
 		const issuedAt = clock();
-		return generateQrPayload(attendeeId, issuedAt)
+
+		// Helper to wrap the server action call
+		const generateQrPayloadFromServer = (): ResultAsync<
+			string,
+			RewardQrEncodingError
+		> =>
+			ResultAsync.fromPromise(
+				generateQrPayloadAction({ attendeeId, issuedAt }),
+				(cause) =>
+					RewardQrEncodingError("Failed to invoke generateQrPayloadAction", {
+						cause,
+						extra: { reason: "encoding_failed" },
+					}),
+			).andThen((result) => {
+				if (result.success) {
+					return okAsync(result.qrPayload);
+				}
+				return errAsync(result.error);
+			});
+
+		return generateQrPayloadFromServer()
 			.mapErr((error): SubmitSurveyFailure => error)
-			.asyncAndThen((qrPayload) =>
+			.andThen((qrPayload) =>
 				createRewardRecord({
 					attendeeId,
 					qrPayload,

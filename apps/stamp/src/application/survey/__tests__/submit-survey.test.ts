@@ -1,6 +1,12 @@
-import { ok, okAsync } from "neverthrow";
-import { describe, expect, it, vi } from "vitest";
+import { okAsync } from "neverthrow";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { generateQrPayloadAction } from "@/app/(guest)/actions/generate-qr-payload-action";
 import { createSubmitSurveyService } from "@/application/survey/submit-survey";
+
+vi.mock("@/app/(guest)/actions/generate-qr-payload-action", () => ({
+	generateQrPayloadAction: vi.fn(),
+}));
+const generateQrPayloadActionMock = vi.mocked(generateQrPayloadAction);
 
 type SurveyAnswers = {
 	ratingPhotobooth: number;
@@ -61,8 +67,8 @@ const createDependencies = () => {
 			findByAttendeeId,
 			save: saveReward,
 		},
-		generateQrPayload: (attendeeId: string) =>
-			ok<string, never>(`qr-${attendeeId}`),
+		// generateQrPayload は使わなくなった
+		generateQrPayload: undefined,
 		clock: createClock(),
 	};
 
@@ -76,6 +82,10 @@ const createDependencies = () => {
 };
 
 describe("createSubmitSurveyService", () => {
+	afterEach(() => {
+		vi.clearAllMocks();
+	});
+
 	const answers: SurveyAnswers = {
 		ratingPhotobooth: 5,
 		ratingAquarium: 4,
@@ -85,6 +95,12 @@ describe("createSubmitSurveyService", () => {
 
 	it("persists survey completion and issues a reward when none exists", async () => {
 		const { dependencies, markCompleted, saveReward } = createDependencies();
+
+		generateQrPayloadActionMock.mockResolvedValue({
+			success: true,
+			qrPayload: "qr-guest-21",
+		});
+
 		const service = createSubmitSurveyService(dependencies);
 
 		const result = await service.submit({

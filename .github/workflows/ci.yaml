@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [art-backend, photo, photo-cleaner, stamp]
+        app: [art-backend, fish-cleaner, photo, photo-cleaner, stamp]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -182,6 +182,13 @@ jobs:
           name: "Art backend"
           json-summary-path: 'coverage/coverage-report-art-backend/coverage-summary.json'
           json-final-path: 'coverage/coverage-report-art-backend/coverage-final.json'
+      - name: Report Fish cleaner coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always()
+        with:
+          name: "Fish cleaner"
+          json-summary-path: 'coverage/coverage-report-fish-cleaner/coverage-summary.json'
+          json-final-path: 'coverage/coverage-report-fish-cleaner/coverage-final.json'
       - name: Report Photo booth coverage
         uses: davelosert/vitest-coverage-report-action@v2
         if: always()

@@ -12,4 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e3337bd69ce4b1090299b3f5c4b73f5, type: 3}
   m_Name: MockFishDataset
   m_EditorClassIdentifier: Art::Art.Fish.MockFishDataset
-  entries: []
+  entries:
+  - id: test1
+    imageUrl: https://www.osaka-u.ac.jp/sp/drwani/img/img_wani01.gif
+    tint: {r: 1, g: 0.3443396, b: 0.5203531, a: 0}
+    createdAtIso: 2025-10-29T12:00:00+09:00

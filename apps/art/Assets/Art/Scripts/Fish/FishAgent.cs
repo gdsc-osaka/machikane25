@@ -17,8 +17,11 @@ namespace Art.Fish
         private Material runtimeMaterial;
         private FishState currentState;
         private Texture2D appliedTexture;
+        private Vector3 visitorSteering;
 
         public FishState CurrentState => currentState;
+
+        public Vector3 VisitorSteering => visitorSteering;
 
         private void Awake()
         {
@@ -121,6 +124,16 @@ namespace Art.Fish
             }
 
             animator.SetBool("IsSwimming", isSwimming);
+        }
+
+        public void ApplyVisitorSteering(Vector3 steering)
+        {
+            visitorSteering = steering;
+        }
+
+        public Vector3 GetVisitorSteering()
+        {
+            return visitorSteering;
         }
 
         public Texture2D GetAppliedTexture()

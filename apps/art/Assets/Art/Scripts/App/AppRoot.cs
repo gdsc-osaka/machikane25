@@ -1,4 +1,5 @@
 using Art.Fish;
+using Art.Presentation.Schools;
 using Art.Rare;
 using Art.Telemetry;
 using Art.Visitors;
@@ -24,6 +25,7 @@ namespace Art.App
         [SerializeField] private VisitorDetector visitorDetector;
         [SerializeField] private RareCharacterController rareCharacters;
         [SerializeField] private MockFishDataProvider mockFishProvider;
+        [SerializeField] private SchoolCoordinator schoolCoordinator;
 
         [Header("Services")]
         // FIXME: SerializeReference currently causes issues with Unity serialization
@@ -56,6 +58,11 @@ namespace Art.App
             visitorDetector.Initialize(config, telemetry);
             rareCharacters.Initialize(config, fishSpawner, telemetry);
 
+            if (schoolCoordinator != null && visitorDetector != null)
+            {
+                visitorDetector.OnVisitorsChanged += schoolCoordinator.ApplyVisitorInfluence;
+            }
+
             pollingRoutine = StartCoroutine(RunWithGuard(fishPolling.Run(), "FishPolling"));
             rareRoutine = StartCoroutine(RunWithGuard(rareCharacters.Run(), "RareCharacters"));
             visitorDetector.StartDetection();
@@ -77,6 +84,11 @@ namespace Art.App
 
             if (visitorDetector != null)
             {
+                if (schoolCoordinator != null)
+                {
+                    visitorDetector.OnVisitorsChanged -= schoolCoordinator.ApplyVisitorInfluence;
+                }
+
                 visitorDetector.StopDetection();
             }
 
@@ -108,6 +120,7 @@ namespace Art.App
             valid &= EnsureControllerAssigned(fishSpawner, nameof(fishSpawner));
             valid &= EnsureControllerAssigned(visitorDetector, nameof(visitorDetector));
             valid &= EnsureControllerAssigned(rareCharacters, nameof(rareCharacters));
+            valid &= EnsureControllerAssigned(schoolCoordinator, nameof(schoolCoordinator));
 
             return valid;
         }

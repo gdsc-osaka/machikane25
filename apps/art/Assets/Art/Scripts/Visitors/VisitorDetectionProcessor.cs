@@ -1,43 +1,59 @@
 using System;
 using System.Collections.Generic;
+using OpenCvSharp;
 using UnityEngine;
 
 namespace Art.Visitors
 {
     /// <summary>
-    /// Processes camera frames, extracts visitor clusters, and maintains smoothed centroids.
+    /// Processes camera frames with OpenCV to derive visitor clusters and smoothing.
     /// </summary>
-    internal sealed class VisitorDetectionProcessor
+    internal sealed class VisitorDetectionProcessor : IDisposable
     {
         private readonly float mergeDistance;
         private readonly float mergeDistanceSquared;
-        private readonly float minClusterArea;
-        private readonly float detectionThreshold;
-        private readonly float backgroundLerp;
-        private readonly int sampleStride;
+        private readonly float minContourArea;
+        private readonly double thresholdValue;
+        private readonly double learningRate;
         private readonly float smoothingSpeed;
         private readonly float absenceDamping;
+        private readonly Size blurKernelSize;
+        private readonly Mat morphKernel;
 
-        private float[] backgroundLuma;
-        private Color32[] frameBuffer;
-        private bool backgroundInitialised;
+        private readonly BackgroundSubtractorMOG2 backgroundSubtractor;
+        private readonly Mat grayMat = new Mat();
+        private readonly Mat blurredMat = new Mat();
+        private readonly Mat maskMat = new Mat();
+        private readonly Mat rgbBuffer = new Mat();
 
-        private readonly List<VisitorPoint> candidatePoints = new List<VisitorPoint>();
+        private bool disposed;
+
         private readonly List<ClusterAccumulator> clusterScratch = new List<ClusterAccumulator>();
         private readonly List<VisitorGroup> rawGroups = new List<VisitorGroup>();
         private readonly List<VisitorGroup> smoothedGroups = new List<VisitorGroup>();
         private readonly List<SmoothEntry> smoothEntries = new List<SmoothEntry>();
 
-        public VisitorDetectionProcessor(float mergeDistance, float minClusterArea, float detectionThreshold, float backgroundLerp, int sampleStride, float smoothingSpeed, float absenceDamping)
+        public VisitorDetectionProcessor(float mergeDistance, float minContourArea, float detectionThreshold, float backgroundLerp, int sampleStride, float smoothingSpeed, float absenceDamping)
         {
             this.mergeDistance = Mathf.Max(0.01f, mergeDistance);
             mergeDistanceSquared = this.mergeDistance * this.mergeDistance;
-            this.minClusterArea = Mathf.Max(1f, minClusterArea);
-            this.detectionThreshold = Mathf.Clamp01(detectionThreshold);
-            this.backgroundLerp = Mathf.Clamp01(backgroundLerp);
-            this.sampleStride = Mathf.Max(1, sampleStride);
+            this.minContourArea = Mathf.Max(1f, minContourArea);
+            thresholdValue = Mathf.Clamp01(detectionThreshold) * 255.0;
+            learningRate = Mathf.Clamp01(backgroundLerp);
             this.smoothingSpeed = Mathf.Max(0.01f, smoothingSpeed);
             this.absenceDamping = Mathf.Max(0.01f, absenceDamping);
+
+            var kernelSize = Mathf.Max(3, sampleStride);
+            if (kernelSize % 2 == 0)
+            {
+                kernelSize += 1;
+            }
+
+            blurKernelSize = new Size(kernelSize, kernelSize);
+            morphKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(kernelSize, kernelSize));
+            backgroundSubtractor = BackgroundSubtractorMOG2.Create();
+            backgroundSubtractor.History = 200;
+            backgroundSubtractor.VarThreshold = 16;
         }
 
         public IReadOnlyList<VisitorGroup> Process(WebCamTexture webcam, Func<Vector2, Vector2> projector)
@@ -47,17 +63,8 @@ namespace Art.Visitors
                 return Array.Empty<VisitorGroup>();
             }
 
-            var width = Mathf.Max(1, webcam.width);
-            var height = Mathf.Max(1, webcam.height);
-            EnsureCapacity(width * height);
-
-            if (frameBuffer == null || frameBuffer.Length != width * height)
-            {
-                frameBuffer = new Color32[width * height];
-            }
-
-            webcam.GetPixels32(frameBuffer);
-            return Process(frameBuffer, width, height, Time.unscaledDeltaTime, Time.unscaledTime, projector);
+            using var frame = OpenCvSharp.Unity.TextureToMat(webcam);
+            return Process(frame, webcam.width, webcam.height, Time.unscaledDeltaTime, Time.unscaledTime, projector);
         }
 
         public IReadOnlyList<VisitorGroup> Process(Color32[] pixels, int width, int height, float deltaTime, float timestamp, Func<Vector2, Vector2> projector)
@@ -67,130 +74,128 @@ namespace Art.Visitors
                 return Array.Empty<VisitorGroup>();
             }
 
-            EnsureCapacity(width * height);
+            rgbBuffer.Create(height, width, MatType.CV_8UC3);
+            var index = 0;
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    var colour = pixels[index++];
+                    rgbBuffer.Set(y, x, new Vec3b(colour.b, colour.g, colour.r));
+                }
+            }
 
-            candidatePoints.Clear();
-            rawGroups.Clear();
+            return Process(rgbBuffer, width, height, deltaTime, timestamp, projector);
+        }
 
-            var areaPerSample = sampleStride * sampleStride;
-            var requiredWeight = minClusterArea / areaPerSample;
+        private IReadOnlyList<VisitorGroup> Process(Mat frame, int width, int height, float deltaTime, float timestamp, Func<Vector2, Vector2> projector)
+        {
+            if (frame == null || frame.Empty())
+            {
+                return Array.Empty<VisitorGroup>();
+            }
 
-            CollectForegroundPoints(pixels, width, height, areaPerSample);
-            BuildClusters(requiredWeight);
-            ProjectClusters(projector, width, height, areaPerSample);
+            ExtractVisitors(frame, width, height, projector);
             Smooth(timestamp, deltaTime);
-
             return smoothedGroups;
         }
 
         public void Reset()
         {
-            backgroundInitialised = false;
-            if (backgroundLuma != null)
-            {
-                Array.Clear(backgroundLuma, 0, backgroundLuma.Length);
-            }
-
-            candidatePoints.Clear();
-            clusterScratch.Clear();
-            rawGroups.Clear();
-            smoothedGroups.Clear();
             smoothEntries.Clear();
-        }
-
-        private void EnsureCapacity(int pixelCount)
-        {
-            if (backgroundLuma == null || backgroundLuma.Length != pixelCount)
-            {
-                backgroundLuma = new float[pixelCount];
-                backgroundInitialised = false;
-            }
-        }
-
-        private void CollectForegroundPoints(Color32[] pixels, int width, int height, int areaPerSample)
-        {
-            var stride = sampleStride;
-            for (var y = 0; y < height; y += stride)
-            {
-                for (var x = 0; x < width; x += stride)
-                {
-                    var index = y * width + x;
-                    var luma = GetLuminance(pixels[index]);
-
-                    if (!backgroundInitialised)
-                    {
-                        backgroundLuma[index] = luma;
-                        continue;
-                    }
-
-                    var backgroundValue = backgroundLuma[index];
-                    var difference = Mathf.Abs(luma - backgroundValue);
-                    backgroundLuma[index] = Mathf.Lerp(backgroundValue, luma, backgroundLerp);
-
-                    if (difference < detectionThreshold)
-                    {
-                        continue;
-                    }
-
-                    var normalisedX = width > 1 ? (float)x / (width - 1) : 0f;
-                    var normalisedY = height > 1 ? (float)y / (height - 1) : 0f;
-                    candidatePoints.Add(new VisitorPoint(new Vector2(normalisedX, normalisedY), difference * areaPerSample));
-                }
-            }
-
-            backgroundInitialised = true;
-        }
-
-        private void BuildClusters(float requiredWeight)
-        {
+            smoothedGroups.Clear();
+            rawGroups.Clear();
             clusterScratch.Clear();
-            if (candidatePoints.Count == 0)
+            backgroundSubtractor.Clear();
+        }
+
+        public void Dispose()
+        {
+            if (disposed)
             {
                 return;
             }
 
-            for (var i = 0; i < candidatePoints.Count; i++)
-            {
-                var point = candidatePoints[i];
-                var assigned = false;
-                for (var j = 0; j < clusterScratch.Count; j++)
-                {
-                    var cluster = clusterScratch[j];
-                    if (Vector2.SqrMagnitude(cluster.Centroid - point.Position) <= mergeDistanceSquared)
-                    {
-                        cluster.Add(point.Position, point.Weight);
-                        clusterScratch[j] = cluster;
-                        assigned = true;
-                        break;
-                    }
-                }
-
-                if (!assigned)
-                {
-                    clusterScratch.Add(ClusterAccumulator.From(point.Position, point.Weight));
-                }
-            }
-
-            for (var i = clusterScratch.Count - 1; i >= 0; i--)
-            {
-                if (clusterScratch[i].TotalWeight < requiredWeight)
-                {
-                    clusterScratch.RemoveAt(i);
-                }
-            }
+            disposed = true;
+            backgroundSubtractor?.Dispose();
+            grayMat.Dispose();
+            blurredMat.Dispose();
+            maskMat.Dispose();
+            rgbBuffer.Dispose();
+            morphKernel.Dispose();
         }
 
-        private void ProjectClusters(Func<Vector2, Vector2> projector, int width, int height, int areaPerSample)
+        private void ExtractVisitors(Mat frame, int width, int height, Func<Vector2, Vector2> projector)
         {
+            rawGroups.Clear();
+            clusterScratch.Clear();
+
+            Cv2.CvtColor(frame, grayMat, ColorConversionCodes.BGR2GRAY);
+            Cv2.GaussianBlur(grayMat, blurredMat, blurKernelSize, 0);
+            backgroundSubtractor.Apply(blurredMat, maskMat, learningRate);
+
+            if (thresholdValue > 0.0)
+            {
+                Cv2.Threshold(maskMat, maskMat, thresholdValue, 255, ThresholdTypes.Binary);
+            }
+
+            Cv2.MorphologyEx(maskMat, maskMat, MorphTypes.Open, morphKernel);
+            Cv2.MorphologyEx(maskMat, maskMat, MorphTypes.Close, morphKernel);
+
+            Cv2.FindContours(maskMat, out var contours, out _, RetrievalModes.External, ContourApproximationModes.Simple);
+            var areaNormalizer = Mathf.Max(1f, width * height);
+
+            for (var i = 0; i < contours.Length; i++)
+            {
+                var contour = contours[i];
+                var contourArea = Cv2.ContourArea(contour);
+                if (contourArea < minContourArea)
+                {
+                    continue;
+                }
+
+                var moments = Cv2.Moments(contour);
+                if (Math.Abs(moments.M00) < double.Epsilon)
+                {
+                    continue;
+                }
+
+                var cx = (float)(moments.M10 / moments.M00);
+                var cy = (float)(moments.M01 / moments.M00);
+
+                var normalised = new Vector2(
+                    width > 1 ? cx / (width - 1f) : 0f,
+                    height > 1 ? cy / (height - 1f) : 0f);
+                normalised.x = Mathf.Clamp01(normalised.x);
+                normalised.y = Mathf.Clamp01(normalised.y);
+
+                var magnitude = Mathf.Clamp01((float)(contourArea / areaNormalizer));
+                AddCluster(normalised, magnitude);
+            }
+
             rawGroups.Clear();
             for (var i = 0; i < clusterScratch.Count; i++)
             {
                 var cluster = clusterScratch[i];
-                var centroid = cluster.Centroid;
-                var mapped = projector != null ? projector(centroid) : centroid;
-                var magnitude = Mathf.Clamp01(cluster.TotalWeight / (width * height));
-                rawGroups.Add(new VisitorGroup(mapped, magnitude));
+                var position = projector != null ? projector(cluster.Centroid) : cluster.Centroid;
+                rawGroups.Add(new VisitorGroup(position, Mathf.Clamp01(cluster.TotalWeight)));
             }
+        }
+
+        private void AddCluster(Vector2 position, float weight)
+        {
+            for (var i = 0; i < clusterScratch.Count; i++)
+            {
+                var existing = clusterScratch[i];
+                if (Vector2.SqrMagnitude(existing.Centroid - position) <= mergeDistanceSquared)
+                {
+                    existing.Add(position, weight);
+                    clusterScratch[i] = existing;
+                    return;
+                }
+            }
+
+            clusterScratch.Add(ClusterAccumulator.From(position, weight));
         }
 
         private void Smooth(float timestamp, float deltaTime)
@@ -204,6 +209,7 @@ namespace Art.Visitors
                 entry.Marked = false;
                 smoothEntries[i] = entry;
             }
+
             for (var i = 0; i < rawGroups.Count; i++)
             {
                 var source = rawGroups[i];
@@ -212,13 +218,14 @@ namespace Art.Visitors
 
                 for (var j = 0; j < smoothEntries.Count; j++)
                 {
-                    if (smoothEntries[j].Marked)
+                    var candidate = smoothEntries[j];
+                    if (candidate.Marked)
                     {
                         continue;
                     }
 
-                    var distance = Vector2.SqrMagnitude(smoothEntries[j].Position - source.Position);
-                    if (distance < bestDistance && distance <= mergeDistanceSquared)
+                    var distance = Vector2.SqrMagnitude(candidate.Position - source.Position);
+                    if (distance <= mergeDistanceSquared && distance < bestDistance)
                     {
                         bestDistance = distance;
                         bestIndex = j;
@@ -255,7 +262,6 @@ namespace Art.Visitors
                 }
 
                 entry.Magnitude = Mathf.Lerp(entry.Magnitude, 0f, decay);
-                entry.Position = entry.Position;
                 entry.LastUpdate = timestamp;
                 smoothEntries[i] = entry;
 
@@ -269,26 +275,8 @@ namespace Art.Visitors
             for (var i = 0; i < smoothEntries.Count; i++)
             {
                 var entry = smoothEntries[i];
-                smoothedGroups.Add(new VisitorGroup(entry.Position, entry.Magnitude));
+                smoothedGroups.Add(new VisitorGroup(entry.Position, Mathf.Clamp01(entry.Magnitude)));
             }
-        }
-
-        private static float GetLuminance(Color32 color)
-        {
-            return (0.2989f * color.r + 0.587f * color.g + 0.114f * color.b) / 255f;
-        }
-
-        private readonly struct VisitorPoint
-        {
-            public VisitorPoint(Vector2 position, float weight)
-            {
-                Position = position;
-                Weight = weight;
-            }
-
-            public Vector2 Position { get; }
-
-            public float Weight { get; }
         }
 
         private struct ClusterAccumulator
@@ -308,9 +296,9 @@ namespace Art.Visitors
 
             public static ClusterAccumulator From(Vector2 point, float weight)
             {
-                var cluster = new ClusterAccumulator();
-                cluster.Add(point, weight);
-                return cluster;
+                var accumulator = new ClusterAccumulator();
+                accumulator.Add(point, weight);
+                return accumulator;
             }
         }
 

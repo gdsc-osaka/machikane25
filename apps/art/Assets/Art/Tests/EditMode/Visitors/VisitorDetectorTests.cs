@@ -15,6 +15,12 @@ namespace Art.Visitors.Tests
             processor = new VisitorDetectionProcessor(0.15f, 12f, 0.18f, 0.1f, 1, 8f, 4f);
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            processor.Dispose();
+        }
+
         [Test]
         public void Process_WithForegroundCluster_ReturnsVisitorNearCentroid()
         {
@@ -25,7 +31,7 @@ namespace Art.Visitors.Tests
             Assert.That(firstPass, Is.Empty);
 
             var foreground = CreateFrame(width, height, new Color32(10, 10, 10, 255));
-            PaintRect(foreground, width, height, 12, 6, 8, 6, new Color32(240, 240, 240, 255));
+            PaintRect(foreground, width, height, 10, 5, 12, 8, new Color32(240, 240, 240, 255));
 
             var detections = processor.Process(foreground, width, height, 1f / 30f, 0.1f, IdentityProjector);
             Assert.That(detections, Has.Count.EqualTo(1));
@@ -45,8 +51,8 @@ namespace Art.Visitors.Tests
             processor.Process(baseline, width, height, 1f / 30f, 0f, IdentityProjector);
 
             var foreground = CreateFrame(width, height, new Color32(5, 5, 5, 255));
-            PaintRect(foreground, width, height, 8, 4, 6, 6, new Color32(220, 220, 220, 255));
-            PaintRect(foreground, width, height, 32, 10, 6, 6, new Color32(220, 220, 220, 255));
+            PaintRect(foreground, width, height, 8, 4, 8, 8, new Color32(220, 220, 220, 255));
+            PaintRect(foreground, width, height, 30, 10, 8, 8, new Color32(220, 220, 220, 255));
 
             var detections = processor.Process(foreground, width, height, 1f / 30f, 0.1f, IdentityProjector);
             Assert.That(detections, Has.Count.EqualTo(2));
@@ -63,7 +69,7 @@ namespace Art.Visitors.Tests
             processor.Process(baseline, width, height, 1f / 60f, 0f, IdentityProjector);
 
             var foreground = CreateFrame(width, height, new Color32(0, 0, 0, 255));
-            PaintRect(foreground, width, height, 10, 6, 4, 4, new Color32(255, 255, 255, 255));
+            PaintRect(foreground, width, height, 9, 5, 6, 6, new Color32(255, 255, 255, 255));
             processor.Process(foreground, width, height, 1f / 60f, 0.05f, IdentityProjector);
 
             var empty = CreateFrame(width, height, new Color32(0, 0, 0, 255));

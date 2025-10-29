@@ -86,10 +86,7 @@ namespace Art.Visitors
 
             DestroyWebcam();
 
-            if (processor != null)
-            {
-                processor.Reset();
-            }
+            processor?.Reset();
 
             cachedVisitors.Clear();
         }
@@ -97,6 +94,13 @@ namespace Art.Visitors
         private void OnDisable()
         {
             StopDetection();
+        }
+
+        private void OnDestroy()
+        {
+            StopDetection();
+            processor?.Dispose();
+            processor = null;
         }
 
         private IEnumerator ProcessLoop()

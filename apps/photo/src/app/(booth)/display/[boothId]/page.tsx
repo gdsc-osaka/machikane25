@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "react-qr-code";
@@ -172,9 +173,12 @@ export default function DisplayPage() {
 
 		return (
 			<div className="flex flex-col items-center gap-6">
-				<img
+				<Image
 					src={latestGeneratedPhotoUrl}
 					alt="生成した写真"
+					width={960}
+					height={1280}
+					sizes="(max-width: 768px) 90vw, 480px"
 					className="max-h-[480px] w-auto max-w-full rounded-lg shadow-lg"
 				/>
 				<p className="text-sm text-muted-foreground">

@@ -1,6 +1,5 @@
 import { collection, onSnapshot } from "firebase/firestore";
-import { use, useCallback, useEffect, useRef, useState } from "react";
-import { set } from "zod";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	getFirebaseFirestore,
 	initializeFirebaseClient,
@@ -68,10 +67,8 @@ export const useGenerationOptions = (): GenerationOptionsResult => {
 
 				const grouped = mapped.reduce<GenerationOptionsState>((acc, option) => {
 					const current = acc[option.typeId] ?? [];
-					return {
-						...acc,
-						[option.typeId]: [...current, option],
-					};
+					acc[option.typeId] = [...current, option];
+					return acc;
 				}, {});
 
 				setOptions(grouped);

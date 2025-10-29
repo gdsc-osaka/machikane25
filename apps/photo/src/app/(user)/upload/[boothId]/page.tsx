@@ -2,7 +2,14 @@
 
 import { useParams } from "next/navigation";
 import type { ChangeEvent } from "react";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 import { uploadUserPhoto } from "@/app/actions/photoActions";
 import { Button } from "@/components/ui/button";
@@ -31,6 +38,7 @@ export default function UploadPage() {
 	const [isPending, startTransition] = useTransition();
 
 	const inputRef = useRef<HTMLInputElement | null>(null);
+	const uploadInputId = useId();
 
 	useEffect(() => {
 		void ensureAnonymousSignIn().catch(() => {
@@ -104,10 +112,10 @@ export default function UploadPage() {
 			</header>
 			<section className="w-full max-w-md space-y-6">
 				<div className="space-y-2">
-					<Label htmlFor="upload-file">写真ファイル</Label>
+					<Label htmlFor={uploadInputId}>写真ファイル</Label>
 					<Input
 						ref={inputRef}
-						id="upload-file"
+						id={uploadInputId}
 						type="file"
 						accept={ALLOWED_MIME_TYPES.join(",")}
 						onChange={handleFileChange}

@@ -153,8 +153,8 @@ describe("useGenerationOptions", () => {
 		collectionMock.mockReturnValue(optionsCollectionRef);
 		onSnapshotMock.mockImplementation(
 			(
-				ref: unknown,
-				successListener: (snapshot: unknown) => void,
+				_ref: unknown,
+				_successListener: (snapshot: unknown) => void,
 				errorListener: (error: Error) => void,
 			) => {
 				errorListeners.push(errorListener);
@@ -196,7 +196,7 @@ describe("useGenerationOptions", () => {
 
 		collectionMock.mockReturnValue(optionsCollectionRef);
 		onSnapshotMock.mockImplementation(
-			(ref: unknown, listener: (snapshot: unknown) => void) => {
+			(_ref: unknown, listener: (snapshot: unknown) => void) => {
 				snapshotListeners.push(listener);
 				return unsubscribeMock;
 			},
@@ -206,7 +206,6 @@ describe("useGenerationOptions", () => {
 			"@/hooks/useGenerationOptions"
 		);
 		let state: ReturnType<typeof useGenerationOptions> | undefined;
-
 		const TestComponent = () => {
 			state = useGenerationOptions();
 			return null;
@@ -269,7 +268,7 @@ describe("useGenerationOptions", () => {
 
 		collectionMock.mockReturnValue(optionsCollectionRef);
 		onSnapshotMock.mockImplementation(
-			(ref: unknown, listener: (snapshot: unknown) => void) => {
+			(_ref: unknown, listener: (snapshot: unknown) => void) => {
 				snapshotListeners.push(listener);
 				return unsubscribeMock;
 			},
@@ -349,7 +348,7 @@ describe("useGenerationOptions", () => {
 
 		collectionMock.mockReturnValue(optionsCollectionRef);
 		onSnapshotMock.mockImplementation(
-			(ref: unknown, listener: (snapshot: unknown) => void) => {
+			(_ref: unknown, listener: (snapshot: unknown) => void) => {
 				snapshotListeners.push(listener);
 				return unsubscribeMock;
 			},
@@ -423,7 +422,7 @@ describe("useGenerationOptions", () => {
 
 		collectionMock.mockReturnValue(optionsCollectionRef);
 		onSnapshotMock.mockImplementation(
-			(ref: unknown, listener: (snapshot: unknown) => void) => {
+			(_ref: unknown, listener: (snapshot: unknown) => void) => {
 				snapshotListeners.push(listener);
 				return unsubscribeMock;
 			},
@@ -432,10 +431,9 @@ describe("useGenerationOptions", () => {
 		const { useGenerationOptions } = await import(
 			"@/hooks/useGenerationOptions"
 		);
-		let state: ReturnType<typeof useGenerationOptions> | undefined;
 
 		const TestComponent = () => {
-			state = useGenerationOptions();
+			useGenerationOptions();
 			return null;
 		};
 

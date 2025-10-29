@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -173,9 +174,12 @@ export default function ControlPage() {
 						].join(" ")}
 					>
 						{hasValidImageUrl ? (
-							<img
+							<Image
 								src={photo.imageUrl}
 								alt="アップロード済みの写真"
+								width={560}
+								height={560}
+								sizes="(max-width: 768px) 50vw, 240px"
 								className="h-70 w-full rounded object-cover"
 							/>
 						) : (
@@ -331,9 +335,12 @@ export default function ControlPage() {
 			<div className="flex flex-col items-center gap-6">
 				<p className="text-xl font-semibold">生成が完了しました！</p>
 				{latestGeneratedPhotoUrl ? (
-					<img
+					<Image
 						src={latestGeneratedPhotoUrl}
 						alt="生成された写真のプレビュー"
+						width={192}
+						height={192}
+						sizes="192px"
 						className="h-48 w-48 rounded object-cover shadow-lg"
 					/>
 				) : null}

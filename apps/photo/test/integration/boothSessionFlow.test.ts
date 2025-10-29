@@ -11,7 +11,7 @@ import type { Firestore as AdminFirestore } from "firebase-admin/firestore";
 import type { Storage as AdminStorage } from "firebase-admin/storage";
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	completeCapture,
 	startCapture,
@@ -122,7 +122,7 @@ const geminiServer = setupServer(
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
 			storageObjects.add(objectName);
 			return HttpResponse.json({
 				name: objectName,
@@ -137,7 +137,7 @@ const geminiServer = setupServer(
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
 			storageObjects.add(objectName);
 			return HttpResponse.json({
 				name: objectName,
@@ -151,7 +151,7 @@ const geminiServer = setupServer(
 		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
 			storageObjects.add(objectName);
 			return HttpResponse.json({
 				name: objectName,
@@ -174,7 +174,7 @@ const geminiServer = setupServer(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
 		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
 					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
@@ -206,7 +206,7 @@ const geminiServer = setupServer(
 		"http://localhost:11004/v0/b/:bucket/o/:object*",
 		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
 					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
@@ -238,7 +238,7 @@ const geminiServer = setupServer(
 		"http://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
 		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			const _bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
 					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {

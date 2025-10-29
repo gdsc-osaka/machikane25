@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
 
@@ -30,17 +31,21 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 
 	if (!result.data) {
 		notFound();
+		return null;
 	}
 
-	const { imageUrl } = result.data!;
+	const { imageUrl } = result.data;
 
 	return (
 		<main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background px-6 py-16 text-center">
 			<h1 className="text-3xl font-semibold">Your AI photo</h1>
-			<img
+			<Image
 				src={imageUrl}
-				alt="Generated Photo"
-				className="max-h-[60vh] rounded-lg shadow-lg"
+				alt="AI-generated result"
+				width={1024}
+				height={1024}
+				sizes="(max-width: 1024px) 90vw, 512px"
+				className="max-h-[60vh] w-auto rounded-lg shadow-lg"
 			/>
 			<a
 				href={imageUrl}

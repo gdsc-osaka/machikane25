@@ -151,10 +151,8 @@ export const getOptions = async (): Promise<GroupedGenerationOptions> => {
 		(accumulator, option) => {
 			const typeId = option.typeId;
 			const existingGroup = accumulator[typeId] ?? [];
-			return {
-				...accumulator,
-				[typeId]: [...existingGroup, option],
-			};
+			accumulator[typeId] = [...existingGroup, option];
+			return accumulator;
 		},
 		{},
 	);

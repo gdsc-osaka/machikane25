@@ -6,11 +6,7 @@
  * (AGENTS.md: Use interfaces for abstractions)
  */
 
-import type { User } from "firebase/auth";
-import type {
-	GenerationOption,
-	GroupedGenerationOptions,
-} from "@/domain/generationOption";
+import type { GroupedGenerationOptions } from "@/domain/generationOption";
 
 /**
  * Authentication Service Interface

@@ -59,7 +59,7 @@ const fetchFromStorage = async (
 			readStringField(metadata, "contentType") ?? inferMimeTypeFromPath(path);
 
 		return { buffer, mimeType };
-	} catch (error) {
+	} catch (_error) {
 		throw new Error(`Storage object not found at path: ${path}`);
 	}
 };

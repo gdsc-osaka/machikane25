@@ -42,7 +42,7 @@ describe("useUploadedPhotos", () => {
 		ensureAnonymousSignInMock.mockResolvedValue({ uid: "anon-user" });
 
 		// デフォルトの動作: imagePathをそのままimageUrlとして返す
-		refMock.mockImplementation((storage, path) => ({ path }));
+		refMock.mockImplementation((_storage, path) => ({ path }));
 		getDownloadURLMock.mockImplementation((storageRef) =>
 			Promise.resolve(
 				`http://localhost:11004/v0/b/machi-25.firebasestorage.app/o/${encodeURIComponent(storageRef.path)}?alt=media`,

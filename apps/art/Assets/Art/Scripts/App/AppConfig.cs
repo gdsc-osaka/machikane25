@@ -5,6 +5,12 @@ namespace Art.App
     [CreateAssetMenu(menuName = "Art/App Config", fileName = "AppConfig")]
     public sealed class AppConfig : ScriptableObject
     {
+        public enum PollingMode
+        {
+            Backend,
+            MockOffline
+        }
+
         [Header("Backend")]
         public string backendUrl;
         public string apiKey;
@@ -18,6 +24,8 @@ namespace Art.App
         public float maxPollIntervalSeconds = 60f;
         [Tooltip("Seconds before locally cached fish data expires.")]
         public float fishTtlSeconds = 120f;
+        [Tooltip("Selects the data source for fish polling.")]
+        public PollingMode pollingMode = PollingMode.Backend;
 
         [Header("Rare Characters")]
         [Tooltip("Probability (0-1) that a rare character spawn is scheduled when evaluated.")]

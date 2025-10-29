@@ -1,5 +1,4 @@
 using Art.App;
-using Art.Infrastructure;
 using Art.Telemetry;
 using NUnit.Framework;
 using System;
@@ -16,7 +15,7 @@ namespace Art.Fish.Tests
     {
         private GameObject host;
         private FishPollingController controller;
-        private StubHttpClient httpClient;
+        private StubProvider provider;
         private FishRepository repository;
         private AppConfig config;
         private TelemetryLogger telemetry;
@@ -40,9 +39,8 @@ namespace Art.Fish.Tests
             config.minPollIntervalSeconds = 2f;
             config.maxPollIntervalSeconds = 10f;
 
-            httpClient = new StubHttpClient();
-            controller.SetHttpClient(httpClient);
-            controller.Initialize(config, repository, telemetry);
+            provider = new StubProvider();
+            controller.Initialize(config, repository, telemetry, provider);
         }
 
         [TearDown]
@@ -62,7 +60,7 @@ namespace Art.Fish.Tests
         [Test]
         public void SuccessfulFetch_PopulatesRepositoryAndResetsBackoff()
         {
-            httpClient.Enqueue(HttpResponses.Success(LoadPayload("sample-success.json")));
+            provider.EnqueueSuccess(DeserializeStates("sample-success.json"));
 
             ExecuteSingleFetch(controller);
 
@@ -76,7 +74,7 @@ namespace Art.Fish.Tests
         [Test]
         public void FailedFetch_IncrementsFailuresAndBacksOff()
         {
-            httpClient.Enqueue(HttpResponses.Failure(500, "Server error"));
+            provider.EnqueueFailure("Server error");
 
             ExecuteSingleFetch(controller);
 
@@ -88,8 +86,8 @@ namespace Art.Fish.Tests
         [Test]
         public void MultipleFailures_ClampToMaxInterval()
         {
-            httpClient.Enqueue(HttpResponses.Failure(500, "Server error"));
-            httpClient.Enqueue(HttpResponses.Failure(500, "Server error"));
+            provider.EnqueueFailure("Server error");
+            provider.EnqueueFailure("Server error");
 
             ExecuteSingleFetch(controller);
             ExecuteSingleFetch(controller);
@@ -127,6 +125,22 @@ namespace Art.Fish.Tests
             return File.ReadAllText(path);
         }
 
+        private static IReadOnlyList<FishState> DeserializeStates(string filename)
+        {
+            var payload = LoadPayload(filename);
+            var dtos = JsonUtilityExtensions.FromJsonArray<FishDto>(payload);
+            var states = new List<FishState>(dtos.Length);
+            for (var i = 0; i < dtos.Length; i++)
+            {
+                if (FishStateMapper.TryMap(dtos[i], out var state, out _))
+                {
+                    states.Add(state);
+                }
+            }
+
+            return states;
+        }
+
         private static int GetFailureCount(FishPollingController controller)
         {
             var field = typeof(FishPollingController).GetField("consecutiveFailures", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -139,44 +153,66 @@ namespace Art.Fish.Tests
             return (float)method.Invoke(controller, null);
         }
 
-        private sealed class StubHttpClient : IHttpClient
+        private sealed class StubProvider : IFishDataProvider
         {
-            private readonly Queue<HttpResponse> responses = new Queue<HttpResponse>();
+            private readonly Queue<Result> results = new Queue<Result>();
 
-            public void Enqueue(HttpResponse response)
+            public string SourceTag => "stub";
+
+            public void EnqueueSuccess(IReadOnlyList<FishState> states, float durationMs = 10f)
             {
-                responses.Enqueue(response);
+                results.Enqueue(Result.Success(states, durationMs));
             }
 
-            public IEnumerator Get(string url, IReadOnlyDictionary<string, string> headers, Action<HttpResponse> onComplete)
+            public void EnqueueFailure(string reason, float durationMs = 10f)
+            {
+                results.Enqueue(Result.Failure(reason, durationMs));
+            }
+
+            public IEnumerator Fetch(FishDataProviderContext context)
             {
                 yield return null;
-                var response = responses.Count > 0 ? responses.Dequeue() : null;
-                onComplete?.Invoke(response);
-            }
-        }
-
-        private static class HttpResponses
-        {
-            public static HttpResponse Success(string body)
-            {
-                return new HttpResponse
+                if (results.Count == 0)
                 {
-                    StatusCode = 200,
-                    Body = body,
-                    Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                };
+                    context.ReportFailure?.Invoke(new FishDataProviderFailure("stub_empty", 0f));
+                    yield break;
+                }
+
+                var result = results.Dequeue();
+                if (result.IsSuccess)
+                {
+                    context.ReportSuccess?.Invoke(new FishDataProviderSuccess(result.States, result.DurationMs));
+                }
+                else
+                {
+                    context.ReportFailure?.Invoke(new FishDataProviderFailure(result.Reason, result.DurationMs));
+                }
             }
 
-            public static HttpResponse Failure(int statusCode, string error)
+            private readonly struct Result
             {
-                return new HttpResponse
+                private Result(IReadOnlyList<FishState> states, string reason, float durationMs, bool isSuccess)
                 {
-                    StatusCode = statusCode,
-                    Error = error,
-                    IsNetworkError = false,
-                    Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                };
+                    States = states;
+                    Reason = reason;
+                    DurationMs = durationMs;
+                    IsSuccess = isSuccess;
+                }
+
+                public IReadOnlyList<FishState> States { get; }
+                public string Reason { get; }
+                public float DurationMs { get; }
+                public bool IsSuccess { get; }
+
+                public static Result Success(IReadOnlyList<FishState> states, float durationMs)
+                {
+                    return new Result(states, null, durationMs, true);
+                }
+
+                public static Result Failure(string reason, float durationMs)
+                {
+                    return new Result(null, reason, durationMs, false);
+                }
             }
         }
     }

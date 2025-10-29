@@ -14,58 +14,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.isStaff == true;
     }
 
-    function allowedUserFields(data) {
-      return data.keys().hasOnly([
-        'createdAt',
-        'lastCollectedAt',
-        'stamps'
-      ]);
-    }
-
-    function validStampKeys(stamps) {
-      return stamps != null
-        && stamps.keys().hasOnly([
-        'reception',
-        'photobooth',
-        'art',
-        'robot',
-        'survey'
-      ]);
-    }
-
-    function attendeeStampUpdateValid(stamps) {
-      return stamps != null && validStampKeys(stamps);
-    }
-
-    function attendeeUpdateAllowed(userId) {
-      return isOwner(userId)
-        && allowedUserFields(request.resource.data)
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.lastCollectedAt > resource.data.lastCollectedAt
-        && attendeeStampUpdateValid(request.resource.data.stamps);
-    }
-
-    function staffUpdateAllowed() {
-      return isStaff()
-        && allowedUserFields(request.resource.data)
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.lastCollectedAt > resource.data.lastCollectedAt
-        && request.resource.data.stamps == resource.data.stamps;
-    }
-
     match /users/{userId} {
-      allow create: if isOwner(userId)
-        && allowedUserFields(request.resource.data)
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.lastCollectedAt is timestamp
-        && attendeeStampUpdateValid(request.resource.data.stamps);
+      allow read, write: if isOwner(userId) || isStaff();
+    }
 
-      allow read: if isOwner(userId) || isStaff();
-      allow list: if isStaff();
+    match /surveyLedger/{attendeeId} {
+      allow read, write: if isOwner(attendeeId) || isStaff();
+    }
 
-      allow update: if attendeeUpdateAllowed(userId) || staffUpdateAllowed();
-
-      allow delete: if false;
+    match /rewards/{attendeeId} {
+      allow read, write: if isOwner(attendeeId) || isStaff();
     }
   }
 }

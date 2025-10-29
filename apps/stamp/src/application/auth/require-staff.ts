@@ -39,43 +39,54 @@ const toStaffAccount = (user: {
 	displayName: user.displayName,
 });
 
-const requireStaff = async (): Promise<StaffAccess> => {
-	const auth = getFirebaseAuth();
-	const user = auth.currentUser;
-	if (user === null) {
-		return { status: "needs-auth" };
-	}
+const requireStaff = (): Promise<StaffAccess> =>
+	new Promise((resolve) => {
+		const auth = getFirebaseAuth();
+		const unsubscribe = auth.onAuthStateChanged(async (user) => {
+			unsubscribe();
+			if (user === null) {
+				resolve({ status: "needs-auth" });
+				return;
+			}
 
-	const token = await getIdTokenResult(user, true);
-	const authorization = ensureStaffAuthorization(token.claims);
-	if (authorization.isErr()) {
-		const error = authorization._unsafeUnwrapErr();
-		logger.warn("Staff guard rejected non-staff user.", {
-			reason: error.extra?.reason ?? "unknown",
-			uid: user.uid,
+			try {
+				const token = await getIdTokenResult(user, true);
+				const authorization = ensureStaffAuthorization(token.claims);
+				if (authorization.isErr()) {
+					const error = authorization._unsafeUnwrapErr();
+					logger.warn("Staff guard rejected non-staff user.", {
+						reason: error.extra?.reason ?? "unknown",
+						uid: user.uid,
+					});
+					await signOutQuietly(auth, error.extra?.reason ?? "not_staff");
+					resolve({ status: "needs-auth" });
+					return;
+				}
+
+				const accountResult = createStaffAccount(
+					toStaffAccount({
+						uid: user.uid,
+						email: user.email ?? null,
+						displayName: user.displayName ?? null,
+					}),
+				);
+				if (accountResult.isErr()) {
+					const error = accountResult._unsafeUnwrapErr();
+					await signOutQuietly(auth, "invalid_account");
+					throw error;
+				}
+
+				resolve({
+					status: "authorized",
+					staff: accountResult._unsafeUnwrap(),
+				});
+			} catch (error) {
+				logger.error("Error during staff authentication", { error });
+				await signOutQuietly(auth, "auth_error");
+				resolve({ status: "needs-auth" });
+			}
 		});
-		await signOutQuietly(auth, error.extra?.reason ?? "not_staff");
-		return { status: "needs-auth" };
-	}
-
-	const accountResult = createStaffAccount(
-		toStaffAccount({
-			uid: user.uid,
-			email: user.email ?? null,
-			displayName: user.displayName ?? null,
-		}),
-	);
-	if (accountResult.isErr()) {
-		const error = accountResult._unsafeUnwrapErr();
-		await signOutQuietly(auth, "invalid_account");
-		throw error;
-	}
-
-	return {
-		status: "authorized",
-		staff: accountResult._unsafeUnwrap(),
-	};
-};
+	});
 
 export { requireStaff };
 export type { StaffAccess };

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { use, useMemo } from "react";
 import useSWR from "swr";
 import type {
 	ClaimStampError,
@@ -150,12 +150,13 @@ const resolveOutcome = (state: ClaimUiState): ClaimOutcome | null => {
 };
 
 type StampTokenPageProps = {
-	params: {
+	params: Promise<{
 		token: string;
-	};
+	}>;
 };
 
-export default function StampTokenPage({ params }: StampTokenPageProps) {
+export default function StampTokenPage(props: StampTokenPageProps) {
+	const params = use(props.params);
 	const { token } = params;
 	const { data: claimResult, error: claimError } = useClaimStamp(token);
 

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4f89785f2ba74047b9e1cb88d162292, type: 3}
   m_Name: AppConfig
   m_EditorClassIdentifier: Assembly-CSharp::Art.App.AppConfig
-  backendUrl: 
-  apiKey: 
+  backendUrl: https://art-backend-724712977891.asia-northeast2.run.app
+  apiKey: art_cmhbiz3sh000104k04ox221do
   pollIntervalSeconds: 30
   minPollIntervalSeconds: 15
   maxPollIntervalSeconds: 60

@@ -44,6 +44,12 @@ flowchart LR
 7. `RareCharacterController` schedules rare spawns and forwards their lifecycle to `FishSpawner`.
 8. `TelemetryLogger` forwards structured logs and exceptions to Sentry.
 
+### Interim Mock Polling Mode
+- `FishPollingController` now resolves its data through an `IFishDataProvider` abstraction so the scene can swap live HTTP polling for offline mocks without touching downstream systems while keeping `HttpFishDataProvider` as the production default.
+- `MockFishDataProvider` reads a deterministic fish list from a `MockFishDataset` ScriptableObject and replays it at the configured cadence, raising the same repository events as the real provider. Telemetry tags these cycles with `source=mock` so operators can distinguish them.
+- `AppConfig` exposes a `pollingMode` enum (`Backend`, `MockOffline`) that `AppRoot` uses to choose between the real provider and the mock. Designers can hot-swap the mode in play mode through a context menu on `AppRoot`.
+- The mock keeps repository TTL and diff logic active, ensuring `FishSpawner`, `SchoolCoordinator`, and downstream systems exercise the full data path even without the backend.
+
 ## Unity Renderer Architecture
 
 ### Assemblies and Directory Layout
@@ -71,6 +77,9 @@ Controllers communicate via direct field references set in the inspector, keepin
 | Component | Responsibility | Notes |
 | --- | --- | --- |
 | `FishPollingController` (MonoBehaviour) | Calls `/get-fish`, handles auth header, retries, and cadence clamping. | Provides `Initialize(AppConfig, FishRepository, TelemetryLogger)` and `IEnumerator Run()`. |
+| `IFishDataProvider` (interface) | Supplies fish payloads to the polling controller. | Implemented by `HttpFishDataProvider` for live data and `MockFishDataProvider` for offline mode. |
+| `HttpFishDataProvider` (plain C# helper) | Uses `UnityWebRequest` to call `/get-fish`, parse JSON, and return `FishState` lists. | Handles retries/backoff and remains the default provider when `AppConfig.pollingMode == Backend`. |
+| `MockFishDataProvider` (ScriptableObject-backed) | Emits synthetic fish payloads while backend services are offline. | Uses `MockFishDataset` asset and honours cadence from `AppConfig`. |
 | `FishRepository` (plain C#) | Stores fish data and raises `FishAdded`, `FishUpdated`, `FishRemoved`. | Keeps TTL consistent with backend; exposes `IReadOnlyList<FishState> Snapshot()`. |
 | `FishSpawner` (MonoBehaviour) | Instantiates prefabs, applies textures/materials, synchronises with `SchoolCoordinator`. | Subscribes to repository events and reuses pooled prefabs where possible. |
 | `FishTextureCache` (plain C#) | Streams textures from Firebase Storage and caches them on disk. | `Task<Texture2D> LoadAsync(FishState state)` throttles concurrent downloads. |
@@ -138,6 +147,8 @@ Controllers remain small and self-contained so EditMode tests can exercise their
 - Polling cadence defaults to 30 seconds but adapts (clamped between 15–60 seconds) based on response headers signaling freshness.
 - Backend errors trigger exponential backoff; after `n` consecutive failures the renderer displays cached fish and raises an alert through Sentry.
 - The renderer never writes to the backend—only `GET /get-fish` requests and direct Firebase Storage downloads.
+- `HttpFishDataProvider` encapsulates the polling logic and remains the active provider whenever `AppConfig.pollingMode` is set to `Backend`, ensuring production builds keep hitting live services.
+- During backend bring-up we run in `MockOffline` polling mode, which bypasses HTTP entirely and feeds the repository from `MockFishDataset` assets while preserving the same cadence and diff semantics.
 
 ## Editor & Build Guidance
 - Main scene: `Assets/Art/Scenes/Aquarium.unity`.

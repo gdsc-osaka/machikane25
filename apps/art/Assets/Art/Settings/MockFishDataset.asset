@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Art::Art.Fish.MockFishDataset
   entries:
   - id: test1
-    imageUrl: https://www.osaka-u.ac.jp/sp/drwani/img/img_wani01.gif
+    imageUrl: https://www.osaka-u.ac.jp/sp/drwani/img/drwani-photo01.jpg
     tint: {r: 1, g: 0.3443396, b: 0.5203531, a: 0}
     createdAtIso: 2025-10-29T12:00:00+09:00

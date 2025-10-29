@@ -147,7 +147,7 @@ namespace Art.Fish
 
         private async Task<Texture2D> DownloadTextureAsync(string imageUrl, string localPath, TelemetryLogger telemetry)
         {
-            using var request = UnityWebRequestTexture.GetTexture(imageUrl);
+            using var request = UnityWebRequest.Get(imageUrl);
             try
             {
                 var completedRequest = await SendRequestAsync(request);
@@ -158,12 +158,22 @@ namespace Art.Fish
                     return null;
                 }
 
-                var texture = DownloadHandlerTexture.GetContent(completedRequest);
-                if (texture == null)
+                var imageData = completedRequest.downloadHandler.data;
+                if (imageData == null || imageData.Length == 0)
                 {
-                    telemetry?.LogWarning($"Fish texture download yielded null content: {imageUrl}");
+                    telemetry?.LogWarning($"Fish texture download yielded no data: {imageUrl}");
                     return null;
                 }
+
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!texture.LoadImage(imageData))
+                {
+                    telemetry?.LogWarning($"Fish texture could not be loaded from image data: {imageUrl}");
+                    UnityEngine.Object.Destroy(texture);
+                    return null;
+                }
+
+                texture.name = Path.GetFileNameWithoutExtension(localPath);
 
                 try
                 {

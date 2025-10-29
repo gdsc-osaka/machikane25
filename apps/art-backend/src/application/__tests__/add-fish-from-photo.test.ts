@@ -27,27 +27,25 @@ const buildDeps = (
 	configOverrides: Partial<Config> = {},
 ): Readonly<{
 	deps: AddFishDeps;
-	repoSave: Mock<[unknown], Promise<void>>;
-	repoList: Mock<[], Promise<readonly never[]>>;
+	repoSave: Mock<(a: unknown) => Promise<void>>;
+	repoList: Mock<() => Promise<readonly never[]>>;
 	storageUpload: Mock<
-		[
-			Readonly<{
+		(
+			a: Readonly<{
 				id: string;
 				buffer: Buffer;
 				mimeType: string;
 			}>,
-		],
-		Promise<
+		) => Promise<
 			Readonly<{
 				imageUrl: string;
 				imagePath: string;
 			}>
 		>
 	>;
-	imageBlur: Mock<[Buffer], Promise<Buffer>>;
+	imageBlur: Mock<(a: Buffer) => Promise<Buffer>>;
 	extractHSV: Mock<
-		[Buffer],
-		Promise<readonly { h: number; s: number; v: number }[]>
+		(a: Buffer) => Promise<readonly { h: number; s: number; v: number }[]>
 	>;
 }> => {
 	const repoSave = vi.fn().mockResolvedValue(undefined);

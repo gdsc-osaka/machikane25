@@ -11,10 +11,10 @@ runConfig:
 env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  - variable: NEXT_PUBLIC_FIREBASE_CONFIG
-    secret: firebaseConfig
-  - variable: SENTRY_AUTH_TOKEN
-    secret: sentryAuthToken
+#  - variable: NEXT_PUBLIC_FIREBASE_CONFIG
+#    secret: firebaseConfig
+#  - variable: SENTRY_AUTH_TOKEN
+#    secret: sentryAuthToken
 
 scripts:
   buildCommand: npm run build

@@ -103,8 +103,7 @@ Do not mutate objects. When a state change is required, create and return a new 
 
 ### 【CRITICAL】 Explicit & Structured Error Handling
 All operations that can fail must explicitly declare their failure cases in their function signature. Throw domain-specific errors for predictable failures and catch them at the call site.
-- **Prefer `try/catch`:** Sequence potentially failing operations with `async/await` and wrap the orchestration in `try/catch` blocks. Convert low-level errors into domain errors before rethrowing.
-- **Use `obj-err`:** Construct all domain errors with `obj-err` so thrown values remain structured, serializable, and contain useful context.
+- **Prefer `try/catDRch`:** Sequence potentially failing operations with `async/await` and wrap the orchestration in `try/catch` blocks. Convert low-level errors into domain errors before rethrowing.
 - **Exhaustive handling:** When catching errors in the Presentation or Application layer, use `ts-pattern`'s `match` (or exhaustive `switch`) on an error's discriminant to ensure every case is handled.
 
 ## 6. Coding Conventions ✍️

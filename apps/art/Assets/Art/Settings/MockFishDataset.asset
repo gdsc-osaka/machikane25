@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e3337bd69ce4b1090299b3f5c4b73f5, type: 3}
+  m_Name: MockFishDataset
+  m_EditorClassIdentifier: Art::Art.Fish.MockFishDataset
+  entries:
+  - id: test1
+    imageUrl: https://www.osaka-u.ac.jp/sp/drwani/img/drwani-photo01.jpg
+    tint: {r: 1, g: 0.3443396, b: 0.5203531, a: 0}
+    createdAtIso: 2025-10-29T12:00:00+09:00

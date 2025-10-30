@@ -1,7 +1,12 @@
 import react from "@vitejs/plugin-react";
 import dotenv from "dotenv";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
+const artBackendDir = resolve(rootDir, "apps/art-backend");
 
 export default defineConfig({
 	define: {
@@ -10,6 +15,9 @@ export default defineConfig({
 	plugins: [tsconfigPaths(), react()],
 	resolve: {
 		dedupe: ["react", "react-dom"],
+		alias: {
+			sharp: resolve(artBackendDir, "test/stubs/sharp.ts"),
+		},
 	},
 	test: {
 		env: dotenv.config({ path: ".env" }).parsed,

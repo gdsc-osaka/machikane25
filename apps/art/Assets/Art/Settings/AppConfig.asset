@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4f89785f2ba74047b9e1cb88d162292, type: 3}
+  m_Name: AppConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Art.App.AppConfig
+  backendUrl: https://art-backend-724712977891.asia-northeast2.run.app
+  apiKey: art_cmhbiz3sh000104k04ox221do
+  pollIntervalSeconds: 30
+  minPollIntervalSeconds: 15
+  maxPollIntervalSeconds: 60
+  fishTtlSeconds: 120
+  pollingMode: 1
+  rareSpawnChance: 0.05
+  rareSpawnCooldownSeconds: 300
+  sentryDsn: https://dbd643a55ee51e019451d5644ff3f40a@o4510180282335232.ingest.us.sentry.io/4510180284366848
+  visitorDetectionIntervalSeconds: 0.5

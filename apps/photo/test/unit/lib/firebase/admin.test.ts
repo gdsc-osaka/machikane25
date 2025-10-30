@@ -1,24 +1,14 @@
 import * as admin from "firebase-admin";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock firebase-admin
-vi.mock("firebase-admin", () => {
-	const mockApp = { name: "test-app" };
-	const mockAuth = { name: "mock-auth" };
-	const mockFirestore = { name: "mock-firestore" };
-	const mockStorage = { name: "mock-storage" };
+const mockApp = { name: "test-app" };
+const mockAuth = { name: "mock-auth" };
+const mockFirestore = { name: "mock-firestore" };
+const mockStorage = { name: "mock-storage" };
 
-	return {
-		default: {
-			apps: [],
-			initializeApp: vi.fn(() => mockApp),
-			auth: vi.fn(() => mockAuth),
-			firestore: vi.fn(() => mockFirestore),
-			storage: vi.fn(() => mockStorage),
-			credential: {
-				cert: vi.fn((serviceAccount) => ({ serviceAccount })),
-			},
-		},
+// Mock firebase-admin
+vi.mock("firebase-admin", () => ({
+	default: {
 		apps: [],
 		initializeApp: vi.fn(() => mockApp),
 		auth: vi.fn(() => mockAuth),
@@ -27,8 +17,20 @@ vi.mock("firebase-admin", () => {
 		credential: {
 			cert: vi.fn((serviceAccount) => ({ serviceAccount })),
 		},
-	};
-});
+	},
+	apps: [],
+	initializeApp: vi.fn(() => mockApp),
+	auth: vi.fn(() => mockAuth),
+	firestore: vi.fn(() => mockFirestore),
+	storage: vi.fn(() => mockStorage),
+	credential: {
+		cert: vi.fn((serviceAccount) => ({ serviceAccount })),
+	},
+}));
+
+vi.mock("firebase-admin/firestore", () => ({
+	getFirestore: vi.fn(() => mockFirestore),
+}));
 
 describe("Firebase Admin", () => {
 	const originalEnv = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;

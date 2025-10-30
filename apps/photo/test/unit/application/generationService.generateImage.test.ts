@@ -38,7 +38,9 @@ describe("GenerationService.generateImage", () => {
 		Reflect.deleteProperty(global, "fetch");
 	});
 
-	it("constructs interleaved Gemini request and stores generated photo metadata", async () => {
+	it(
+		"constructs interleaved Gemini request and stores generated photo metadata",
+		async () => {
 		const { generateImage } = await import("@/application/generationService");
 
 		getImageDataFromIdMock.mockImplementation((id: string) => {
@@ -155,7 +157,9 @@ describe("GenerationService.generateImage", () => {
 		});
 
 		expect(result).toBe("photo-abc");
-	});
+		},
+		30000,
+	);
 
 	it("throws descriptive error when Gemini API response lacks inline data", async () => {
 		const { generateImage } = await import("@/application/generationService");
@@ -185,5 +189,5 @@ describe("GenerationService.generateImage", () => {
 		await expect(generateImage("booth-x", "photo-y", {})).rejects.toThrowError(
 			"Gemini response missing image data",
 		);
-	});
+	}, 30000);
 });

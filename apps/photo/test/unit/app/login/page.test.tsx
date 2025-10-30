@@ -23,6 +23,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("firebase/auth", () => ({
 	getAuth: () => ({ appName: "photo-app" }),
 	signInWithCustomToken: signInWithCustomTokenMock,
+	connectAuthEmulator: vi.fn(),
 }));
 
 vi.mock("@/app/actions/authActions", () => ({

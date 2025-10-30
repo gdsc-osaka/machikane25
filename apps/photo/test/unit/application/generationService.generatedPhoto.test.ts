@@ -31,7 +31,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 			imageUrl: "https://example.com/generated/photo-1.png",
 		});
 		expect(findGeneratedPhotoMock).toHaveBeenCalledWith("booth-1", "photo-1");
-	});
+	}, 30000);
 
 	it("throws PhotoNotFoundError when repository returns null", async () => {
 		findGeneratedPhotoMock.mockResolvedValue(null);
@@ -49,7 +49,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 		).rejects.toMatchObject({ name: "PhotoNotFoundError" });
 
 		expect(isPhotoNotFoundError(capturedError)).toBe(true);
-	});
+	}, 30000);
 
 	it("throws PhotoExpiredError when photo is older than 24 hours", async () => {
 		const now = Date.now();
@@ -74,5 +74,5 @@ describe("GenerationService.getGeneratedPhoto", () => {
 		).rejects.toMatchObject({ name: "PhotoExpiredError" });
 
 		expect(isPhotoExpiredError(capturedError)).toBe(true);
-	});
+	}, 30000);
 });

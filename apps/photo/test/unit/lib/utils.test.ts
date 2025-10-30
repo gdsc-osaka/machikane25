@@ -11,4 +11,3 @@ describe("cn utility", () => {
 		expect(result).toBe("text-center p-6 items-center");
 	});
 });
-

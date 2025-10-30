@@ -174,7 +174,13 @@ const geminiServer = setupServer(
 	// HTTP handlers
 	http.post(
 		"http://localhost:11004/upload/storage/v1/b/:bucket/o",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -189,7 +195,13 @@ const geminiServer = setupServer(
 	// HTTPS handler for Admin SDK (which uses HTTPS even for emulator)
 	http.post(
 		"https://localhost:11004/upload/storage/v1/b/:bucket/o",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -203,7 +215,13 @@ const geminiServer = setupServer(
 	),
 	http.post(
 		"http://localhost:11004/v0/b/:bucket/o",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -215,19 +233,28 @@ const geminiServer = setupServer(
 			});
 		},
 	),
-	http.put("http://localhost:11004/:bucket/:object*", async ({ params }: { params: Record<string, string> }) => {
-		const objectName = String(params.object ?? "");
-		const bucket = String(params.bucket ?? "photo-test.appspot.com");
-		storageObjects.add(objectName);
-		return HttpResponse.json({
-			name: objectName,
-			bucket,
-			contentType: "image/png",
-		});
-	}),
+	http.put(
+		"http://localhost:11004/:bucket/:object*",
+		async ({ params }: { params: Record<string, string> }) => {
+			const objectName = String(params.object ?? "");
+			const bucket = String(params.bucket ?? "photo-test.appspot.com");
+			storageObjects.add(objectName);
+			return HttpResponse.json({
+				name: objectName,
+				bucket,
+				contentType: "image/png",
+			});
+		},
+	),
 	http.get(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
@@ -259,7 +286,13 @@ const geminiServer = setupServer(
 	),
 	http.get(
 		"http://localhost:11004/v0/b/:bucket/o/:object*",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
@@ -291,7 +324,13 @@ const geminiServer = setupServer(
 	),
 	http.get(
 		"http://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
@@ -324,7 +363,13 @@ const geminiServer = setupServer(
 	// HTTPS handler for Admin SDK download
 	http.get(
 		"https://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
-		async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+		async ({
+			params,
+			request,
+		}: {
+			params: Record<string, string>;
+			request: Request;
+		}) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {

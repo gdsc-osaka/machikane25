@@ -15,11 +15,8 @@ vi.mock("@/app/actions/adminActions", () => ({
 
 vi.mock("swr", () => ({
 	__esModule: true,
-	default: (
-		key: unknown,
-		fetcher: () => Promise<unknown>,
-		options: unknown,
-	) => useSWRMock(key, fetcher, options),
+	default: (key: unknown, fetcher: () => Promise<unknown>, options: unknown) =>
+		useSWRMock(key, fetcher, options),
 }));
 
 describe("useAquariumSyncErrors", () => {
@@ -105,9 +102,7 @@ describe("useAquariumSyncErrors", () => {
 		}>;
 		expect(refreshed?.eventId).toBe("evt-2");
 		expect(refreshed?.timestamp instanceof Date).toBe(true);
-		expect(refreshed?.timestamp.toISOString()).toBe(
-			new Date(0).toISOString(),
-		);
+		expect(refreshed?.timestamp.toISOString()).toBe(new Date(0).toISOString());
 	});
 
 	it("derives generic error when swr error is not instance of Error", async () => {

@@ -55,4 +55,3 @@ describe("generation option domain", () => {
 		expectTypeOf(grouped.location).toMatchTypeOf<GenerationOption[]>();
 	});
 });
-

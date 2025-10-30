@@ -1,20 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
-const {
-	verifyAdminTokenMock,
-	getAdminCookieNameMock,
-	redirectMock,
-	nextMock,
-} = vi.hoisted(() => {
-	const redirectMock = vi.fn();
-	const nextMock = vi.fn();
-	return {
-		verifyAdminTokenMock: vi.fn(),
-		getAdminCookieNameMock: vi.fn(() => "adminToken"),
-		redirectMock,
-		nextMock,
-	};
-});
+const { verifyAdminTokenMock, getAdminCookieNameMock, redirectMock, nextMock } =
+	vi.hoisted(() => {
+		const redirectMock = vi.fn();
+		const nextMock = vi.fn();
+		return {
+			verifyAdminTokenMock: vi.fn(),
+			getAdminCookieNameMock: vi.fn(() => "adminToken"),
+			redirectMock,
+			nextMock,
+		};
+	});
 
 vi.mock("@/application/authService", () => ({
 	verifyAdminToken: verifyAdminTokenMock,

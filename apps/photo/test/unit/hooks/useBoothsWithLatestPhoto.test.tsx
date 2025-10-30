@@ -79,7 +79,12 @@ describe("useBoothsWithLatestPhoto", () => {
 			},
 		);
 		docMock.mockImplementation(
-			(_firestore, segmentOne: string, segmentTwo: string, ...rest: string[]) => ({
+			(
+				_firestore,
+				segmentOne: string,
+				segmentTwo: string,
+				...rest: string[]
+			) => ({
 				path: [segmentOne, segmentTwo, ...rest].join("/"),
 			}),
 		);
@@ -92,9 +97,7 @@ describe("useBoothsWithLatestPhoto", () => {
 					exists: () => true,
 					data: () => ({
 						imageUrl: "https://example.com/photo-1.png",
-						createdAt: MockTimestamp.fromDate(
-							new Date("2025-01-01T10:00:00Z"),
-						),
+						createdAt: MockTimestamp.fromDate(new Date("2025-01-01T10:00:00Z")),
 					}),
 				};
 			}

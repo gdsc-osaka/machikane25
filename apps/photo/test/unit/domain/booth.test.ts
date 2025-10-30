@@ -4,7 +4,13 @@ import { boothSchema, ensureValidBoothState } from "@/domain/booth";
 
 describe("booth domain", () => {
 	it("accepts every valid booth state", () => {
-		const validStates = ["idle", "menu", "capturing", "generating", "completed"] satisfies ReadonlyArray<BoothState>;
+		const validStates = [
+			"idle",
+			"menu",
+			"capturing",
+			"generating",
+			"completed",
+		] satisfies ReadonlyArray<BoothState>;
 
 		validStates.forEach((state) => {
 			expect(() => ensureValidBoothState(state)).not.toThrow();

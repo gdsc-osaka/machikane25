@@ -2,11 +2,11 @@
 
 import {
 	collection,
+	type DocumentData,
 	doc,
+	type Firestore,
 	getDoc,
 	onSnapshot,
-	type DocumentData,
-	type Firestore,
 	Timestamp,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";

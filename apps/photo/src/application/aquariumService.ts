@@ -47,7 +47,7 @@ const ensureSentryEnv = (): SentryEnv => {
 const extractTags = (issue: RawSentryIssue): SentryTag[] => {
 	const issueTags = Array.isArray(issue.tags) ? issue.tags : [];
 	const latestEventTags = Array.isArray(issue.latestEvent?.tags)
-		? issue.latestEvent?.tags ?? []
+		? (issue.latestEvent?.tags ?? [])
 		: [];
 
 	return [...issueTags, ...latestEventTags];
@@ -67,7 +67,9 @@ const toIsoString = (value: string | undefined): string => {
 		return new Date(0).toISOString();
 	}
 	const date = new Date(value);
-	return Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString();
+	return Number.isNaN(date.getTime())
+		? new Date(0).toISOString()
+		: date.toISOString();
 };
 
 const toErrorMessage = (issue: RawSentryIssue): string => {
@@ -119,7 +121,10 @@ const parseSentryIssues = (payload: unknown): RawSentryIssue[] => {
 		return [];
 	}
 
-	return payload.filter((entry): entry is RawSentryIssue => typeof entry === "object" && entry !== null);
+	return payload.filter(
+		(entry): entry is RawSentryIssue =>
+			typeof entry === "object" && entry !== null,
+	);
 };
 
 export const getSyncErrors = async (): Promise<AquariumSyncError[]> => {
@@ -134,15 +139,11 @@ export const getSyncErrors = async (): Promise<AquariumSyncError[]> => {
 	});
 
 	if (!response.ok) {
-		throw new Error(
-			`Failed to fetch aquarium sync errors: ${response.status}`,
-		);
+		throw new Error(`Failed to fetch aquarium sync errors: ${response.status}`);
 	}
 
 	const payload = await response.json();
 	const issues = parseSentryIssues(payload);
 	const mapped = issues.map(mapSentryIssueToSyncError);
-	return mapped.filter(
-		(issue): issue is AquariumSyncError => issue !== null,
-	);
+	return mapped.filter((issue): issue is AquariumSyncError => issue !== null);
 };

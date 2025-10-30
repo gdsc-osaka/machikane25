@@ -1,4 +1,3 @@
-import { Buffer } from "node:buffer";
 import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
@@ -9,7 +8,7 @@ import {
 	findGeneratedPhoto,
 } from "@/infra/firebase/photoRepository";
 import { getImageDataFromId } from "@/infra/gemini/imageData";
-import { handleGeminiResponse } from "@/infra/gemini/storage";
+import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 const GEMINI_ENDPOINT =
@@ -241,36 +240,44 @@ type AquariumConfig = {
 const AQUARIUM_FEATURE_TAG = "aquarium-sync";
 
 const ensureAquariumConfig = (): AquariumConfig => {
-	const endpoint = process.env.AQUARIUM_SYNC_ENDPOINT ?? "";
-	const token = process.env.AQUARIUM_SYNC_TOKEN ?? "";
+	const baseUrl = process.env.AQUARIUM_API_BASE_URL ?? "";
+	const apiKey = process.env.AQUARIUM_API_KEY ?? "";
 
-	if (!endpoint) {
-		throw new Error("AQUARIUM_SYNC_ENDPOINT is not defined");
+	if (!baseUrl) {
+		throw new Error("AQUARIUM_API_BASE_URL is not defined");
 	}
 
-	return { endpoint, token };
+	const endpoint = `${baseUrl}/upload-photo`;
+	return { endpoint, token: apiKey };
 };
 
-const buildAquariumHeaders = (token: string): Record<string, string> => {
-	const baseHeaders: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
-
-	if (!token) {
-		return baseHeaders;
+const buildAquariumHeaders = (apiKey: string): Record<string, string> => {
+	if (!apiKey) {
+		return {};
 	}
 
 	return {
-		...baseHeaders,
-		Authorization: `Bearer ${token}`,
+		"X-API-KEY": apiKey,
 	};
 };
 
-const toAquariumPayload = (photo: GeneratedPhotoRecord) => ({
-	boothId: photo.boothId,
-	photoId: photo.photoId,
-	imageUrl: photo.imageUrl,
-});
+const downloadImageFromStorage = async (imagePath: string): Promise<Buffer> => {
+	const bucket = storageBucket();
+	const file = bucket.file(imagePath);
+	const [buffer] = await file.download();
+	return buffer;
+};
+
+const createMultipartFormData = async (
+	photo: GeneratedPhotoRecord,
+): Promise<FormData> => {
+	const imageBuffer = await downloadImageFromStorage(photo.imagePath);
+	const uint8Array = new Uint8Array(imageBuffer);
+	const file = new File([uint8Array], "photo.png", { type: "image/png" });
+	const formData = new FormData();
+	formData.append("photo", file);
+	return formData;
+};
 
 const createAquariumError = (message: string): Error => {
 	const error = new Error(message);
@@ -297,13 +304,13 @@ export const sendToAquarium = async (
 	photo: GeneratedPhotoRecord,
 ): Promise<void> => {
 	const { endpoint, token } = ensureAquariumConfig();
-	const payload = toAquariumPayload(photo);
 
 	try {
+		const formData = await createMultipartFormData(photo);
 		const response = await fetch(endpoint, {
 			method: "POST",
 			headers: buildAquariumHeaders(token),
-			body: JSON.stringify(payload),
+			body: formData,
 		});
 
 		if (!response.ok) {

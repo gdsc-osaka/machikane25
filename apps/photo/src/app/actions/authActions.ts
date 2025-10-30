@@ -14,9 +14,7 @@ const loginSchema = z.object({
 
 const ADMIN_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 
-export const loginWithAdminTokenAction = async (input: {
-	token: string;
-}) => {
+export const loginWithAdminTokenAction = async (input: { token: string }) => {
 	const { token } = loginSchema.parse(input);
 
 	await assertValidAdminToken(token);

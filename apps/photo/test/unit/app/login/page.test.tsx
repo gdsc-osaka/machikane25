@@ -56,9 +56,7 @@ describe("LoginPage", () => {
 		render(<LoginPage />);
 
 		expect(screen.getByLabelText(/admin token/i)).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: /log in/i }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
 	});
 
 	it("submits token, signs in with custom token, and navigates to /admin", async () => {

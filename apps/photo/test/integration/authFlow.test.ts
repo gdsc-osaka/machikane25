@@ -132,9 +132,7 @@ describe("Admin Auth Flow", () => {
 			"https://photo.local/login",
 		);
 
-		const missingCookieRequest = new NextRequest(
-			"https://photo.local/photos",
-		);
+		const missingCookieRequest = new NextRequest("https://photo.local/photos");
 		const missingCookieResponse = await middleware(missingCookieRequest);
 
 		expect(missingCookieResponse.status).toBe(307);

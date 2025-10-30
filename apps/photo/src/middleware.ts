@@ -1,6 +1,9 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getAdminCookieName, verifyAdminToken } from "@/application/authService";
+import {
+	getAdminCookieName,
+	verifyAdminToken,
+} from "@/application/authService";
 
 const redirectToLogin = (request: NextRequest) =>
 	NextResponse.redirect(new URL("/login", request.url));
@@ -23,5 +26,10 @@ export const middleware = async (request: NextRequest) => {
 };
 
 export const config = {
-	matcher: ["/admin/:path*", "/control/:path*", "/display/:path*", "/photos/:path*"],
+	matcher: [
+		"/admin/:path*",
+		"/control/:path*",
+		"/display/:path*",
+		"/photos/:path*",
+	],
 };

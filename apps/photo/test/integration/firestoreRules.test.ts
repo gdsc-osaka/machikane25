@@ -300,15 +300,12 @@ describe("Firestore Security Rules", () => {
 				createdAt: serverTimestamp(),
 			});
 
-			await setDoc(
-				doc(adminDb, "booths/booth-1/generatedPhotos", "photo-1"),
-				{
-					imageUrl: "https://storage.example.com/generated.png",
-					imagePath: "generated_photos/photo-1/photo.png",
-					boothId: "booth-1",
-					createdAt: serverTimestamp(),
-				},
-			);
+			await setDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-1"), {
+				imageUrl: "https://storage.example.com/generated.png",
+				imagePath: "generated_photos/photo-1/photo.png",
+				boothId: "booth-1",
+				createdAt: serverTimestamp(),
+			});
 		});
 
 		it("should allow unauthenticated user to read generated photos", async () => {

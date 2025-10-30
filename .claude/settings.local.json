@@ -16,7 +16,9 @@
       "Bash(pnpm test:photo:generateImage:*)",
       "Bash(pnpm lint:fix:*)",
       "Bash(pnpm exec biome:*)",
-      "Bash(pnpm vitest run:*)"
+      "Bash(pnpm vitest run:*)",
+      "Bash(pnpm next build:*)",
+      "Bash(pnpm exec tsc:*)"
     ],
     "deny": [],
     "ask": []

@@ -15,7 +15,7 @@ const resolveBucketName = (): string | undefined => {
 	return undefined;
 };
 
-const storageBucket = () => {
+export const storageBucket = () => {
 	const storage = getAdminStorage();
 	const bucketName = resolveBucketName();
 	if (bucketName) {

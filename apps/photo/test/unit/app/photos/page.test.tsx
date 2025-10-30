@@ -58,9 +58,7 @@ describe("PhotosPage", () => {
 		expect(boothHeadings).toHaveLength(boothSamples.length);
 
 		const renderedImages = boothSamples.map((booth) =>
-			screen.getByAltText(
-				`Latest generated photo for ${booth.boothId}`,
-			),
+			screen.getByAltText(`Latest generated photo for ${booth.boothId}`),
 		);
 
 		renderedImages.forEach((imgElement, index) => {

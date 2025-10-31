@@ -21,8 +21,6 @@ env:
     secret: firebaseConfig
   - variable: FIREBASE_STORAGE_BUCKET
     secret: firebaseStorageBucket
-  - variable: FIREBASE_SERVICE_ACCOUNT_JSON
-    secret: firebaseServiceAccountJson
 
   # API Keys (secrets)
   - variable: GEMINI_API_KEY

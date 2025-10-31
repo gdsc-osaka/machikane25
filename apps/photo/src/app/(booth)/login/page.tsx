@@ -18,6 +18,7 @@ const LoginPage = () => {
 
 		startTransition(async () => {
 			try {
+				console.log("Attempting to log in with admin token");
 				const { customToken } = await loginWithAdminTokenAction({ token });
 				await initializeFirebaseClient();
 				const auth = getAuth();

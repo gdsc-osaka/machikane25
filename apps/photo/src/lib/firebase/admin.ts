@@ -13,14 +13,21 @@ import { getFirestore } from "firebase-admin/firestore";
 import type { Storage } from "firebase-admin/storage";
 
 /**
- * Parse service account from environment variable
+ * Get Firebase credential based on environment
+ * Uses Application Default Credentials (ADC) in Firebase App Hosting
+ * Falls back to service account JSON from environment variable for local development
  */
-const getServiceAccount = (): admin.ServiceAccount => {
+const getCredential = (): admin.credential.Credential => {
 	const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
 	if (!serviceAccountJson) {
-		throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not defined");
+		// Use Application Default Credentials (ADC) for Firebase App Hosting
+		return admin.credential.applicationDefault();
 	}
-	return JSON.parse(serviceAccountJson) as admin.ServiceAccount;
+
+	// Use service account JSON for local development/testing
+	const serviceAccount = JSON.parse(serviceAccountJson) as admin.ServiceAccount;
+	return admin.credential.cert(serviceAccount);
 };
 
 let adminApp: App | null = null;
@@ -36,10 +43,10 @@ const initializeAdminApp = (): App => {
 
 	// Check if already initialized by checking apps length
 	if (admin.apps.length === 0) {
-		const serviceAccount = getServiceAccount();
+		const credential = getCredential();
 		const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
 		const appOptions: admin.AppOptions = {
-			credential: admin.credential.cert(serviceAccount),
+			credential,
 		};
 		if (storageBucket) {
 			appOptions.storageBucket = storageBucket;

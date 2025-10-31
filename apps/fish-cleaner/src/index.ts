@@ -7,9 +7,9 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import * as logger from "firebase-functions/logger";
 import { CloudTasksClient } from "@google-cloud/tasks";
 import * as admin from "firebase-admin";
+import * as logger from "firebase-functions/logger";
 import { onRequest } from "firebase-functions/v2/https";
 // Some environments may not have up-to-date type declarations for these v2 paths.
 import { onObjectFinalized } from "firebase-functions/v2/storage";
@@ -27,11 +27,16 @@ if (!admin.apps.length) {
 const storage = admin.storage();
 
 const REGION = "asia-northeast2";
-const PROJECT_ID = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT!;
+const PROJECT_ID =
+	(process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT) ?? "unknown";
 const LOCATION_ID = "asia-northeast2";
 const QUEUE_ID = "file-delete-queue";
 // Firestore collection to clear when deletion runs. Change this if your collection name differs.
 const FIRESTORE_COLLECTION_TO_CLEAR = "fish_images";
+
+if (PROJECT_ID === "unknown") {
+	throw new Error("Environment value GCP-PROJECT not set")
+}
 
 const tasksClient = new CloudTasksClient();
 
@@ -41,7 +46,7 @@ const tasksClient = new CloudTasksClient();
  */
 export const fishCleanerExample = onObjectFinalized(
 	{ region: REGION },
-	async (object: any) => {
+	async (object) => {
 		try {
 			const bucket = object.bucket;
 			const filePath = object.name;
@@ -83,7 +88,7 @@ export const fishCleanerExample = onObjectFinalized(
 					httpMethod: "POST" as const,
 					url,
 					headers: { "Content-Type": "application/json" },
-					body: (globalThis as any).Buffer.from(payload).toString("base64"),
+					body: Buffer.from(payload).toString("base64"),
 				},
 				scheduleTime: {
 					seconds: scheduleSeconds,
@@ -105,7 +110,7 @@ export const fishCleanerExample = onObjectFinalized(
 /**
  * Cloud Tasks によって呼び出され、指定ファイルと Firestore データを削除する関数。
  */
-export const deleteFile = onRequest({ region: REGION }, async (req: any, res: any) => {
+export const deleteFile = onRequest({ region: REGION }, async (req, res) => {
 	try {
 		const { bucket, filePath } = req.body;
 		// この関数は Cloud Tasks から実行され、fish_images の一括削除と
@@ -120,10 +125,15 @@ export const deleteFile = onRequest({ region: REGION }, async (req: any, res: an
 		if (filePath) {
 			try {
 				await targetBucket.file(filePath).delete();
-				logger.info("Deleted file from storage", { bucket: targetBucket.name, filePath });
-			} catch (err: any) {
+				logger.info("Deleted file from storage", {
+					bucket: targetBucket.name,
+					filePath,
+				});
+			} catch (err) {
 				// ファイルが存在しない場合でも先に進める
-				logger.warn("Could not delete specified file (may not exist)", { error: err?.message });
+				logger.warn("Could not delete specified file (may not exist)", {
+					error: err?.message,
+				});
 			}
 		}
 
@@ -131,9 +141,13 @@ export const deleteFile = onRequest({ region: REGION }, async (req: any, res: an
 		try {
 			// deleteFiles は複数ファイルを一括削除するユーティリティ
 			await targetBucket.deleteFiles({ prefix: "fish_images/" });
-			logger.info("Deleted all files under fish_images/ prefix", { bucket: targetBucket.name });
-		} catch (err: any) {
-			logger.error("Failed to delete files under fish_images/ prefix", { error: err?.message });
+			logger.info("Deleted all files under fish_images/ prefix", {
+				bucket: targetBucket.name,
+			});
+		} catch (err) {
+			logger.error("Failed to delete files under fish_images/ prefix", {
+				error: err?.message,
+			});
 		}
 
 		// 3) Firestore コレクション内の全ドキュメントを削除
@@ -155,12 +169,19 @@ export const deleteFile = onRequest({ region: REGION }, async (req: any, res: an
 					}
 				}
 				if (operationCount > 0) await batch.commit();
-				logger.info("Cleared Firestore collection", { collection: FIRESTORE_COLLECTION_TO_CLEAR });
+				logger.info("Cleared Firestore collection", {
+					collection: FIRESTORE_COLLECTION_TO_CLEAR,
+				});
 			} else {
-				logger.info("Firestore collection already empty", { collection: FIRESTORE_COLLECTION_TO_CLEAR });
+				logger.info("Firestore collection already empty", {
+					collection: FIRESTORE_COLLECTION_TO_CLEAR,
+				});
 			}
-		} catch (err: any) {
-			logger.error("Failed to clear Firestore collection", { collection: FIRESTORE_COLLECTION_TO_CLEAR, error: err?.message });
+		} catch (err) {
+			logger.error("Failed to clear Firestore collection", {
+				collection: FIRESTORE_COLLECTION_TO_CLEAR,
+				error: err?.message,
+			});
 		}
 
 		res.status(200).send("Deletion completed");

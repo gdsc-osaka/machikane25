@@ -2,7 +2,23 @@
   "permissions": {
     "allow": [
       "Bash(pnpm test:photo:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(pnpm coverage:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm test:photo:boothSessionFlow:*)",
+      "Bash(test:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm lint:*)",
+      "WebSearch",
+      "Bash(Select-String -Pattern \"FAIL|failed\" -Context 5,10)",
+      "Bash(pnpm test:photo:generateImage:*)",
+      "Bash(pnpm lint:fix:*)",
+      "Bash(pnpm exec biome:*)",
+      "Bash(pnpm vitest run:*)",
+      "Bash(pnpm next build:*)",
+      "Bash(pnpm exec tsc:*)"
     ],
     "deny": [],
     "ask": []

@@ -14,7 +14,7 @@ import { createFirestoreFishRepository } from "./infra/repositories/firestore-fi
 import { createStoragePhotoStore } from "./infra/repositories/storage-photo-store.js";
 import { createImageProcessor } from "./infra/services/image-processor.js";
 
-const STORAGE_BUCKET_SUFFIX = ".firebasestorage.app";
+// const STORAGE_BUCKET_SUFFIX = ".firebasestorage.app";
 const IMAGE_BLUR_SIGMA = 12;
 const IMAGE_SAMPLE_SIZE = 32;
 
@@ -29,7 +29,8 @@ const fishRepository = createFirestoreFishRepository({
 
 const photoStorage = createStoragePhotoStore({
 	storage: firebaseServices.storage,
-	bucketName: `${config.firebaseProjectId}${STORAGE_BUCKET_SUFFIX}`,
+	// FIXME: enable when multi-project is supported
+	// bucketName: `${config.firebaseProjectId}${STORAGE_BUCKET_SUFFIX}`,
 });
 
 const imageProcessor = createImageProcessor({

@@ -11,7 +11,7 @@ const toPath = (id: string) => `${IMAGE_FOLDER}/${id}/${IMAGE_FILE_NAME}`;
 
 export type StorageDeps = Readonly<{
 	storage: Storage;
-	bucketName: string;
+	bucketName?: string;
 }>;
 
 export const createStoragePhotoStore = (deps: StorageDeps): PhotoStorage => {

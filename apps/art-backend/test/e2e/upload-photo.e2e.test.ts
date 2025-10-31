@@ -56,9 +56,7 @@ const createMultipartFormData = (
 
 describe("POST /upload-photo E2E", () => {
 	beforeAll(() => {
-		console.log(
-			"⚠️  E2E tests require the server to be running: pnpm run dev",
-		);
+		console.log("⚠️  E2E tests require the server to be running: pnpm run dev");
 		console.log(`   Testing against: ${BASE_URL}`);
 		console.log(`   Using API key: ${config.apiKey.substring(0, 10)}...`);
 	});

@@ -18,7 +18,10 @@
       "Bash(pnpm exec biome:*)",
       "Bash(pnpm vitest run:*)",
       "Bash(pnpm next build:*)",
-      "Bash(pnpm exec tsc:*)"
+      "Bash(pnpm exec tsc:*)",
+      "Bash(gcloud secrets list:*)",
+      "Bash(pnpm exec firebase apps:sdkconfig:*)",
+      "Bash(where gcloud:*)"
     ],
     "deny": [],
     "ask": []

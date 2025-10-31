@@ -35,7 +35,7 @@ const QUEUE_ID = "file-delete-queue";
 const FIRESTORE_COLLECTION_TO_CLEAR = "fish_images";
 
 if (PROJECT_ID === "unknown") {
-	throw new Error("Environment value GCP-PROJECT not set")
+	throw new Error("Environment value GCP-PROJECT not set");
 }
 
 const tasksClient = new CloudTasksClient();

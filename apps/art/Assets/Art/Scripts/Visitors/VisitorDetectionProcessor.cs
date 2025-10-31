@@ -44,6 +44,19 @@ namespace Art.Visitors
         {
             runtimeModel = ModelLoader.Load(modelAsset);
             worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel);
+
+            // Log model structure for debugging
+            Debug.Log($"[VisitorDetectionProcessor] Model loaded: {runtimeModel.ProducerName}");
+            Debug.Log($"[VisitorDetectionProcessor] Input count: {runtimeModel.inputs.Count}");
+            foreach (var input in runtimeModel.inputs)
+            {
+                Debug.Log($"[VisitorDetectionProcessor] Input: {input.name}, shape: {input.shape}");
+            }
+            Debug.Log($"[VisitorDetectionProcessor] Output count: {runtimeModel.outputs.Count}");
+            foreach (var output in runtimeModel.outputs)
+            {
+                Debug.Log($"[VisitorDetectionProcessor] Output: {output}");
+            }
         }
 
         public IReadOnlyList<VisitorGroup> Process(WebCamTexture webcam, Func<Vector2, Vector2> projector)
@@ -99,24 +112,53 @@ namespace Art.Visitors
             var detections = new List<PersonDetection>();
 
             var inputTensor = PreprocessImage(pixels, width, height);
-            var imageShapeTensor = new Tensor(1, 2, new float[] { height, width });
 
-            var inputs = new Dictionary<string, Tensor>
+            // Execute with just the main input tensor
+            // Barracuda will use the model's default input name
+            worker.Execute(inputTensor);
+
+            // Try to get outputs - YOLO models may have different output names
+            // Common names: yolo_nms_*, combined_nms, detection_*
+            Tensor boxes = null;
+            Tensor scores = null;
+            Tensor indices = null;
+
+            // Try different possible output names
+            if (worker.PeekOutput("yolonms_layer_1") != null)
             {
-                { "input_1", inputTensor },
-                { "image_shape", imageShapeTensor }
-            };
+                boxes = worker.PeekOutput("yolonms_layer_1");
+                scores = worker.PeekOutput("yolonms_layer_1:1");
+                indices = worker.PeekOutput("yolonms_layer_1:2");
+            }
+            else if (worker.PeekOutput("detection_boxes") != null)
+            {
+                boxes = worker.PeekOutput("detection_boxes");
+                scores = worker.PeekOutput("detection_scores");
+                indices = worker.PeekOutput("detection_classes");
+            }
+            else
+            {
+                // Get the first output layers by index
+                var outputNames = new List<string>();
+                foreach (var layer in runtimeModel.outputs)
+                {
+                    outputNames.Add(layer);
+                }
 
-            worker.Execute(inputs);
+                if (outputNames.Count >= 3)
+                {
+                    boxes = worker.PeekOutput(outputNames[0]);
+                    scores = worker.PeekOutput(outputNames[1]);
+                    indices = worker.PeekOutput(outputNames[2]);
+                }
+            }
 
-            var boxes = worker.PeekOutput("yolonms_layer_1");
-            var scores = worker.PeekOutput("yolonms_layer_1:1");
-            var indices = worker.PeekOutput("yolonms_layer_1:2");
-
-            ParseYoloOutput(boxes, scores, indices, width, height, detections);
+            if (boxes != null && scores != null && indices != null)
+            {
+                ParseYoloOutput(boxes, scores, indices, width, height, detections);
+            }
 
             inputTensor.Dispose();
-            imageShapeTensor.Dispose();
 
             return detections;
         }

@@ -7,6 +7,8 @@ type SurveyFormEntryIds = {
 	ratingPhotobooth: string;
 	ratingAquarium: string;
 	ratingStampRally: string;
+	howYouKnew: string;
+	howYouKnewOther: string;
 	freeComment: string;
 };
 
@@ -26,6 +28,8 @@ const entryMapSchema = z.object({
 	aquariumRating: entryIdSchema,
 	ratingStampRally: entryIdSchema,
 	stampRallyRating: entryIdSchema,
+	howYouKnew: entryIdSchema,
+	howYouKnewOther: entryIdSchema,
 	freeComment: entryIdSchema,
 });
 
@@ -119,17 +123,28 @@ const parseSurveyFormConfig = (
 							entryMap,
 							"ratingStampRally",
 						).andThen((ratingStampRally) =>
-							selectEntryId(["freeComment"], entryMap, "freeComment").map(
-								(freeComment) => ({
-									formResponseUrl: config.formUrl,
-									entryIds: {
-										attendeeId,
-										ratingPhotobooth,
-										ratingAquarium,
-										ratingStampRally,
-										freeComment,
-									},
-								}),
+							selectEntryId(["howYouKnew"], entryMap, "howYouKnew").andThen(
+								(howYouKnew) =>
+									selectEntryId(
+										["howYouKnewOther"],
+										entryMap,
+										"howYouKnewOther",
+									).andThen((howYouKnewOther) =>
+										selectEntryId(["freeComment"], entryMap, "freeComment").map(
+											(freeComment) => ({
+												formResponseUrl: config.formUrl,
+												entryIds: {
+													attendeeId,
+													ratingPhotobooth,
+													ratingAquarium,
+													ratingStampRally,
+													howYouKnew,
+													howYouKnewOther,
+													freeComment,
+												},
+											}),
+										),
+									),
 							),
 						),
 					),

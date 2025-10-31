@@ -1,5 +1,5 @@
-import type { Timestamp } from "firebase/firestore";
 import useSWR from "swr";
+import { fetchStampProgressForCurrentUser } from "@/application/stamps/fetch-stamp-progress.client";
 
 const STAMP_PROGRESS_CACHE_KEY = "stamp-progress";
 
@@ -7,11 +7,9 @@ type StampIdentifier = "reception" | "photobooth" | "art" | "robot" | "survey";
 
 type StampProgressCacheKey = [typeof STAMP_PROGRESS_CACHE_KEY, string];
 
-type StampProgressSnapshot = Record<StampIdentifier, Timestamp | null>;
+type StampProgressSnapshot = Record<StampIdentifier, number | null>;
 
-type StampProgressFetcher = (
-	attendeeId: string,
-) => Promise<StampProgressSnapshot>;
+type StampProgressFetcher = () => Promise<StampProgressSnapshot>;
 
 const createStampProgressKey = (attendeeId: string): StampProgressCacheKey => [
 	STAMP_PROGRESS_CACHE_KEY,
@@ -26,14 +24,31 @@ const createEmptyStampProgress = (): StampProgressSnapshot => ({
 	survey: null,
 });
 
-const fetchStampProgress: StampProgressFetcher = async () =>
-	createEmptyStampProgress();
+const fetchStampProgress: StampProgressFetcher = async () => {
+	const result = await fetchStampProgressForCurrentUser();
+	return result.match(
+		(progress) => {
+			const empty = createEmptyStampProgress();
+			if (progress === null) {
+				return empty;
+			}
+			const ledger: StampProgressSnapshot = progress.collected.reduce(
+				(ledger, checkpoint) => {
+					ledger[checkpoint] = progress.lastCollectedAt;
+					return ledger;
+				},
+				empty,
+			);
+			return ledger;
+		},
+		() => createEmptyStampProgress(),
+	);
+};
 
 const useStampProgress = (attendeeId: string | null) => {
 	const key = attendeeId === null ? null : createStampProgressKey(attendeeId);
 	const fallbackData = createEmptyStampProgress();
-	const fetcher = () =>
-		attendeeId === null ? undefined : fetchStampProgress(attendeeId);
+	const fetcher = () => (key === null ? undefined : fetchStampProgress());
 	return useSWR(key, fetcher, {
 		fallbackData,
 		revalidateOnFocus: false,

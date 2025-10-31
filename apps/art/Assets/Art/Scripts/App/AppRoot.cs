@@ -1,10 +1,14 @@
 using Art.Fish;
+using Art.Presentation.Schools;
 using Art.Rare;
 using Art.Telemetry;
 using Art.Visitors;
 using System.Collections;
 using System.IO;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Art.App
 {
@@ -20,11 +24,17 @@ namespace Art.App
         [SerializeField] private FishSpawner fishSpawner;
         [SerializeField] private VisitorDetector visitorDetector;
         [SerializeField] private RareCharacterController rareCharacters;
+        [SerializeField] private MockFishDataProvider mockFishProvider;
+        [SerializeField] private SchoolCoordinator schoolCoordinator;
 
         [Header("Services")]
-        [SerializeReference] private FishRepository fishRepository = new FishRepository();
-        [SerializeReference] private FishTextureCache textureCache = new FishTextureCache();
-        [SerializeReference] private TelemetryLogger telemetry = new TelemetryLogger();
+        // FIXME: SerializeReference currently causes issues with Unity serialization
+        // [SerializeReference] 
+        private FishRepository fishRepository = new FishRepository();
+        // [SerializeReference] 
+        private FishTextureCache textureCache = new FishTextureCache();
+        // [SerializeReference] 
+        private TelemetryLogger telemetry = new TelemetryLogger();
 
         private Coroutine pollingRoutine;
         private Coroutine rareRoutine;
@@ -43,9 +53,15 @@ namespace Art.App
             fishRepository.Initialize(config.fishTtlSeconds);
 
             fishSpawner.Initialize(fishRepository, textureCache, telemetry);
-            fishPolling.Initialize(config, fishRepository, telemetry);
+            var provider = SelectProvider();
+            fishPolling.Initialize(config, fishRepository, telemetry, provider);
             visitorDetector.Initialize(config, telemetry);
             rareCharacters.Initialize(config, fishSpawner, telemetry);
+
+            if (schoolCoordinator != null && visitorDetector != null)
+            {
+                visitorDetector.OnVisitorsChanged += schoolCoordinator.ApplyVisitorInfluence;
+            }
 
             pollingRoutine = StartCoroutine(RunWithGuard(fishPolling.Run(), "FishPolling"));
             rareRoutine = StartCoroutine(RunWithGuard(rareCharacters.Run(), "RareCharacters"));
@@ -68,6 +84,11 @@ namespace Art.App
 
             if (visitorDetector != null)
             {
+                if (schoolCoordinator != null)
+                {
+                    visitorDetector.OnVisitorsChanged -= schoolCoordinator.ApplyVisitorInfluence;
+                }
+
                 visitorDetector.StopDetection();
             }
 
@@ -84,7 +105,7 @@ namespace Art.App
 
             var valid = true;
 
-            if (string.IsNullOrWhiteSpace(config.backendUrl))
+            if (config.pollingMode == AppConfig.PollingMode.Backend && string.IsNullOrWhiteSpace(config.backendUrl))
             {
                 Debug.LogError("AppConfig backend URL is missing or empty.", config);
                 valid = false;
@@ -99,6 +120,7 @@ namespace Art.App
             valid &= EnsureControllerAssigned(fishSpawner, nameof(fishSpawner));
             valid &= EnsureControllerAssigned(visitorDetector, nameof(visitorDetector));
             valid &= EnsureControllerAssigned(rareCharacters, nameof(rareCharacters));
+            valid &= EnsureControllerAssigned(schoolCoordinator, nameof(schoolCoordinator));
 
             return valid;
         }
@@ -137,5 +159,38 @@ namespace Art.App
                 yield return current;
             }
         }
+
+        private IFishDataProvider SelectProvider()
+        {
+            if (config.pollingMode == AppConfig.PollingMode.MockOffline)
+            {
+                if (mockFishProvider != null)
+                {
+                    telemetry.LogWarning("AppRoot running in MockOffline polling mode.");
+                    return mockFishProvider;
+                }
+
+                Debug.LogWarning("AppRoot MockOffline mode selected but no MockFishDataProvider assigned. Falling back to backend provider.", this);
+            }
+
+            return new HttpFishDataProvider();
+        }
+
+#if UNITY_EDITOR
+        [ContextMenu("Switch Polling Mode")]
+        private void SwitchPollingMode()
+        {
+            if (config == null)
+            {
+                return;
+            }
+
+            config.pollingMode = config.pollingMode == AppConfig.PollingMode.Backend
+                ? AppConfig.PollingMode.MockOffline
+                : AppConfig.PollingMode.Backend;
+            UnityEditor.EditorUtility.SetDirty(config);
+            Debug.Log($"AppRoot switched polling mode to {config.pollingMode}.", this);
+        }
+#endif
     }
 }

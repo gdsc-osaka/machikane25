@@ -66,7 +66,7 @@ namespace Art.Fish
 
             try
             {
-                var texture = await loadTask.ConfigureAwait(false);
+                var texture = await loadTask;
                 if (texture != null)
                 {
                     lock (syncRoot)
@@ -126,7 +126,7 @@ namespace Art.Fish
             {
                 try
                 {
-                    var bytes = await File.ReadAllBytesAsync(localPath).ConfigureAwait(false);
+                    var bytes = await File.ReadAllBytesAsync(localPath);
                     var fromDisk = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                     if (fromDisk.LoadImage(bytes))
                     {
@@ -142,15 +142,15 @@ namespace Art.Fish
                 }
             }
 
-            return await DownloadTextureAsync(imageUrl, localPath, telemetry).ConfigureAwait(false);
+            return await DownloadTextureAsync(imageUrl, localPath, telemetry);
         }
 
         private async Task<Texture2D> DownloadTextureAsync(string imageUrl, string localPath, TelemetryLogger telemetry)
         {
-            using var request = UnityWebRequestTexture.GetTexture(imageUrl);
+            using var request = UnityWebRequest.Get(imageUrl);
             try
             {
-                var completedRequest = await SendRequestAsync(request).ConfigureAwait(false);
+                var completedRequest = await SendRequestAsync(request);
 
                 if (completedRequest.result != UnityWebRequest.Result.Success)
                 {
@@ -158,12 +158,22 @@ namespace Art.Fish
                     return null;
                 }
 
-                var texture = DownloadHandlerTexture.GetContent(completedRequest);
-                if (texture == null)
+                var imageData = completedRequest.downloadHandler.data;
+                if (imageData == null || imageData.Length == 0)
                 {
-                    telemetry?.LogWarning($"Fish texture download yielded null content: {imageUrl}");
+                    telemetry?.LogWarning($"Fish texture download yielded no data: {imageUrl}");
                     return null;
                 }
+
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!texture.LoadImage(imageData))
+                {
+                    telemetry?.LogWarning($"Fish texture could not be loaded from image data: {imageUrl}");
+                    UnityEngine.Object.Destroy(texture);
+                    return null;
+                }
+
+                texture.name = Path.GetFileNameWithoutExtension(localPath);
 
                 try
                 {
@@ -171,7 +181,7 @@ namespace Art.Fish
                     var png = texture.EncodeToPNG();
                     if (png != null)
                     {
-                        await File.WriteAllBytesAsync(localPath, png).ConfigureAwait(false);
+                        await File.WriteAllBytesAsync(localPath, png);
                     }
                 }
                 catch (Exception ex)
@@ -193,7 +203,7 @@ namespace Art.Fish
             var tcs = new TaskCompletionSource<UnityWebRequest>();
             var operation = request.SendWebRequest();
             operation.completed += _ => tcs.TrySetResult(request);
-            return await tcs.Task.ConfigureAwait(false);
+            return await tcs.Task;
         }
 
         private string GetLocalPath(string imageUrl)

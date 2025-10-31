@@ -1,9 +1,7 @@
 using Art.App;
-using Art.Infrastructure;
 using Art.Telemetry;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Art.Fish
@@ -15,18 +13,13 @@ namespace Art.Fish
         private AppConfig config;
         private FishRepository repository;
         private TelemetryLogger telemetry;
-        private IHttpClient httpClient;
+        private IFishDataProvider dataProvider;
         private float defaultInterval;
         private float currentInterval;
         private int consecutiveFailures;
         private bool isInitialized;
 
-        public void SetHttpClient(IHttpClient client)
-        {
-            httpClient = client;
-        }
-
-        public void Initialize(AppConfig cfg, FishRepository repo, TelemetryLogger telemetryLogger)
+        public void Initialize(AppConfig cfg, FishRepository repo, TelemetryLogger telemetryLogger, IFishDataProvider provider = null)
         {
             if (cfg == null)
             {
@@ -41,7 +34,7 @@ namespace Art.Fish
             config = cfg;
             repository = repo;
             telemetry = telemetryLogger;
-            httpClient ??= HttpClientFactory.Create();
+            dataProvider = provider ?? new HttpFishDataProvider();
 
             defaultInterval = ClampInterval(config.pollIntervalSeconds);
             currentInterval = defaultInterval;
@@ -88,95 +81,75 @@ namespace Art.Fish
                 yield break;
             }
 
-            if (httpClient == null)
+            if (dataProvider == null)
             {
-                telemetry?.LogWarning("FishPollingController missing HTTP client; skipping fetch.");
+                telemetry?.LogWarning("FishPollingController missing data provider; skipping fetch.");
                 yield break;
             }
 
-            var requestUrl = BuildEndpoint();
-            if (string.IsNullOrEmpty(requestUrl))
+            FishDataProviderSuccess success = null;
+            FishDataProviderFailure failure = null;
+            IEnumerator fetchRoutine = null;
+
+            try
             {
-                telemetry?.LogWarning("FishPollingController missing backend URL; skipping fetch.");
+                var context = new FishDataProviderContext(
+                    config,
+                    telemetry,
+                    result => success = result,
+                    error => failure = error);
+
+                fetchRoutine = dataProvider.Fetch(context);
+            }
+            catch (Exception ex)
+            {
+                telemetry?.LogException("Fish data provider threw during Fetch invocation.", ex);
+                failure = new FishDataProviderFailure("provider_invocation_failed", 0f);
+            }
+
+            if (fetchRoutine != null)
+            {
+                yield return fetchRoutine;
+            }
+
+            if (success != null)
+            {
+                HandleSuccess(success);
                 yield break;
             }
 
-            var headers = BuildHeaders();
-            HttpResponse response = null;
-            var startTime = Time.realtimeSinceStartup;
-
-            yield return httpClient.Get(requestUrl, headers, r => response = r);
-
-            var durationMs = (Time.realtimeSinceStartup - startTime) * 1000f;
-
-            if (response == null)
+            if (failure != null)
             {
-                HandleFailure("No response received from HTTP layer.", durationMs);
+                HandleFailure(failure);
                 yield break;
             }
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorDescription = !string.IsNullOrEmpty(response.Error)
-                    ? response.Error
-                    : $"HTTP {(int)response.StatusCode}";
-                HandleFailure(errorDescription, durationMs);
-                yield break;
-            }
-
-            HandleSuccess(response.Body, durationMs);
+            HandleFailure(new FishDataProviderFailure("provider_returned_no_result", 0f));
         }
 
-        private string BuildEndpoint()
-        {
-            if (config == null || string.IsNullOrWhiteSpace(config.backendUrl))
-            {
-                return string.Empty;
-            }
-
-            var baseUrl = config.backendUrl.TrimEnd('/');
-            return $"{baseUrl}/get-fish";
-        }
-
-        private Dictionary<string, string> BuildHeaders()
-        {
-            var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "Content-Type", "application/json" }
-            };
-
-            if (!string.IsNullOrEmpty(config.apiKey))
-            {
-                headers["X-API-KEY"] = config.apiKey;
-            }
-
-            return headers;
-        }
-
-        private void HandleSuccess(string payload, float durationMs)
+        private void HandleSuccess(FishDataProviderSuccess success)
         {
             try
             {
-                var dtos = JsonUtilityExtensions.FromJsonArray<FishDto>(payload);
-                var states = new List<FishState>(dtos.Length);
-                for (var i = 0; i < dtos.Length; i++)
-                {
-                    var dto = dtos[i];
-                    if (FishStateMapper.TryMap(dto, out var state, out var error))
-                    {
-                        states.Add(state);
-                    }
-                    else
-                    {
-                        telemetry?.LogWarning(error);
-                    }
-                }
-
-                var diff = repository.ApplyPayload(states);
+                var diff = repository.ApplyPayload(success.States);
                 consecutiveFailures = 0;
                 currentInterval = defaultInterval;
 
-                telemetry?.LogInfo($"fish_poll_success added={diff.Added.Count} updated={diff.Updated.Count} removed={diff.Removed.Count} durationMs={durationMs:F1}");
+                telemetry?.LogEvent(TelemetryEvents.FishPollSuccess, new
+                {
+                    source = dataProvider?.SourceTag ?? "unknown",
+                    added = diff.Added.Count,
+                    updated = diff.Updated.Count,
+                    removed = diff.Removed.Count,
+                    durationMs = success.DurationMs
+                });
+
+                // Add breadcrumb for debugging
+                telemetry?.LogBreadcrumb("http", "Fish poll succeeded", new
+                {
+                    source = dataProvider?.SourceTag ?? "unknown",
+                    fishCount = success.States?.Count ?? 0
+                });
             }
             catch (Exception ex)
             {
@@ -185,12 +158,25 @@ namespace Art.Fish
             }
         }
 
-        private void HandleFailure(string reason, float durationMs)
+        private void HandleFailure(FishDataProviderFailure failure)
         {
             consecutiveFailures++;
             BackoffInterval();
 
-            telemetry?.LogWarning($"fish_poll_failed attempts={consecutiveFailures} reason={reason} durationMs={durationMs:F1}");
+            telemetry?.LogEvent(TelemetryEvents.FishPollFailure, new
+            {
+                source = dataProvider?.SourceTag ?? "unknown",
+                attempts = consecutiveFailures,
+                reason = failure.Reason,
+                durationMs = failure.DurationMs
+            });
+
+            // Add breadcrumb for debugging
+            telemetry?.LogBreadcrumb("http", "Fish poll failed", new
+            {
+                reason = failure.Reason,
+                consecutiveFailures
+            });
 
             if (consecutiveFailures >= FailureWarningThreshold)
             {

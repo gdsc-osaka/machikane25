@@ -1,57 +1,58 @@
 import { describe, expect, test } from "vitest";
-import type { PhotoLimits, PhotoMeta } from "../photo";
-import { createPhoto } from "../photo";
 
-const limits: PhotoLimits = { maxSizeBytes: 2 * 1024 * 1024 };
-const baseMeta: PhotoMeta = { mimeType: "image/jpeg", size: 512 };
+import { createPhoto, PhotoValidationError, validatePhoto } from "../photo.js";
 
-const buildBuffer = () => Buffer.alloc(baseMeta.size, 1);
+const buffer = Buffer.from("photodata");
+const meta = {
+	mimeType: "image/png",
+	size: buffer.byteLength,
+} as const;
+
+const limits = {
+	maxSizeBytes: buffer.byteLength * 2,
+} as const;
 
 describe("createPhoto", () => {
-	test("returns ok result for a valid photo payload", () => {
-		const buffer = buildBuffer();
-		const result = createPhoto(buffer, baseMeta, limits);
+	test("returns immutable photo value object when within limits", () => {
+		const photo = createPhoto(buffer, meta, limits);
 
-		expect(result.isOk()).toBe(true);
-		const photo = result._unsafeUnwrap();
 		expect(photo.buffer).toBe(buffer);
-		expect(photo.mimeType).toBe(baseMeta.mimeType);
-		expect(photo.size).toBe(baseMeta.size);
+		expect(photo.mimeType).toBe(meta.mimeType);
+		expect(photo.size).toBe(meta.size);
+		expect(Object.isFrozen(photo)).toBe(true);
 	});
 
-	test("rejects photos that exceed configured limit", () => {
-		const buffer = Buffer.alloc(limits.maxSizeBytes + 1, 1);
-		const meta = { ...baseMeta, size: buffer.byteLength };
-
-		const result = createPhoto(buffer, meta, limits);
-
-		expect(result.isErr()).toBe(true);
-		const error = result._unsafeUnwrapErr();
-		expect(error.type).toBe("validation");
-		expect(error.message).toContain("size");
+	test("throws PhotoValidationError when mime type is unsupported", () => {
+		expect(() =>
+			createPhoto(buffer, { ...meta, mimeType: "image/gif" }, limits),
+		).toThrowError(PhotoValidationError);
 	});
 
-	test("rejects photos with non-image mime types", () => {
-		const buffer = buildBuffer();
-		const meta = { ...baseMeta, mimeType: "application/pdf" };
-
-		const result = createPhoto(buffer, meta, limits);
-
-		expect(result.isErr()).toBe(true);
-		const error = result._unsafeUnwrapErr();
-		expect(error.type).toBe("validation");
-		expect(error.message).toContain("mime");
+	test("throws PhotoValidationError when size exceeds limit", () => {
+		expect(() =>
+			createPhoto(
+				buffer,
+				{
+					...meta,
+					size: limits.maxSizeBytes + 1,
+				},
+				limits,
+			),
+		).toThrowError(PhotoValidationError);
 	});
+});
 
-	test("rejects metadata that does not match buffer length", () => {
-		const buffer = buildBuffer();
-		const meta = { ...baseMeta, size: baseMeta.size + 1 };
-
-		const result = createPhoto(buffer, meta, limits);
-
-		expect(result.isErr()).toBe(true);
-		const error = result._unsafeUnwrapErr();
-		expect(error.type).toBe("validation");
-		expect(error.message).toContain("size mismatch");
+describe("validatePhoto", () => {
+	test("throws when recorded size mismatches buffer length", () => {
+		expect(() =>
+			validatePhoto({
+				buffer,
+				meta: {
+					...meta,
+					size: buffer.byteLength + 5,
+				},
+				limits,
+			}),
+		).toThrowError(PhotoValidationError);
 	});
 });

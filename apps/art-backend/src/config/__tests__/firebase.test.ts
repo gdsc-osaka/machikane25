@@ -1,163 +1,133 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { Config } from "../env.js";
-import { getFirebaseServices } from "../firebase.js";
 
-const adminState = vi.hoisted(() => {
-	const firestoreInstance = { kind: "firestore" } as const;
-	const storageInstance = { kind: "storage" } as const;
+type AppStub = { readonly name: string };
 
-	class MockTimestamp {
-		readonly millis: number;
+const apps: AppStub[] = [];
 
-		constructor(date: Date) {
-			this.millis = date.getTime();
-		}
+const appInstance: AppStub = { name: "mock-app" };
 
-		toDate() {
-			return new Date(this.millis);
-		}
-
-		toMillis() {
-			return this.millis;
-		}
-	}
-
-	const apps: unknown[] = [];
-
-	const initializeApp = vi.fn((options: unknown) => {
-		apps.push({ options });
-		return { options };
-	});
-
-	const firestoreFactory = vi.fn(() => firestoreInstance);
-	const storageFactory = vi.fn(() => storageInstance);
-
-	Object.assign(firestoreFactory, {
-		Timestamp: MockTimestamp,
-	});
-
-	const credential = {
-		cert: vi.fn(() => ({ mock: "cert" })),
-	};
-
-	const reset = () => {
-		apps.splice(0, apps.length);
-		initializeApp.mockClear();
-		firestoreFactory.mockClear();
-		storageFactory.mockClear();
-		credential.cert.mockClear();
-	};
-
-	return {
-		apps,
-		initializeApp,
-		firestoreFactory,
-		storageFactory,
-		credential,
-		firestoreInstance,
-		storageInstance,
-		MockTimestamp,
-		reset,
-	};
+const getAppsMock = vi.fn(() => apps);
+const initializeAppMock = vi.fn(() => {
+	apps.push(appInstance);
+	return appInstance;
 });
+const getAppMock = vi.fn(() => appInstance);
+const applicationDefaultMock = vi.fn(() => ({ credential: "default" }));
 
-const fsState = vi.hoisted(() => {
-	const readFileSync = vi.fn(() =>
-		JSON.stringify({
-			client_email: "service@example.com",
-			private_key: "key",
-			project_id: "test-project",
-		}),
-	);
+const firestoreInstance = { kind: "firestore" };
+const getFirestoreMock = vi.fn(() => firestoreInstance);
 
-	const reset = () => {
-		readFileSync.mockClear();
-		readFileSync.mockImplementation(() =>
-			JSON.stringify({
-				client_email: "service@example.com",
-				private_key: "key",
-				project_id: "test-project",
-			}),
-		);
-	};
+const storageInstance = { kind: "storage" };
+const getStorageMock = vi.fn(() => storageInstance);
 
-	return {
-		readFileSync,
-		reset,
-	};
-});
+vi.mock("firebase-admin/app", () => ({
+	getApps: getAppsMock,
+	getApp: getAppMock,
+	initializeApp: initializeAppMock,
+	applicationDefault: applicationDefaultMock,
+}));
 
-vi.mock("firebase-admin", () => ({
-	default: {
-		apps: adminState.apps,
-		initializeApp: adminState.initializeApp,
-		firestore: adminState.firestoreFactory,
-		storage: adminState.storageFactory,
-		credential: adminState.credential,
+vi.mock("firebase-admin/firestore", () => ({
+	getFirestore: getFirestoreMock,
+	Timestamp: {
+		fromDate: (input: Date) => input,
 	},
 }));
 
-vi.mock("node:fs", () => ({
-	readFileSync: fsState.readFileSync,
-	default: {
-		readFileSync: fsState.readFileSync,
-	},
+vi.mock("firebase-admin/storage", () => ({
+	getStorage: getStorageMock,
 }));
 
 const baseConfig: Config = {
-	apiKey: "test-key",
-	firebaseProjectId: "test-project",
-	credentialsPath: "/tmp/service-account.json",
+	apiKey: "api",
+	firebaseProjectId: "project",
+	credentialsPath: "/credentials.json",
 	fishTtlMinutes: 60,
-	maxPhotoSizeMb: 8,
+	maxPhotoSizeMb: 10,
 };
 
 describe("getFirebaseServices", () => {
 	beforeEach(() => {
-		adminState.reset();
-		fsState.reset();
+		vi.resetModules();
+		apps.splice(0, apps.length);
+		getAppsMock.mockClear();
+		initializeAppMock.mockClear();
+		getAppMock.mockClear();
+		applicationDefaultMock.mockClear();
+		getFirestoreMock.mockClear();
+		getStorageMock.mockClear();
+		delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
 	});
 
-	test("initialises Firebase Admin with credentials from disk", () => {
+	afterEach(() => {
+		delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+	});
+
+	test("initializes Firebase app and returns services + converters", async () => {
+		const { getFirebaseServices } = await import("../firebase.js");
+
 		const services = getFirebaseServices(baseConfig);
 
-		expect(fsState.readFileSync).toHaveBeenCalledWith(
-			"/tmp/service-account.json",
-			"utf8",
+		expect(applicationDefaultMock).toHaveBeenCalledTimes(1);
+		expect(initializeAppMock).toHaveBeenCalledWith({
+			credential: { credential: "default" },
+			projectId: baseConfig.firebaseProjectId,
+		});
+		expect(getFirestoreMock).toHaveBeenCalledWith(appInstance);
+		expect(getStorageMock).toHaveBeenCalledWith(appInstance);
+		expect(services.firestore).toBe(firestoreInstance);
+		expect(services.storage).toBe(storageInstance);
+		expect(services.converters.fish).toBeDefined();
+		expect(typeof services.converters.fish.toFirestore).toBe("function");
+		expect(typeof services.converters.fish.fromFirestore).toBe("function");
+		expect(process.env.GOOGLE_APPLICATION_CREDENTIALS).toBe(
+			baseConfig.credentialsPath,
 		);
-		expect(adminState.credential.cert).toHaveBeenCalledWith(
-			expect.objectContaining({
-				client_email: "service@example.com",
-				private_key: "key",
-			}),
-		);
-		expect(adminState.initializeApp).toHaveBeenCalledTimes(1);
-		expect(services.firestore).toBe(adminState.firestoreInstance);
-		expect(services.storage).toBe(adminState.storageInstance);
 	});
 
-	test("reuses existing Firebase app without reinitialising", () => {
-		const services = getFirebaseServices(baseConfig);
-		const second = getFirebaseServices(baseConfig);
-
-		expect(services.firestore).toBe(adminState.firestoreInstance);
-		expect(second.storage).toBe(adminState.storageInstance);
-		expect(adminState.initializeApp).toHaveBeenCalledTimes(1);
-	});
-
-	test("provides fish converter utilities", () => {
-		const services = getFirebaseServices(baseConfig);
-
-		const fishDocument = {
-			id: "fish-123",
-			imageUrl: "https://example.com/fish.png",
-			imagePath: "fish_images/fish-123/fish.png",
-			color: "#ff0000",
-			createdAt: new adminState.MockTimestamp(new Date()),
+	test("does not override credentials env when path is unset", async () => {
+		const { getFirebaseServices } = await import("../firebase.js");
+		const minimalConfig: Config = {
+			apiKey: "api",
+			firebaseProjectId: "project",
+			fishTtlMinutes: 60,
+			maxPhotoSizeMb: 10,
 		};
 
-		const serialized = services.converters.fish.toFirestore(fishDocument);
-		expect(serialized).toBe(fishDocument);
+		getFirebaseServices(minimalConfig);
+
+		expect(process.env.GOOGLE_APPLICATION_CREDENTIALS).toBeUndefined();
+	});
+
+	test("reuses existing Firebase app without reinitializing", async () => {
+		apps.push(appInstance);
+		const { getFirebaseServices } = await import("../firebase.js");
+
+		const services = getFirebaseServices(baseConfig);
+
+		expect(initializeAppMock).not.toHaveBeenCalled();
+		expect(getAppMock).toHaveBeenCalledTimes(1);
+		expect(services.firestore).toBe(firestoreInstance);
+	});
+
+	test("wraps initialization errors in FirebaseInitializationError", async () => {
+		initializeAppMock.mockImplementationOnce(() => {
+			throw new Error("boom");
+		});
+
+		const { getFirebaseServices, FirebaseInitializationError } = await import(
+			"../firebase.js"
+		);
+
+		let caught: unknown = null;
+		try {
+			getFirebaseServices(baseConfig);
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toBeInstanceOf(FirebaseInitializationError);
 	});
 });

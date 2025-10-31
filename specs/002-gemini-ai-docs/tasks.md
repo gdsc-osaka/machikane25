@@ -30,8 +30,8 @@
 - [ ] T206 [FOUND] Build `apps/photo/src/libs/firebase/client.ts` (client SDK) and `server.ts` (Admin SDK) exporting memoized Firebase clients (Auth, Firestore, Storage) with emulator support.
 - [ ] T207 [P] [FOUND] Write failing GenerationOption loader tests `apps/photo/test/unit/application/generationOptions.test.ts` (TDD for GenerationService).
 - [ ] T208 [FOUND] Implement GenerationService (`src/application/generationService.ts`) to load options collection from Firestore (per `data-model.md`) to satisfy T207.
-- [ ] T209 [P] [FOUND] Add failing GenerationService tests `apps/photo/test/unit/application/generationService.gemini.test.ts` covering Gemini API request schema (msw mock).
-- [ ] T210 [FOUND] Extend GenerationService (`src/application/generationService.ts`) and `src/infra/gemini/client.ts` to handle AI generation requests (FR-003) passing T209.
+- [x] T209 [P] [FOUND] Add failing GenerationService tests `apps/photo/test/unit/application/generationService.gemini.test.ts` covering Gemini API request schema (msw mock).
+- [x] T210 [FOUND] Extend GenerationService (`src/application/generationService.ts`) and `src/infra/gemini/client.ts` to handle AI generation requests (FR-003) passing T209.
 - [ ] T211 [P] [FOUND] Create Firebase security regression tests `apps/photo/test/integration/firestoreRules.test.ts` + `storageRules.test.ts` asserting access policies (per Design Doc - admin R/W, anonymous R/W for specific paths).
 - [ ] T212 [FOUND] Author `apps/photo/firestore.rules`, `storage.rules`, and emulator seed scripts ensuring anonymous attendees and admin (Custom Claim) roles, satisfying T211.
 - [ ] T213 [FOUND] Implement AuthService (`src/application/authService.ts`) and `src/infra/firebase/authAdmin.ts` for admin token validation and custom token creation (per Design Doc).
@@ -52,6 +52,7 @@
 - [ ] T302 [P] [US1] Create failing RTL spec `apps/photo/test/unit/app/control.test.tsx` (Control Page) asserting state-based UI (idle, menu, generating, completed) and interactions (start, option select, generate, QR display).
 - [ ] T303 [P] [US1] Create failing RTL spec `apps/photo/test/unit/app/display.test.tsx` (Display Page) asserting state-based UI (idle, menu (Upload QR), capturing (Webcam), generating, completed (Result)).
 - [ ] T304 [P] [US1] Create failing RTL spec `apps/photo/test/unit/app/upload.test.tsx` (Image Upload Page) asserting file input, validation, and upload submission (FR-002).
+- [x] T314 [P] [US1] Cover Upload Page accessibility contract (dynamic input id & label linking) in apps/photo/test/unit/app/upload/[boothId]/page.test.tsx.
 
 ### Implementation for User Story 1
 

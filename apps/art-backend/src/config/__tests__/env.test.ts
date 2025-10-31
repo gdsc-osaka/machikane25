@@ -1,111 +1,134 @@
-import {
-	afterAll,
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	test,
-} from "vitest";
-
-import { buildConfig, type Config } from "../env.js";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const baseEnv = {
-	API_KEY: "test-key",
+	API_KEY: "test-api-key",
 	FIREBASE_PROJECT_ID: "test-project",
-	GOOGLE_APPLICATION_CREDENTIALS: "/tmp/credentials.json",
-	FISH_TTL_MINUTES: "30",
-	MAX_PHOTO_SIZE_MB: "5",
-} satisfies Record<string, string>;
+	GOOGLE_APPLICATION_CREDENTIALS: "/tmp/service-account.json",
+	FISH_TTL_MINUTES: "90",
+	MAX_PHOTO_SIZE_MB: "8",
+};
 
-const originalEnv = { ...process.env };
+type EnvShape = typeof baseEnv;
 
-const applyEnv = (overrides: Record<string, string | undefined>) => {
-	const merged = {
-		...originalEnv,
-		...baseEnv,
-		...overrides,
-	};
+const assignedKeys = new Set<string>();
 
-	Object.keys(process.env).forEach((key) => {
-		if (!(key in merged)) {
-			Reflect.deleteProperty(process.env, key);
+const assignEnv = (values: Partial<EnvShape>) => {
+	Object.entries(values).forEach(([key, value]) => {
+		if (typeof value === "string") {
+			assignedKeys.add(key);
+			process.env[key] = value;
 		}
-	});
-
-	Object.entries(merged).forEach(([key, value]) => {
-		if (value === undefined) {
-			Reflect.deleteProperty(process.env, key);
-			return;
-		}
-
-		process.env[key] = value;
 	});
 };
 
-const restoreOriginalEnv = () => {
-	Object.keys(process.env).forEach((key) => {
-		if (!(key in originalEnv)) {
-			Reflect.deleteProperty(process.env, key);
-		}
+const clearAssignedEnv = () => {
+	assignedKeys.forEach((key) => {
+		delete process.env[key];
 	});
-
-	Object.entries(originalEnv).forEach(([key, value]) => {
-		if (value === undefined) {
-			Reflect.deleteProperty(process.env, key);
-			return;
-		}
-
-		process.env[key] = value;
-	});
+	assignedKeys.clear();
 };
 
 describe("buildConfig", () => {
 	beforeEach(() => {
-		applyEnv({});
+		vi.resetModules();
+		clearAssignedEnv();
 	});
 
 	afterEach(() => {
-		restoreOriginalEnv();
+		clearAssignedEnv();
 	});
 
-	afterAll(() => {
-		restoreOriginalEnv();
-	});
+	test("returns frozen configuration when all variables are valid", async () => {
+		assignEnv(baseEnv);
+		const { buildConfig } = await import("../env.js");
 
-	test("returns frozen config with parsed values", () => {
 		const config = buildConfig();
 
-		const expected: Config = {
-			apiKey: "test-key",
-			firebaseProjectId: "test-project",
-			credentialsPath: "/tmp/credentials.json",
-			fishTtlMinutes: 30,
-			maxPhotoSizeMb: 5,
-		};
-
-		expect(config).toStrictEqual(expected);
+		expect(config.apiKey).toBe(baseEnv.API_KEY);
+		expect(config.firebaseProjectId).toBe(baseEnv.FIREBASE_PROJECT_ID);
+		expect(config.credentialsPath).toBe(baseEnv.GOOGLE_APPLICATION_CREDENTIALS);
+		expect(config.fishTtlMinutes).toBe(90);
+		expect(config.maxPhotoSizeMb).toBe(8);
 		expect(Object.isFrozen(config)).toBe(true);
 	});
 
-	test("throws when required environment variable is missing", () => {
-		const envWithoutKey = {
-			...baseEnv,
-			API_KEY: undefined,
-		};
+	test("allows missing GOOGLE_APPLICATION_CREDENTIALS", async () => {
+		assignEnv({
+			API_KEY: baseEnv.API_KEY,
+			FIREBASE_PROJECT_ID: baseEnv.FIREBASE_PROJECT_ID,
+			FISH_TTL_MINUTES: baseEnv.FISH_TTL_MINUTES,
+			MAX_PHOTO_SIZE_MB: baseEnv.MAX_PHOTO_SIZE_MB,
+		});
+		const { buildConfig } = await import("../env.js");
 
-		applyEnv(envWithoutKey);
+		const config = buildConfig();
 
-		expect(() => buildConfig()).toThrowError("API_KEY");
+		expect(config.credentialsPath).toBeUndefined();
 	});
 
-	test("throws when numeric environment variable is invalid", () => {
-		const invalidEnv = {
+	test("throws ConfigError when a required variable is missing", async () => {
+		assignEnv({
+			FIREBASE_PROJECT_ID: baseEnv.FIREBASE_PROJECT_ID,
+			GOOGLE_APPLICATION_CREDENTIALS: baseEnv.GOOGLE_APPLICATION_CREDENTIALS,
+			FISH_TTL_MINUTES: baseEnv.FISH_TTL_MINUTES,
+			MAX_PHOTO_SIZE_MB: baseEnv.MAX_PHOTO_SIZE_MB,
+		});
+
+		const { buildConfig, ConfigError } = await import("../env.js");
+
+		let caught: unknown = null;
+		try {
+			buildConfig();
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toBeInstanceOf(ConfigError);
+		if (caught instanceof ConfigError) {
+			expect(caught.context.missingKeys).toEqual(["API_KEY"]);
+		}
+	});
+
+	test("throws ConfigError when numeric variables are invalid", async () => {
+		assignEnv({
 			...baseEnv,
-			FISH_TTL_MINUTES: "not-a-number",
-		};
+			FISH_TTL_MINUTES: "-5",
+		});
 
-		applyEnv(invalidEnv);
+		const { buildConfig, ConfigError } = await import("../env.js");
 
-		expect(() => buildConfig()).toThrowError("FISH_TTL_MINUTES");
+		let caught: unknown = null;
+		try {
+			buildConfig();
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toBeInstanceOf(ConfigError);
+		if (caught instanceof ConfigError) {
+			expect(caught.context.invalidKeys).toEqual(["FISH_TTL_MINUTES"]);
+		}
+	});
+
+	test("derives ConfigError from AppError base type", async () => {
+		assignEnv({
+			FIREBASE_PROJECT_ID: baseEnv.FIREBASE_PROJECT_ID,
+			GOOGLE_APPLICATION_CREDENTIALS: baseEnv.GOOGLE_APPLICATION_CREDENTIALS,
+			FISH_TTL_MINUTES: baseEnv.FISH_TTL_MINUTES,
+			MAX_PHOTO_SIZE_MB: baseEnv.MAX_PHOTO_SIZE_MB,
+		});
+
+		const { buildConfig, ConfigError } = await import("../env.js");
+		const { AppError } = await import("../../errors/app-error.js");
+
+		let caught: unknown = null;
+		try {
+			buildConfig();
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toBeInstanceOf(ConfigError);
+		expect(caught).toBeInstanceOf(AppError);
 	});
 });

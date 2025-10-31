@@ -1,8 +1,6 @@
-import { err, ok, type Result } from "neverthrow";
-import {
-	type ColorExtractionError,
-	createColorExtractionError,
-} from "./errors";
+import { z } from "zod";
+
+import { AppError } from "../../errors/app-error.js";
 
 export type HSVPixel = Readonly<{
 	h: number;
@@ -10,92 +8,139 @@ export type HSVPixel = Readonly<{
 	v: number;
 }>;
 
-const HUE_SEGMENTS = 12;
-const SEGMENT_SIZE = 360 / HUE_SEGMENTS;
-const HUE_BUCKET_HEX = Object.freeze([
-	"#FF4B4B",
-	"#FF8A4B",
-	"#FFD84B",
-	"#D4FF4B",
-	"#8BFF4B",
-	"#4BFF8A",
-	"#4BFFF3",
-	"#4BCBFF",
-	"#4B7CFF",
-	"#8B4BFF",
-	"#E04BFF",
-	"#FF4BC0",
-] as const);
-const DEFAULT_HEX = "#A0AEC0";
+type ColorExtractionContext = Readonly<{
+	reason: string;
+}>;
 
-const initialWeights = Object.freeze(
-	Array.from({ length: HUE_SEGMENTS }, () => 0),
-);
+export class ColorExtractionError extends AppError {
+	constructor(context: ColorExtractionContext) {
+		super({
+			message: "Unable to derive fish color",
+			code: "COLOR_EXTRACTION_FAILED",
+			name: "ColorExtractionError",
+			context,
+		});
+	}
+}
 
-const normaliseHue = (hue: number) => {
-	const modulo = hue % 360;
-	return modulo < 0 ? modulo + 360 : modulo;
+const pixelSchema = z.object({
+	h: z
+		.number()
+		.min(0)
+		.max(360)
+		.refine((value) => value < 360, {
+			message: "Hue must be less than 360 degrees",
+		}),
+	s: z.number().min(0).max(1),
+	v: z.number().min(0).max(1),
+});
+
+type HistogramEntry = Readonly<{
+	weight: number;
+	sSum: number;
+	vSum: number;
+	count: number;
+}>;
+
+const hsvToRgb = (h: number, s: number, v: number) => {
+	const c = v * s;
+	const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+	const m = v - c;
+	const segment = Math.floor(h / 60);
+	const base =
+		segment === 0
+			? [c, x, 0]
+			: segment === 1
+				? [x, c, 0]
+				: segment === 2
+					? [0, c, x]
+					: segment === 3
+						? [0, x, c]
+						: segment === 4
+							? [x, 0, c]
+							: [c, 0, x];
+
+	return base.map((component) => Math.round((component + m) * 255)) as [
+		number,
+		number,
+		number,
+	];
 };
 
-const isValidPixel = ({ h, s, v }: HSVPixel) =>
-	Number.isFinite(h) &&
-	Number.isFinite(s) &&
-	Number.isFinite(v) &&
-	h >= 0 &&
-	h <= 360 &&
-	s >= 0 &&
-	s <= 1 &&
-	v >= 0 &&
-	v <= 1;
+const toHex = (value: number) =>
+	value.toString(16).padStart(2, "0").toUpperCase();
 
-const addWeight = (
-	weights: ReadonlyArray<number>,
-	index: number,
-	delta: number,
-) =>
-	weights.map((weight, weightIndex) =>
-		weightIndex === index ? weight + delta : weight,
-	);
+const sanitizePixel = (pixel: HSVPixel) => {
+	const validation = pixelSchema.safeParse(pixel);
+	if (validation.success) {
+		return validation.data;
+	}
+	const [issue] = validation.error.issues;
+	throw new ColorExtractionError({
+		reason: issue?.message ?? "Invalid pixel data",
+	});
+};
 
-export const deriveFishColor = (
-	pixels: HSVPixel[],
-): Result<string, ColorExtractionError> => {
+const bucketize = (pixels: HSVPixel[]) =>
+	pixels.reduce<Map<number, HistogramEntry>>((map, rawPixel) => {
+		const pixel = sanitizePixel(rawPixel);
+		const bucket = Math.floor(pixel.h);
+		const weight = pixel.s * pixel.v;
+		const previous = map.get(bucket);
+		const entry: HistogramEntry =
+			previous === undefined
+				? {
+						weight,
+						sSum: pixel.s,
+						vSum: pixel.v,
+						count: 1,
+					}
+				: {
+						weight: previous.weight + weight,
+						sSum: previous.sSum + pixel.s,
+						vSum: previous.vSum + pixel.v,
+						count: previous.count + 1,
+					};
+		map.set(bucket, entry);
+		return map;
+	}, new Map());
+
+const clamp = (value: number, min: number, max: number) =>
+	Math.min(Math.max(value, min), max);
+
+const pickDominantBucket = (histogram: Map<number, HistogramEntry>) => {
+	const entries = Array.from(histogram.entries());
+	if (entries.length === 0) {
+		throw new ColorExtractionError({
+			reason: "No pixels available for color derivation",
+		});
+	}
+	const sorted = entries.sort((a, b) => {
+		if (a[1].weight === b[1].weight) {
+			return a[0] - b[0];
+		}
+		return b[1].weight - a[1].weight;
+	});
+	const [bucket, data] = sorted[0];
+	if (data.weight <= 0) {
+		throw new ColorExtractionError({
+			reason: "All pixels have zero weight",
+		});
+	}
+	return { bucket, data };
+};
+
+export const deriveFishColor = (pixels: HSVPixel[]): string => {
 	if (pixels.length === 0) {
-		return err(
-			createColorExtractionError(
-				"color extraction failed: at least one pixel is required",
-			),
-		);
+		throw new ColorExtractionError({
+			reason: "Pixel set is empty",
+		});
 	}
 
-	const invalidPixel = pixels.find((pixel) => !isValidPixel(pixel));
-
-	if (invalidPixel) {
-		return err(
-			createColorExtractionError("color extraction failed: hue out of range", {
-				pixel: invalidPixel,
-			}),
-		);
-	}
-
-	const weights = pixels.reduce(
-		(acc, pixel) => {
-			const hue = normaliseHue(pixel.h === 360 ? 0 : pixel.h);
-			const bucket = Math.min(HUE_SEGMENTS - 1, Math.floor(hue / SEGMENT_SIZE));
-			const delta = pixel.s * pixel.v;
-			return addWeight(acc, bucket, delta);
-		},
-		[...initialWeights],
-	);
-
-	const { index: selectedBucket, weight: maxWeight } = weights.reduce(
-		(best, weight, index) => (weight > best.weight ? { index, weight } : best),
-		{ index: 0, weight: -1 },
-	);
-
-	if (maxWeight <= 0) {
-		return ok(DEFAULT_HEX);
-	}
-
-	return ok(HUE_BUCKET_HEX[selectedBucket] ?? DEFAULT_HEX);
+	const histogram = bucketize(pixels);
+	const { bucket, data } = pickDominantBucket(histogram);
+	const averageS = clamp(data.sSum / data.count, 0, 1);
+	const averageV = clamp(data.vSum / data.count, 0, 1);
+	const [r, g, b] = hsvToRgb(bucket, averageS, averageV);
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 };

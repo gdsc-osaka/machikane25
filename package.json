@@ -4,8 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"dev:photo": "pnpm --filter photo dev",
-		"dev:stamp": "pnpm --filter stamp dev",
+		"dev:photo": "pnpm --filter photo dev -p 3000",
+		"dev:stamp": "pnpm --filter stamp dev -p 3001",
 		"build:photo": "pnpm --filter photo build",
 		"build:photo-cleaner": "pnpm --filter photo-cleaner build",
 		"build:fish-cleaner": "pnpm --filter fish-cleaner build",
@@ -48,6 +48,7 @@
 		"firebase-tools": "^14.19.1",
 		"jsdom": "^27.0.0",
 		"prettier": "3.6.2",
+		"tsx": "^4.20.6",
 		"typescript": "^5",
 		"vite-tsconfig-paths": "^5.1.4",
 		"vitest": "^3.2.4"

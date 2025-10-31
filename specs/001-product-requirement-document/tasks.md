@@ -49,9 +49,9 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 - [X] T010 [US1] Define stamp domain types and result helpers in `apps/stamp/src/domain/stamp.ts`
 - [X] T011 [US1] Implement Firestore stamp repository with token validation hooks in `apps/stamp/src/infra/stamp/stamp-repository.ts` and `apps/stamp/src/infra/stamp/stamp-converter.ts`
 - [X] T012 [US1] Create application service for claiming stamps and refreshing progress in `apps/stamp/src/application/stamps/claim-stamp.ts`
-- [ ] T013 [US1] Update Stamp Page UI to animate claims and invoke service in `apps/stamp/src/app/(guest)/stamp/[token]/page.tsx`
-- [ ] T014 [US1] Update Home Page to render five-slot board with bilingual CTA states in `apps/stamp/src/app/(guest)/page.tsx`
-- [ ] T015 [P] [US1] Populate localized copy constants for Home/Stamp states in `apps/stamp/src/application/i18n/messages.ts`
+- [X] T013 [US1] Update Stamp Page UI to animate claims and invoke service in `apps/stamp/src/app/(guest)/stamp/[token]/page.tsx`
+- [X] T014 [US1] Update Home Page to render five-slot board with bilingual CTA states in `apps/stamp/src/app/(guest)/page.tsx`
+- [X] T015 [P] [US1] Populate localized copy constants for Home/Stamp states in `apps/stamp/src/application/i18n/messages.ts`
 
 **Checkpoint**: User Story 1 complete—guest stamp collection is fully functional and testable.
 
@@ -65,16 +65,19 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 2 ⚠️ (write first, ensure they fail)
 
-- [ ] T016 [P] [US2] Add failing Vitest coverage for survey unlock gating in `apps/stamp/src/app/__tests__/survey-access.test.tsx`
-- [ ] T017 [P] [US2] Add failing Vitest coverage for QR issuance idempotency in `apps/stamp/src/app/__tests__/reward-qr.test.tsx`
+- [X] T016 [P] [US2] Add failing Vitest coverage for survey unlock gating in `apps/stamp/src/app/(guest)/form/__tests__/page.test.tsx`
+- [X] T017 [P] [US2] Add failing Vitest coverage for QR issuance idempotency in `apps/stamp/src/app/(guest)/gift/__tests__/page.test.tsx`
+- [X] T018 [P] [US2] Add failing Vitest coverage for Google Forms submission mocking in `apps/stamp/src/app/(guest)/actions/__tests__/submit-survey.test.ts`
+- [X] T019 [P] [US2] Add failing Vitest coverage for reward persistence in `apps/stamp/src/application/survey/__tests__/submit-survey.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement survey submission server action posting to Google Forms in `apps/stamp/src/app/(guest)/actions/submit-survey.ts`
-- [ ] T019 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
-- [ ] T020 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
-- [ ] T021 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
-- [ ] T022 [P] [US2] Extend reward repository for QR payload persistence in `apps/stamp/src/infra/firestore/reward-repository.ts`
+- [X] T020 [US2] Implement survey submission server action posting to Google Forms in `apps/stamp/src/app/(guest)/actions/submit-survey.ts`
+- [X] T021 [US2] Add reward domain types and QR payload generator in `apps/stamp/src/domain/reward.ts`
+- [X] T022 [P] [US2] Add reward repository for QR payload persistence in `apps/stamp/src/infra/reward/reward-repository.ts` and `apps/stamp/src/infra/reward/reward-converter.ts`
+- [X] T023 [US2] Add survey application service to persist timestamps and unlock rewards in `apps/stamp/src/application/survey/submit-survey.ts`
+- [X] T024 [US2] Update Form Page with bilingual form controls and submit wiring in `apps/stamp/src/app/(guest)/form/page.tsx`
+- [X] T025 [US2] Update Gift Page to render QR via `qrcode.react` and show redeemed state in `apps/stamp/src/app/(guest)/gift/page.tsx`
 
 **Checkpoint**: User Story 2 complete—survey + reward issuance is independently testable.
 
@@ -88,16 +91,16 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ### Tests for User Story 3 ⚠️ (write first, ensure they fail)
 
-- [ ] T023 [P] [US3] Add failing Vitest coverage for staff-only redemption access in `apps/stamp/src/app/__tests__/staff-auth.test.tsx`
-- [ ] T024 [P] [US3] Add failing Vitest coverage for QR scan flows (valid/duplicate/invalid) in `apps/stamp/src/app/__tests__/scan-dialogs.test.tsx`
+- [X] T026 [P] [US3] Add failing Vitest coverage for staff-only redemption access in `apps/stamp/src/app/__tests__/staff-auth.test.tsx`
+- [X] T027 [P] [US3] Add failing Vitest coverage for QR scan flows (valid/duplicate/invalid) in `apps/stamp/src/app/__tests__/scan-dialogs.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement staff auth guard leveraging custom claims in `apps/stamp/src/application/auth/require-staff.ts`
-- [ ] T026 [US3] Update security rules to allow staff to set `giftReceivedAt` timestamps in `firestore.rules`
-- [ ] T027 [US3] Integrate `jsqr` scanner and manual ID fallback in Scan Page UI `apps/stamp/src/app/scan/page.tsx`
-- [ ] T028 [US3] Implement reward redemption application service with duplicate protection in `apps/stamp/src/application/rewards/redeem-reward.ts`
-- [ ] T029 [P] [US3] Add bilingual dialog components for scan outcomes in `apps/stamp/src/app/scan/components/redemption-dialog.tsx`
+- [X] T028 [US3] Implement staff auth guard leveraging custom claims in `apps/stamp/src/application/auth/require-staff.ts`. Implement infra and domain layer as needed.
+- [X] T029 [US3] Implement reward redemption application service with duplicate protection in `apps/stamp/src/application/rewards/redeem-reward.ts`. Implement infra and domain layer as needed.
+- [X] T030 [US3] Update security rules to allow staff to set `giftReceivedAt` timestamps in `firestore.rules`. Do not add/update unit test files (test/firestore/security.test.ts).
+- [X] T031 [US3] Integrate `jsqr` scanner and manual ID fallback in Scan Page UI `apps/stamp/src/app/scan/page.tsx`
+- [X] T032 [P] [US3] Add bilingual dialog components for scan outcomes in `apps/stamp/src/app/scan/components/redemption-dialog.tsx`
 
 **Checkpoint**: User Story 3 complete—staff redemption tooling works independently.
 
@@ -105,10 +108,10 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [ ] T030 Wire Sentry performance tags for new routes in `apps/stamp/src/infra/observability/sentry.ts`
-- [ ] T031 Capture bilingual copy updates and evidence in `docs/spec/stamp/Design Doc.md`
-- [ ] T032 Update Remote Config rollout playbook with status messaging steps in `docs/spec/change-log.md`
-- [ ] T033 Verify `pnpm coverage --filter stamp` and document artifacts in `apps/stamp/test/README.md`
+- [ ] T033 Wire Sentry performance tags for new routes in `apps/stamp/src/infra/observability/sentry.ts`
+- [ ] T034 Capture bilingual copy updates and evidence in `docs/spec/stamp/Design Doc.md`
+- [ ] T035 Update Remote Config rollout playbook with status messaging steps in `docs/spec/change-log.md`
+- [ ] T036 Verify `pnpm coverage --filter stamp` and document artifacts in `apps/stamp/test/README.md`
 
 ---
 
@@ -123,8 +126,8 @@ description: "Task list for Stamp Rally Guest Experience implementation"
 
 - T008 and T009 can run concurrently as independent Vitest suites.
 - T010, T011, and T015 touch different modules (domain, infra, i18n) and may proceed in parallel once tests exist.
-- T016 and T017 run concurrently; T018–T022 follow once they fail.
-- T023 and T024 can execute in parallel; T027 and T029 are UI-focused and separable.
+- T016 and T019 run concurrently; T020–T025 follow once they fail.
+- T026 and T027 can execute in parallel; T028 and T030 are UI-focused and separable.
 
 ## Implementation Strategy
 

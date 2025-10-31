@@ -14,87 +14,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.isStaff == true;
     }
 
-    function allowedUserFields(data) {
-      return data.keys().hasOnly([
-        'stamps',
-        'lastSignedInAt',
-        'giftReceivedAt',
-        'createdAt',
-        'language',
-        'rewardQr'
-      ]);
-    }
-
-    function validStampKeys(stamps) {
-      return stamps != null
-        && stamps.keys().hasOnly([
-        'reception',
-        'photobooth',
-        'art',
-        'robot',
-        'survey'
-      ]);
-    }
-
-    function stampValuesAreTimestamps(stamps) {
-      return stamps != null
-        && stamps.values().all(value, value is timestamp);
-    }
-
-    function stampsOnlyAccumulate(stamps, previousStamps) {
-      return stamps != null
-        && (previousStamps == null
-        || previousStamps.keys().all(key,
-          stamps[key] == previousStamps[key]
-        ));
-    }
-
-    function attendeeStampUpdateValid(stamps, previousStamps) {
-      return stamps != null
-        && validStampKeys(stamps)
-        && stampValuesAreTimestamps(stamps)
-        && stampsOnlyAccumulate(stamps, previousStamps);
-    }
-
-    function attendeeUpdateAllowed(userId) {
-      return isOwner(userId)
-        && allowedUserFields(request.resource.data)
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.giftReceivedAt == resource.data.giftReceivedAt
-        && request.resource.data.rewardQr == resource.data.rewardQr
-        && attendeeStampUpdateValid(
-          request.resource.data.stamps,
-          resource.data.stamps
-        );
-    }
-
-    function staffUpdateAllowed() {
-      return isStaff()
-        && allowedUserFields(request.resource.data)
-        && request.resource.data.stamps == resource.data.stamps
-        && request.resource.data.lastSignedInAt == resource.data.lastSignedInAt
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.language == resource.data.language
-        && request.resource.data.rewardQr == resource.data.rewardQr
-        && (request.resource.data.giftReceivedAt == null
-          || request.resource.data.giftReceivedAt is timestamp);
-    }
-
     match /users/{userId} {
-      allow create: if isOwner(userId)
-        && allowedUserFields(request.resource.data)
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.lastSignedInAt is timestamp
-        && request.resource.data.giftReceivedAt == null
-        && request.resource.data.rewardQr == null
-        && attendeeStampUpdateValid(request.resource.data.stamps, null);
+      allow read, write: if isOwner(userId) || isStaff();
+    }
 
-      allow read: if isOwner(userId) || isStaff();
-      allow list: if isStaff();
+    match /surveyLedger/{attendeeId} {
+      allow read, write: if isOwner(attendeeId) || isStaff();
+    }
 
-      allow update: if attendeeUpdateAllowed(userId) || staffUpdateAllowed();
-
-      allow delete: if false;
+    match /rewards/{attendeeId} {
+      allow read, write: if isOwner(attendeeId) || isStaff();
     }
   }
 }

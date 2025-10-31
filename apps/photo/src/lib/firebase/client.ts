@@ -62,7 +62,7 @@ export const initializeFirebaseClient = (): void => {
 		auth = getAuth(firebaseApp);
 	}
 	if (!firestore) {
-		firestore = getFirestore(firebaseApp);
+		firestore = getFirestore(firebaseApp, "photo");
 	}
 	if (!storage) {
 		storage = getStorage(firebaseApp);

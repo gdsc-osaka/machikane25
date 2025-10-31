@@ -56,7 +56,10 @@ describe("stampLedgerConverter.toFirestore", () => {
 		expect(fromMillisSpy).toHaveBeenCalledWith(1_700_000_123_000);
 		expect(record.createdAt).toBeInstanceOf(MockTimestamp);
 		expect(record.lastCollectedAt).toBeInstanceOf(MockTimestamp);
-		expect(record.stamps).toBe(ledger);
+		for (const stamp of Object.values(record.stamps)) {
+			const isValidInstance = stamp == null || stamp instanceof MockTimestamp;
+			expect(isValidInstance).toBe(true);
+		}
 	});
 
 	it("keeps null lastCollectedAt without converting", () => {

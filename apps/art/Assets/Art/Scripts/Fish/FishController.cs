@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class FishController : MonoBehaviour
 {
+    [SerializeField] private Animator animator;
     public float speed = 2.0f;
     public float rotationSpeed = 4.0f;
     private Vector3 targetPosition;
@@ -15,15 +16,25 @@ public class FishController : MonoBehaviour
 
     void Update()
     {
+        float currentSpeed = 0f;
+        float direction = 0f;
+
         // 目標地点に向かって移動・回転
         if (Vector3.Distance(transform.position, targetPosition) > 1.0f)
         {
             // 前方に移動
             transform.position += transform.forward * (speed * Time.deltaTime);
+            currentSpeed = speed;
 
             // 目標地点の方を向く
             Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
+            Quaternion previousRotation = transform.rotation;
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            // 回転の変化量を計算（Y軸の角度差）
+            float angleDifference = Quaternion.Angle(previousRotation, transform.rotation);
+            Vector3 cross = Vector3.Cross(previousRotation * Vector3.forward, transform.rotation * Vector3.forward);
+            direction = cross.y > 0 ? angleDifference : -angleDifference;
         }
         else
         {
@@ -32,7 +43,11 @@ public class FishController : MonoBehaviour
         }
 
         // Animatorのパラメータを更新
-        // animator.SetBool("IsSwimming", isSwimming);
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", currentSpeed);
+            animator.SetFloat("Direction", direction);
+        }
     }
 
     // Aquariumの範囲内でランダムな目標地点を設定するメソッド

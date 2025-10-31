@@ -1,6 +1,7 @@
 "use client";
 
 import { signInAnonymously } from "firebase/auth";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,12 @@ import {
 } from "@/libs/i18n/messages";
 import { cn } from "@/libs/utils";
 import { getLogger } from "@/packages/logger";
+import logoBlue from "../../../public/gdg-blue.svg";
+import logoColor from "../../../public/gdg-color.svg";
+import logoGreen from "../../../public/gdg-green.svg";
+import logoRed from "../../../public/gdg-red.svg";
+import logoYellow from "../../../public/gdg-yellow.svg";
+import fullLogo from "../../../public/gdgoc-osaka-full-logo.svg";
 
 type StampBoardState = Record<StampIdentifier, boolean>;
 
@@ -46,13 +53,39 @@ const resolveBoardState = (progress: StampProgressSnapshot): StampBoardState =>
 		createInitialBoardState(),
 	);
 
-const boardItemTone = (isCollected: boolean) =>
+const boardItemTone = (isCollected: boolean, checkpoint: StampCheckpoint) =>
 	cn(
-		"rounded-xl border px-4 py-4 transition-colors duration-300",
+		"rounded-xl border px-4 py-4 transition-colors duration-300 flex items-center justify-center gap-8",
 		isCollected
 			? "border-primary bg-primary/10 text-primary shadow-sm"
 			: "border-muted-foreground/30 border-dashed bg-muted/30 text-muted-foreground",
+		checkpoint === "reception"
+			? "bg-[#FFE7A5] border-[#FAAB00]"
+			: checkpoint === "photobooth"
+				? "bg-[#CCF6C5] border-[#34A853]"
+				: checkpoint === "robot"
+					? "bg-[#F8D8D8] border-[#EA4336]"
+					: checkpoint === "art"
+						? "bg-[#C3ECF6] border-[#4285F4]"
+						: "border-primary text-primary",
 	);
+
+const getCheckpointLogo = (checkpoint: StampCheckpoint) => {
+	switch (checkpoint) {
+		case "reception":
+			return logoYellow;
+		case "photobooth":
+			return logoGreen;
+		case "art":
+			return logoBlue;
+		case "robot":
+			return logoRed;
+		case "survey":
+			return logoColor;
+		default:
+			return null;
+	}
+};
 
 const LocaleStack = ({ copy }: { copy: LocaleField }) => (
 	<span className="flex flex-col items-center gap-0.5 text-center">
@@ -139,6 +172,10 @@ export default function HomePage() {
 	return (
 		<main className="bg-background text-foreground mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-6 py-12">
 			<section className="flex flex-col items-center gap-4 text-center">
+				<Image
+					src={fullLogo}
+					alt={"GDG on Campus University of Osaka のロゴ"}
+				/>
 				<h1 className="text-3xl font-semibold tracking-tight">
 					{HOME_MESSAGES.heading.ja}
 				</h1>
@@ -163,8 +200,17 @@ export default function HomePage() {
 						{STAMP_SEQUENCE.map((checkpoint) => (
 							<li
 								key={checkpoint}
-								className={boardItemTone(boardState[checkpoint])}
+								className={boardItemTone(boardState[checkpoint], checkpoint)}
 							>
+								<div className="bg-white border-2 flex items-center justify-center rounded-full w-16 h-16">
+									{boardState[checkpoint] ? (
+										<Image
+											src={getCheckpointLogo(checkpoint)}
+											alt=""
+											width={36}
+										/>
+									) : null}
+								</div>
 								<LocaleStack copy={CHECKPOINT_LABELS[checkpoint]} />
 							</li>
 						))}

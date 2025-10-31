@@ -36,9 +36,10 @@ const tasksClient = new CloudTasksClient();
  * Cloud Tasks を使用して 15分後に削除タスクをスケジュールする。
  */
 export const scheduleDelete = onObjectFinalized(
-	{ region: REGION },
-	async (object: any) => {
+	{ region: "us-west1" },
+	async (event) => {
 		try {
+			const object = event.data; // ← event.data に ObjectMetadata が入る
 			const bucket = object.bucket;
 			const filePath = object.name;
 			if (!bucket || !filePath) {

@@ -34,6 +34,11 @@ export default defineConfig({
       "test/**/*.test.ts",
       "test/**/*.test.tsx",
     ],
+    environmentMatchGlobs: [
+      ["test/integration/**/*.test.ts", "node"],
+      ["test/unit/**/*.test.ts", "jsdom"],
+      ["test/unit/**/*.test.tsx", "jsdom"],
+    ],
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",

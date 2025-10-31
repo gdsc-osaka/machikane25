@@ -11,61 +11,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * Helper function: Check if user is admin
-     * Admin users have custom claim: role = 'admin'
-     */
+
     function isAdmin() {
       return request.auth != null && request.auth.token.role == 'admin';
     }
 
-    /**
-     * Helper function: Check if user is authenticated (including anonymous)
-     */
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    /**
-     * Options Collection
-     * - Read: Anyone (including unauthenticated)
-     * - Write: Admin only
-     */
     match /options/{optionId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    /**
-     * Booths Collection
-     * - Read: Authenticated users (including anonymous)
-     * - Update: Authenticated users (including anonymous)
-     * - Create: Admin only
-     */
     match /booths/{boothId} {
       allow read, update: if isAuthenticated();
       allow create: if isAdmin();
 
-      /**
-       * UploadedPhotos Sub-collection
-       * - Read: Authenticated users (including anonymous)
-       * - Create: Authenticated users (including anonymous)
-       * - Delete: Admin only
-       */
       match /uploadedPhotos/{photoId} {
         allow read, create: if isAuthenticated();
-        allow delete: if isAdmin();
+        allow delete, update: if isAdmin();
       }
 
-      /**
-       * GeneratedPhotos Sub-collection
-       * - Read: Anyone (including unauthenticated) for Download Page
-       * - Create, Delete: Admin only (GenerationService uses Admin SDK)
-       */
       match /generatedPhotos/{photoId} {
         allow read: if true;
-        allow create, delete: if isAdmin();
+        allow create, update, delete: if isAdmin();
       }
+
     }
 
   }

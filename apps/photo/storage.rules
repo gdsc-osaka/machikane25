@@ -47,11 +47,11 @@ service firebase.storage {
     }
 
     /**
-     * GeneratedPhotos Storage Path: generated_photos/{photoId}/photo.png
+     * GeneratedPhotos Storage Path: generated_photos/{boothId}/{photoId}/photo.png
      * - Read: Anyone (including unauthenticated) for Download Page
      * - Create, Delete: Admin only (GenerationService uses Admin SDK)
      */
-    match /generated_photos/{photoId}/{fileName} {
+    match /generated_photos/{boothId}/{photoId}/{fileName} {
       allow read: if true;
       allow create, delete: if isAdmin();
     }

@@ -3,5 +3,5 @@ export default function BoothLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	return <>{children}</>;
+	return <div className="h-screen w-full overflow-hidden">{children}</div>;
 }

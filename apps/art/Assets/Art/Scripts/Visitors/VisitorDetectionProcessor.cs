@@ -255,7 +255,6 @@ namespace Art.Visitors
                 }
 
                 entry.Magnitude = Mathf.Lerp(entry.Magnitude, 0f, decay);
-                entry.Position = entry.Position;
                 entry.LastUpdate = timestamp;
                 smoothEntries[i] = entry;
 

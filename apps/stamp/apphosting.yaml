@@ -17,8 +17,6 @@ env:
     secret: sentryAuthToken
   - variable: NEXT_PUBLIC_SURVEY_FORM_URL_MAP
     secret: surveyFormUrlMap
-  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
-    secret: firebaseServiceAccountKey
 
 scripts:
   buildCommand: sh -c "cd apps/stamp && pnpm build"

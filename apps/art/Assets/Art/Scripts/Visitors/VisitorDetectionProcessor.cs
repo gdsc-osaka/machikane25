@@ -23,6 +23,13 @@ namespace Art.Visitors
 
         private const int YoloInputSize = 416;
         private const int PersonClassIndex = 0;
+        private const int AmountOfClasses = 80;
+        private const int Box20Sections = 13;
+        private const int Box40Sections = 26;
+        private const int AnchorBatchSize = 85;
+        private const float IouThreshold = 0.45f;
+
+        private readonly float[] anchors = { 10, 14, 23, 27, 37, 58, 81, 82, 135, 169, 344, 319 };
 
         private readonly List<VisitorGroup> rawGroups = new List<VisitorGroup>();
         private readonly List<VisitorGroup> smoothedGroups = new List<VisitorGroup>();
@@ -113,49 +120,19 @@ namespace Art.Visitors
 
             var inputTensor = PreprocessImage(pixels, width, height);
 
-            // Execute with just the main input tensor
-            // Barracuda will use the model's default input name
             worker.Execute(inputTensor);
 
-            // Try to get outputs - YOLO models may have different output names
-            // Common names: yolo_nms_*, combined_nms, detection_*
-            Tensor boxes = null;
-            Tensor scores = null;
-            Tensor indices = null;
+            // YoloV3Tiny outputs raw YOLO format with two scales
+            var output13 = worker.PeekOutput("016_convolutional"); // 13x13 grid for large objects
+            var output26 = worker.PeekOutput("023_convolutional"); // 26x26 grid for small objects
 
-            // Try different possible output names
-            if (worker.PeekOutput("yolonms_layer_1") != null)
+            if (output13 != null && output26 != null)
             {
-                boxes = worker.PeekOutput("yolonms_layer_1");
-                scores = worker.PeekOutput("yolonms_layer_1:1");
-                indices = worker.PeekOutput("yolonms_layer_1:2");
-            }
-            else if (worker.PeekOutput("detection_boxes") != null)
-            {
-                boxes = worker.PeekOutput("detection_boxes");
-                scores = worker.PeekOutput("detection_scores");
-                indices = worker.PeekOutput("detection_classes");
-            }
-            else
-            {
-                // Get the first output layers by index
-                var outputNames = new List<string>();
-                foreach (var layer in runtimeModel.outputs)
-                {
-                    outputNames.Add(layer);
-                }
+                DecodeYoloOutput(output26, Box40Sections, 0, detections);
+                DecodeYoloOutput(output13, Box20Sections, 3, detections);
 
-                if (outputNames.Count >= 3)
-                {
-                    boxes = worker.PeekOutput(outputNames[0]);
-                    scores = worker.PeekOutput(outputNames[1]);
-                    indices = worker.PeekOutput(outputNames[2]);
-                }
-            }
-
-            if (boxes != null && scores != null && indices != null)
-            {
-                ParseYoloOutput(boxes, scores, indices, width, height, detections);
+                // Apply Non-Maximum Suppression to remove overlapping detections
+                ApplyNonMaxSuppression(detections);
             }
 
             inputTensor.Dispose();
@@ -165,76 +142,137 @@ namespace Art.Visitors
 
         private Tensor PreprocessImage(Color32[] pixels, int width, int height)
         {
-            var inputData = new float[1 * 3 * YoloInputSize * YoloInputSize];
+            var resizedTexture = new Texture2D(YoloInputSize, YoloInputSize, TextureFormat.RGB24, false);
+            var tempTexture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            tempTexture.SetPixels32(pixels);
+            tempTexture.Apply();
 
-            for (var y = 0; y < YoloInputSize; y++)
+            RenderTexture rt = RenderTexture.GetTemporary(YoloInputSize, YoloInputSize);
+            Graphics.Blit(tempTexture, rt);
+            RenderTexture.active = rt;
+            resizedTexture.ReadPixels(new Rect(0, 0, YoloInputSize, YoloInputSize), 0, 0);
+            resizedTexture.Apply();
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(rt);
+
+            UnityEngine.Object.Destroy(tempTexture);
+
+            var inputTensor = new Tensor(resizedTexture, 3);
+            UnityEngine.Object.Destroy(resizedTexture);
+
+            return inputTensor;
+        }
+
+        private void DecodeYoloOutput(Tensor output, int boxSections, int anchorMask, List<PersonDetection> detections)
+        {
+            for (var boundingBoxX = 0; boundingBoxX < boxSections; boundingBoxX++)
             {
-                for (var x = 0; x < YoloInputSize; x++)
+                for (var boundingBoxY = 0; boundingBoxY < boxSections; boundingBoxY++)
                 {
-                    var srcX = (int)((float)x / YoloInputSize * width);
-                    var srcY = (int)((float)y / YoloInputSize * height);
-                    var srcIndex = srcY * width + srcX;
-
-                    if (srcIndex >= 0 && srcIndex < pixels.Length)
+                    for (var anchor = 0; anchor < 3; anchor++)
                     {
-                        var pixel = pixels[srcIndex];
-                        var baseIndex = y * YoloInputSize + x;
+                        var objectness = output[0, boundingBoxX, boundingBoxY, anchor * AnchorBatchSize + 4];
+                        if (objectness < confidenceThreshold)
+                        {
+                            continue;
+                        }
 
-                        inputData[0 * YoloInputSize * YoloInputSize + baseIndex] = pixel.r / 255f;
-                        inputData[1 * YoloInputSize * YoloInputSize + baseIndex] = pixel.g / 255f;
-                        inputData[2 * YoloInputSize * YoloInputSize + baseIndex] = pixel.b / 255f;
+                        // Find the best class
+                        var personScore = output[0, boundingBoxX, boundingBoxY, anchor * AnchorBatchSize + 5 + PersonClassIndex];
+                        var confidence = objectness * personScore;
+
+                        if (confidence < confidenceThreshold)
+                        {
+                            continue;
+                        }
+
+                        // Extract box coordinates
+                        var rawX = output[0, boundingBoxX, boundingBoxY, anchor * AnchorBatchSize + 0];
+                        var rawY = output[0, boundingBoxX, boundingBoxY, anchor * AnchorBatchSize + 1];
+                        var rawW = output[0, boundingBoxX, boundingBoxY, anchor * AnchorBatchSize + 2];
+                        var rawH = output[0, boundingBoxX, boundingBoxY, anchor * AnchorBatchSize + 3];
+
+                        // Convert to pixel coordinates
+                        var anchorIndex = anchor + anchorMask;
+                        var x = (-YoloInputSize * 0.5f) + YoloInputSize / boxSections * 0.5f +
+                                YoloInputSize / boxSections * boundingBoxY + Sigmoid(rawX);
+                        var y = (-YoloInputSize * 0.5f) + YoloInputSize / boxSections * 0.5f +
+                                YoloInputSize / boxSections * boundingBoxX + Sigmoid(rawY);
+                        var w = anchors[anchorIndex * 2] * Mathf.Exp(rawW);
+                        var h = anchors[anchorIndex * 2 + 1] * Mathf.Exp(rawH);
+
+                        // Normalize to 0-1 range
+                        var centerX = (x + YoloInputSize * 0.5f) / YoloInputSize;
+                        var centerY = (y + YoloInputSize * 0.5f) / YoloInputSize;
+                        var normalizedWidth = w / YoloInputSize;
+                        var normalizedHeight = h / YoloInputSize;
+
+                        detections.Add(new PersonDetection
+                        {
+                            Center = new Vector2(centerX, centerY),
+                            Size = new Vector2(normalizedWidth, normalizedHeight),
+                            Confidence = confidence
+                        });
                     }
                 }
             }
-
-            return new Tensor(1, 3, YoloInputSize, YoloInputSize, inputData);
         }
 
-        private void ParseYoloOutput(Tensor boxes, Tensor scores, Tensor indices, int originalWidth, int originalHeight, List<PersonDetection> detections)
+        private float Sigmoid(float value)
         {
-            var indicesShape = indices.shape.ToArray();
-            var indicesCount = indicesShape[1];
-            var indicesWidth = indicesShape[2];
+            return 1.0f / (1.0f + Mathf.Exp(-value));
+        }
 
-            var scoresShape = scores.shape.ToArray();
-            var scoresWidth = scoresShape[2];
-
-            var boxesShape = boxes.shape.ToArray();
-            var boxesWidth = boxesShape[2];
-
-            for (var i = 0; i < indicesCount; i++)
+        private void ApplyNonMaxSuppression(List<PersonDetection> detections)
+        {
+            for (var i = 0; i < detections.Count - 1; i++)
             {
-                var classIndex = (int)indices[i * indicesWidth + 1];
-                if (classIndex != PersonClassIndex)
+                for (var j = i + 1; j < detections.Count; j++)
                 {
-                    continue;
+                    if (IntersectionOverUnion(detections[i], detections[j]) > IouThreshold)
+                    {
+                        // Remove the detection with lower confidence
+                        if (detections[i].Confidence < detections[j].Confidence)
+                        {
+                            detections.RemoveAt(i);
+                            i--;
+                            break;
+                        }
+                        else
+                        {
+                            detections.RemoveAt(j);
+                            j--;
+                        }
+                    }
                 }
-
-                var boxIndex = (int)indices[i * indicesWidth + 2];
-                var confidence = scores[PersonClassIndex * scoresWidth + boxIndex];
-
-                if (confidence < confidenceThreshold)
-                {
-                    continue;
-                }
-
-                var y1 = boxes[boxIndex * boxesWidth + 0];
-                var x1 = boxes[boxIndex * boxesWidth + 1];
-                var y2 = boxes[boxIndex * boxesWidth + 2];
-                var x2 = boxes[boxIndex * boxesWidth + 3];
-
-                var centerX = (x1 + x2) / 2f / originalWidth;
-                var centerY = (y1 + y2) / 2f / originalHeight;
-                var boxWidth = (x2 - x1) / originalWidth;
-                var boxHeight = (y2 - y1) / originalHeight;
-
-                detections.Add(new PersonDetection
-                {
-                    Center = new Vector2(centerX, centerY),
-                    Size = new Vector2(boxWidth, boxHeight),
-                    Confidence = confidence
-                });
             }
+        }
+
+        private float IntersectionOverUnion(PersonDetection box1, PersonDetection box2)
+        {
+            var b1x1 = box1.Center.x - 0.5f * box1.Size.x;
+            var b1x2 = box1.Center.x + 0.5f * box1.Size.x;
+            var b1y1 = box1.Center.y - 0.5f * box1.Size.y;
+            var b1y2 = box1.Center.y + 0.5f * box1.Size.y;
+            var b2x1 = box2.Center.x - 0.5f * box2.Size.x;
+            var b2x2 = box2.Center.x + 0.5f * box2.Size.x;
+            var b2y1 = box2.Center.y - 0.5f * box2.Size.y;
+            var b2y2 = box2.Center.y + 0.5f * box2.Size.y;
+
+            var xLeft = Mathf.Max(b1x1, b2x1);
+            var yTop = Mathf.Max(b1y1, b2y1);
+            var xRight = Mathf.Min(b1x2, b2x2);
+            var yBottom = Mathf.Min(b1y2, b2y2);
+
+            if (xRight < xLeft || yBottom < yTop)
+            {
+                return 0.0f;
+            }
+
+            var intersectionArea = (xRight - xLeft) * (yBottom - yTop);
+            var b1area = (b1x2 - b1x1) * (b1y2 - b1y1);
+            var b2area = (b2x2 - b2x1) * (b2y2 - b2y1);
+            return intersectionArea / (b1area + b2area - intersectionArea);
         }
 
         private void ConvertDetectionsToGroups(List<PersonDetection> detections, Func<Vector2, Vector2> projector, int width, int height)

@@ -4,6 +4,7 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
+		"dev:art-backend": "pnpm --filter art-backend dev",
 		"dev:photo": "pnpm --filter photo dev -p 3000",
 		"dev:stamp": "pnpm --filter stamp dev -p 3001",
 		"build:photo": "pnpm --filter photo build",
@@ -18,6 +19,7 @@
 		"lint": "pnpm --recursive lint && pnpm exec biome check *.ts *.json",
 		"lint:fix": "pnpm --recursive lint:fix && pnpm exec biome check --write *.ts *.json",
 		"test:art-backend": "pnpm --filter art-backend test",
+		"test:art-backend:e2e": "pnpm --filter art-backend test:e2e",
 		"test:photo": "pnpm --filter photo test",
 		"test:photo-cleaner": "pnpm --filter photo-cleaner test",
 		"test:fish-cleaner": "pnpm --filter fish-cleaner test",

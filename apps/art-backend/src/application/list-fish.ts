@@ -68,12 +68,14 @@ export const createListFish = (
 				log("error", "listFish.failed", {
 					code: error.code,
 					name: error.name,
+					error,
 				});
 				throw error;
 			}
 
 			log("error", "listFish.unexpected", {
 				name: error instanceof Error ? error.name : "UnknownError",
+				error,
 			});
 
 			throw new UseCaseError({

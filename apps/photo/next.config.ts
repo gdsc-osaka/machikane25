@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      // Development (localhost)
       {
         protocol: "http",
         hostname: "localhost",
@@ -21,6 +22,20 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "localhost",
+      },
+      // Production domain
+      {
+        protocol: "https",
+        hostname: "photo.fes2025.gdsc-osaka.jp",
+      },
+      // Firebase Storage
+      {
+        protocol: "https",
+        hostname: "*.firebasestorage.app",
+      },
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
       },
     ],
   },

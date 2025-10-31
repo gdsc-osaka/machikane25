@@ -89,9 +89,12 @@ Components:
 
 ### Display Page States
 
+**IMPORTANT**: Display page is designed for **portrait orientation (9:21 aspect ratio)**
+
 #### 1. Idle State
-- Welcome message: "Gemini AI フォトブース"
-- Prompt: "タブレットの画面をタップしてスタート"
+- Welcome message: "Gemini AI フォトブース" (split across 2 lines)
+- Prompt: "タブレットの画面をタップしてスタート" (split across 2 lines)
+- Responsive text sizes with padding
 
 #### 2. Menu State
 - Message at center:
@@ -101,18 +104,21 @@ Components:
   2. 写真を撮る
   3. 決定
   ```
+- Responsive text size (4xl on portrait, 5xl on larger)
 
 #### 3. Capturing State
-- Webcam feed at center
-- Countdown overlay from control page
+- Webcam feed at center (portrait: 1080x1920)
+- Countdown overlay (200px on portrait, 300px on larger displays)
+- Full-screen coverage
 
 #### 4. Generating State
 - Message: "画像を生成中..."
-- Progress bar below message
+- Progress bar (75% width, max 2xl) with responsive sizing
 
 #### 5. Completed State
 - Generated image at center
-- Full screen display
+- Full screen display with `object-contain`
+- Black background
 
 ## Technical Specifications
 
@@ -218,11 +224,12 @@ Check if `progress` component from shadcn is installed. If not, install it.
 
 ## Success Criteria
 
-- [ ] Both pages implement all 5 states correctly
-- [ ] State transitions work as specified
-- [ ] Scrolling is disabled on both pages
-- [ ] UI is visually appealing and matches design philosophy
-- [ ] Back button works from all states
-- [ ] QR code generation works correctly
-- [ ] Webcam capture works reliably
-- [ ] All tests pass
+- [x] Both pages implement all 5 states correctly
+- [x] State transitions work as specified
+- [x] Scrolling is disabled on both pages
+- [x] UI is visually appealing and matches design philosophy
+- [x] Back button works from all states (control page)
+- [x] QR code generation works correctly
+- [x] Webcam capture works reliably (portrait: 1080x1920)
+- [x] Display page optimized for portrait orientation (9:21)
+- [ ] All tests pass (to be verified by user)

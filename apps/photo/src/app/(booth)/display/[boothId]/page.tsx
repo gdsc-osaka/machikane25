@@ -92,19 +92,23 @@ export default function DisplayPage() {
 	}, [countdown, boothId]);
 
 	const renderIdle = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-blue-600 to-purple-700 text-white">
-			<h1 className="text-8xl font-bold drop-shadow-lg">
-				Gemini AI フォトブース
+		<div className="flex h-full w-full flex-col items-center justify-center gap-12 bg-gradient-to-br from-blue-600 to-purple-700 px-8 text-white">
+			<h1 className="text-center text-6xl font-bold leading-tight drop-shadow-lg md:text-7xl">
+				Gemini AI
+				<br />
+				フォトブース
 			</h1>
-			<p className="animate-pulse text-4xl font-semibold drop-shadow-md">
-				タブレットの画面をタップしてスタート
+			<p className="animate-pulse text-center text-3xl font-semibold drop-shadow-md md:text-4xl">
+				タブレットの画面を
+				<br />
+				タップしてスタート
 			</p>
 		</div>
 	);
 
 	const renderMenu = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-indigo-600 to-blue-700 text-white">
-			<p className="whitespace-pre-line text-center text-5xl font-semibold leading-relaxed">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-indigo-600 to-blue-700 px-8 text-white">
+			<p className="whitespace-pre-line text-center text-4xl font-semibold leading-relaxed md:text-5xl">
 				{`タブレットを操作してください
 
 1. 画像を選ぶ
@@ -122,8 +126,8 @@ export default function DisplayPage() {
 					audio={false}
 					screenshotFormat="image/png"
 					videoConstraints={{
-						width: 1920,
-						height: 1080,
+						width: 1080,
+						height: 1920,
 						facingMode: "user",
 					}}
 					className="h-full w-full object-cover"
@@ -138,7 +142,7 @@ export default function DisplayPage() {
 							transition={{ duration: 0.3 }}
 							className="absolute inset-0 flex items-center justify-center bg-black/30"
 						>
-							<span className="text-[300px] font-bold text-white drop-shadow-2xl">
+							<span className="text-[200px] font-bold text-white drop-shadow-2xl md:text-[300px]">
 								{countdown}
 							</span>
 						</motion.div>
@@ -149,11 +153,11 @@ export default function DisplayPage() {
 	);
 
 	const renderGenerating = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-purple-600 to-pink-600">
-			<p className="text-6xl font-semibold text-white drop-shadow-lg">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-purple-600 to-pink-600 px-8">
+			<p className="text-center text-5xl font-semibold text-white drop-shadow-lg md:text-6xl">
 				画像を生成中...
 			</p>
-			<Progress value={undefined} className="w-[600px] bg-white/30" />
+			<Progress value={undefined} className="w-3/4 max-w-2xl bg-white/30" />
 		</div>
 	);
 

@@ -310,7 +310,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Art::Art.Visitors.VisitorDetector
   calibration: {fileID: 11400000, guid: 18200db8b9f4949e8afde4ecf6dc459a, type: 2}
-  preferredCameraName: 
+  preferredCameraName: MacBook Pro Camera
   targetWidth: 640
   targetHeight: 360
   minContourArea: 800

@@ -1,0 +1,64 @@
+/**
+ * Firebase Storage Security Rules
+ *
+ * Based on spec.md and data-model.md
+ * - Anonymous auth for attendees (uploading photos)
+ * - Admin role via Custom Claim for staff
+ */
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    /**
+     * Helper function: Check if user is admin
+     * Admin users have custom claim: role = 'admin'
+     */
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    /**
+     * Helper function: Check if user is authenticated (including anonymous)
+     */
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /**
+     * UploadedPhotos Storage Path: photos/{photoId}/photo.png
+     * - Create: Authenticated users (including anonymous) - FR-002
+     * - Read: Authenticated users (including anonymous)
+     * - Delete: Admin only
+     */
+    match /photos/{photoId}/{fileName} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * Photos directory access for listing
+     * - List/Read: Authenticated users (including anonymous)
+     */
+    match /photos/{allPaths=**} {
+      allow read, list: if isAuthenticated();
+    }
+
+    /**
+     * GeneratedPhotos Storage Path: generated_photos/{boothId}/{photoId}/photo.png
+     * - Read: Anyone (including unauthenticated) for Download Page
+     * - Create, Delete: Admin only (GenerationService uses Admin SDK)
+     */
+    match /generated_photos/{boothId}/{photoId}/{fileName} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+    }
+
+    match /fish_images/{fishId}/{fileName} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+    }
+  }
+}

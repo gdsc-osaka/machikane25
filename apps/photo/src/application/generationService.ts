@@ -197,6 +197,11 @@ export const generateImage = async (
 					parts,
 				},
 			],
+			generationConfig: {
+				imageConfig: {
+					aspectRatio: "3:4",
+				},
+			},
 		}),
 	});
 

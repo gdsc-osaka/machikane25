@@ -11,8 +11,34 @@ runConfig:
 env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+
+  # Public environment variables
+  - variable: NEXT_PUBLIC_BASE_URL
+    value: https://photo.fes2025.gdsc-osaka.jp
+
+  # Firebase configuration (secrets)
   - variable: NEXT_PUBLIC_FIREBASE_CONFIG
     secret: firebaseConfig
+  - variable: FIREBASE_STORAGE_BUCKET
+    secret: firebaseStorageBucket
+
+  # API Keys (secrets)
+  - variable: GEMINI_API_KEY
+    secret: geminiApiKey
+  - variable: AQUARIUM_API_KEY
+    secret: aquariumApiKey
+
+  # App configuration (secrets)
+  - variable: ADMIN_TOKEN_SALT
+    secret: adminTokenSalt
+  - variable: ADMIN_TOKEN_HASH
+    secret: adminTokenHash
+
+  # External services
+  - variable: AQUARIUM_API_BASE_URL
+    value: https://art-backend-724712977891.asia-northeast2.run.app
+
+  # Monitoring
   - variable: SENTRY_AUTH_TOKEN
     secret: sentryAuthToken
 

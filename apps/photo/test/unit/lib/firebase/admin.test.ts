@@ -16,6 +16,7 @@ vi.mock("firebase-admin", () => ({
 		storage: vi.fn(() => mockStorage),
 		credential: {
 			cert: vi.fn((serviceAccount) => ({ serviceAccount })),
+			applicationDefault: vi.fn(() => ({ type: "application_default" })),
 		},
 	},
 	apps: [],
@@ -25,6 +26,7 @@ vi.mock("firebase-admin", () => ({
 	storage: vi.fn(() => mockStorage),
 	credential: {
 		cert: vi.fn((serviceAccount) => ({ serviceAccount })),
+		applicationDefault: vi.fn(() => ({ type: "application_default" })),
 	},
 }));
 
@@ -80,15 +82,16 @@ describe("Firebase Admin", () => {
 			expect(admin.initializeApp).toHaveBeenCalledOnce();
 		});
 
-		it("should throw error when FIREBASE_SERVICE_ACCOUNT_JSON is not defined", async () => {
+		it("should use applicationDefault when FIREBASE_SERVICE_ACCOUNT_JSON is not defined", async () => {
 			delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 			vi.resetModules();
 
 			const { getAdminAuth } = await import("@/lib/firebase/admin");
+			const auth = getAdminAuth();
 
-			expect(() => getAdminAuth()).toThrow(
-				"FIREBASE_SERVICE_ACCOUNT_JSON is not defined",
-			);
+			expect(auth).toBeDefined();
+			expect(admin.credential.applicationDefault).toHaveBeenCalledOnce();
+			expect(admin.initializeApp).toHaveBeenCalledOnce();
 		});
 	});
 

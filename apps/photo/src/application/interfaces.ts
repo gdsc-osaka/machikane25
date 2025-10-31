@@ -6,11 +6,7 @@
  * (AGENTS.md: Use interfaces for abstractions)
  */
 
-import type { User } from "firebase/auth";
-import type {
-	GenerationOption,
-	GroupedGenerationOptions,
-} from "@/domain/generationOption";
+import type { GroupedGenerationOptions } from "@/domain/generationOption";
 
 /**
  * Authentication Service Interface
@@ -66,7 +62,13 @@ export interface IPhotoService {
 	 * @param photoId - Photo ID
 	 * @returns Promise resolving to photo URL or null if not found/expired
 	 */
-	getGeneratedPhoto(boothId: string, photoId: string): Promise<string | null>;
+	getGeneratedPhoto(
+		boothId: string,
+		photoId: string,
+	): Promise<{
+		id: string;
+		imageUrl: string;
+	} | null>;
 }
 
 /**

@@ -285,7 +285,7 @@ describe("Firestore Security Rules", () => {
 		});
 	});
 
-	describe("GeneratedPhotos Sub-collection", () => {
+	describe("GeneratedPhotos Collection", () => {
 		beforeEach(async () => {
 			// Setup: Create a booth and a generated photo as admin
 			const adminContext = testEnv.authenticatedContext("admin-setup", {
@@ -303,6 +303,7 @@ describe("Firestore Security Rules", () => {
 			await setDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-1"), {
 				imageUrl: "https://storage.example.com/generated.png",
 				imagePath: "generated_photos/photo-1/photo.png",
+				boothId: "booth-1",
 				createdAt: serverTimestamp(),
 			});
 		});
@@ -333,6 +334,7 @@ describe("Firestore Security Rules", () => {
 				setDoc(doc(anonDb, "booths/booth-1/generatedPhotos", "photo-2"), {
 					imageUrl: "https://storage.example.com/new.png",
 					imagePath: "generated_photos/photo-2/photo.png",
+					boothId: "booth-1",
 					createdAt: serverTimestamp(),
 				}),
 			);
@@ -349,6 +351,7 @@ describe("Firestore Security Rules", () => {
 				setDoc(doc(adminDb, "booths/booth-1/generatedPhotos", "photo-2"), {
 					imageUrl: "https://storage.example.com/new.png",
 					imagePath: "generated_photos/photo-2/photo.png",
+					boothId: "booth-1",
 					createdAt: serverTimestamp(),
 				}),
 			);

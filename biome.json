@@ -21,7 +21,8 @@
 				"noArrayIndexKey": "warn"
 			},
 			"a11y": {
-				"useSemanticElements": "warn"
+				"useSemanticElements": "warn",
+				"noRedundantAlt": "warn"
 			},
 			"correctness": {
 				"useUniqueElementIds": "warn"

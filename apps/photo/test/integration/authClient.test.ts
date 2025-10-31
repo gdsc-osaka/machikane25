@@ -48,8 +48,6 @@ describe("Anonymous Authentication", () => {
 	});
 
 	it("should not sign in again when called twice (idempotent)", async () => {
-		const auth = getAuth();
-
 		// First call
 		const user1 = await ensureAnonymousSignIn();
 		expect(user1).toBeDefined();

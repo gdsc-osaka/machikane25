@@ -519,6 +519,9 @@
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/PackageCache/com.unity.collections@d49facba0036/Unity.Collections.Tests/System.Runtime.CompilerServices.Unsafe/System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
+    <Reference Include="Google.Protobuf">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/PackageCache/com.unity.barracuda@eefb8cb01e6c/Barracuda/Runtime/Plugins/ProtoBuffer/Google.Protobuf.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEditor.iOS.Extensions.Xcode">
       <HintPath>/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.iOS.Extensions.Xcode.dll</HintPath>
     </Reference>
@@ -918,6 +921,9 @@
     <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Barracuda.iOSBLAS">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.iOSBLAS.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
     </Reference>
@@ -954,6 +960,9 @@
     <Reference Include="Unity.PlasticSCM.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.PlasticSCM.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Barracuda.Editor">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.Editor.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.Burst.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Burst.Editor.dll</HintPath>
     </Reference>
@@ -962,6 +971,9 @@
     </Reference>
     <Reference Include="Unity.Mathematics.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Mathematics.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Barracuda.MacBLAS">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.MacBLAS.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Rendering.LightTransport.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Rendering.LightTransport.Editor.dll</HintPath>
@@ -983,6 +995,9 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Flow">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.VisualScripting.Flow.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Barracuda">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
@@ -1041,6 +1056,9 @@
     <Reference Include="Unity.Multiplayer.Center.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Multiplayer.Center.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Barracuda.BurstBLAS">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.BurstBLAS.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
     </Reference>
@@ -1061,6 +1079,9 @@
     </Reference>
     <Reference Include="Unity.ShaderGraph.Editor">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.ShaderGraph.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Barracuda.ONNX">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.ONNX.dll</HintPath>
     </Reference>
     <Reference Include="Unity.RenderPipelines.HighDefinition.Config.Runtime">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.RenderPipelines.HighDefinition.Config.Runtime.dll</HintPath>

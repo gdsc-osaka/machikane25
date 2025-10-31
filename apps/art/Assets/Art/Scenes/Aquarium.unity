@@ -309,15 +309,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed686797bb17847fda17408ad1aa2b18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Art::Art.Visitors.VisitorDetector
+  yoloModel: {fileID: 5022602860645237092, guid: cd75491b4a7cc4ac996498aca07d89ea, type: 3}
   calibration: {fileID: 11400000, guid: 18200db8b9f4949e8afde4ecf6dc459a, type: 2}
   preferredCameraName: MacBook Pro Camera
   targetWidth: 640
   targetHeight: 360
-  minContourArea: 800
   mergeDistance: 0.2
-  detectionThreshold: 0.18
-  backgroundLerp: 0.05
-  sampleStride: 4
+  confidenceThreshold: 0.5
   smoothingSpeed: 6
   absenceDamping: 3
 --- !u!1001 &111094562

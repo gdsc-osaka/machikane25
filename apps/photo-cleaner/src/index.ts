@@ -7,16 +7,97 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import * as logger from "firebase-functions/logger";
+import { CloudTasksClient } from "@google-cloud/tasks";
+import * as admin from "firebase-admin";
+import { logger } from "firebase-functions";
 import { onRequest } from "firebase-functions/v2/https";
+// Some environments may not have up-to-date type declarations for these v2 paths.
+import { onObjectFinalized } from "firebase-functions/v2/storage";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 
-export const helloWorld = onRequest(
-	{ region: "asia-northeast2" },
-	(request, response) => {
-		logger.info("Hello logs!", { structuredData: true });
-		response.send("Hello from Firebase!");
+// Initialize Admin SDK
+if (!admin.apps.length) {
+	admin.initializeApp();
+}
+
+const storage = admin.storage();
+
+const REGION = "asia-northeast2";
+const PROJECT_ID = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT!;
+const LOCATION_ID = "asia-northeast2";
+const QUEUE_ID = "file-delete-queue";
+
+const tasksClient = new CloudTasksClient();
+
+/**
+ * ファイルが Cloud Storage にアップロードされたとき、
+ * Cloud Tasks を使用して 15分後に削除タスクをスケジュールする。
+ */
+export const scheduleDelete = onObjectFinalized(
+	{ region: "us-west1" },
+	async (event) => {
+		try {
+			const object = event.data; // ← event.data に ObjectMetadata が入る
+			const bucket = object.bucket;
+			const filePath = object.name;
+			if (!bucket || !filePath) {
+				logger.warn("Received storage finalize without bucket or name", {
+					object,
+				});
+				return;
+			}
+
+			if (!filePath.startsWith("photos/")) return;
+
+			// 15分後に実行される削除タスクを作成
+			const url = `https://${REGION}-${PROJECT_ID}.cloudfunctions.net/deleteFile`;
+			const payload = JSON.stringify({ bucket, filePath });
+
+			const parent = tasksClient.queuePath(PROJECT_ID, LOCATION_ID, QUEUE_ID);
+			const task = {
+				httpRequest: {
+					httpMethod: "POST" as const,
+					url,
+					headers: { "Content-Type": "application/json" },
+					body: Buffer.from(payload).toString("base64"),
+				},
+				scheduleTime: {
+					seconds: Math.floor(Date.now() / 1000) + 15 * 60, // 15分後
+				},
+			};
+
+			await tasksClient.createTask({ parent, task });
+			logger.info("Scheduled file deletion via Cloud Tasks", {
+				filePath,
+				deleteAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+			});
+		} catch (error) {
+			logger.error("Error scheduling delete task", error);
+		}
 	},
 );
+
+/**
+ * Cloud Tasks によって呼び出され、指定ファイルと Firestore データを削除する関数。
+ */
+export const deleteFile = onRequest({ region: REGION }, async (req, res) => {
+	try {
+		const { bucket, filePath } = req.body;
+		if (!bucket || !filePath) {
+			logger.warn("Invalid delete request", req.body);
+			res.status(400).send("Invalid request");
+			return;
+		}
+
+		// Storage ファイル削除
+		await storage.bucket(bucket).file(filePath).delete();
+		logger.info("Deleted file from storage", { bucket, filePath });
+
+		res.status(200).send("File and Firestore data deleted successfully");
+	} catch (error) {
+		logger.error("Failed to delete file or Firestore data", error);
+		res.status(500).send("Deletion failed");
+	}
+});

@@ -15,6 +15,10 @@ env:
     secret: firebaseConfig
   - variable: SENTRY_AUTH_TOKEN
     secret: sentryAuthToken
+  - variable: NEXT_PUBLIC_SURVEY_FORM_URL_MAP
+    secret: surveyFormUrlMap
+  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+    secret: firebaseServiceAccountKey
 
 scripts:
   buildCommand: npm run build

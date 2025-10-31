@@ -5,18 +5,26 @@ import { z } from "zod";
 const StampCheckpoint = z.union([
 	z.literal("reception"),
 	z.literal("photobooth"),
-	z.literal("art"),
 	z.literal("robot"),
+	z.literal("art"),
 	z.literal("survey"),
 ]);
 
 export type StampCheckpoint = z.infer<typeof StampCheckpoint>;
 
+const stampToken: Record<StampCheckpoint, string> = {
+	reception: "976f5ccf-3341-47cf-82cc-76fe8f192209",
+	photobooth: "4a28c0a7-36ee-4c0e-ad4f-0e0110293c5f",
+	robot: "5a9837bb-a11c-4f01-9903-31af97cd1c85",
+	art: "9096caad-525f-496d-93fc-af4ba10a912a",
+	survey: "67e0714a-5b7f-4c45-967d-02391bcc54fc",
+};
+
 export const STAMP_SEQUENCE: ReadonlyArray<StampCheckpoint> = [
 	"reception",
 	"photobooth",
-	"art",
 	"robot",
+	"art",
 	"survey",
 ];
 
@@ -104,7 +112,10 @@ export const resolveStampToken = (token: string): StampCheckpoint | null => {
 		return null;
 	}
 
-	return STAMP_SEQUENCE.find((checkpoint) => checkpoint === candidate) ?? null;
+	return (
+		STAMP_SEQUENCE.find((checkpoint) => stampToken[checkpoint] === candidate) ??
+		null
+	);
 };
 
 export const InvalidStampTokenError = errorBuilder(

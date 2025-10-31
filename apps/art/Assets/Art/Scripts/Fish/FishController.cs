@@ -10,7 +10,7 @@ public class FishController : MonoBehaviour
     void Start()
     {
         // 最初はランダムな目標地点を設定
-        SetNewRandomTarget();
+        // SetNewRandomTarget();
     }
 
     void Update()
@@ -39,9 +39,9 @@ public class FishController : MonoBehaviour
     void SetNewRandomTarget()
     {
         // TODO: 後でFlockControllerが管理するAquariumの範囲を取得するように変更
-        float x = Random.Range(-20f, 20f);
-        float y = Random.Range(0f, 10f);
-        float z = Random.Range(-20f, 20f);
+        float x = Random.Range(-5f, 5f);
+        float y = Random.Range(0f, 5f);
+        float z = Random.Range(-5f, 5f);
         targetPosition = new Vector3(x, y, z);
     }
 }

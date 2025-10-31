@@ -44,7 +44,7 @@ const tasksClient = new CloudTasksClient();
  * ファイルが Cloud Storage にアップロードされたとき、
  * Cloud Tasks を使用して当日の23:59(JST)に削除タスクをスケジュールする。
  */
-export const fishCleanerExample = onObjectFinalized(async (event) => {
+export const fishCleanerExample = onObjectFinalized({ region: "us-west1" }, async (event) => {
 	// ← 型を明示！
 	try {
 		const object = event.data; // ← event.data に ObjectMetadata が入る

@@ -6,9 +6,15 @@ import { getStampCopy } from "@/libs/i18n/stamp-copy";
 type SurveyQuestionId =
 	| "ratingPhotobooth"
 	| "ratingAquarium"
-	| "ratingStampRally";
+	| "ratingStampRally"
+	| "howYouKnew";
 
 type SurveyRatingOption = {
+	value: string;
+	label: LocaleField;
+};
+
+type SurveyCheckboxOption = {
 	value: string;
 	label: LocaleField;
 };
@@ -41,6 +47,7 @@ type SurveyFormCopy = {
 		message: LocaleField;
 	};
 	ratingOptions: ReadonlyArray<SurveyRatingOption>;
+	howYouKnewOptions: ReadonlyArray<SurveyCheckboxOption>;
 	questions: ReadonlyArray<SurveyQuestionCopy>;
 };
 
@@ -87,6 +94,44 @@ const surveyRatingOptions: ReadonlyArray<SurveyRatingOption> = [
 	},
 ];
 
+const surveyHowYouKnewOptions: ReadonlyArray<SurveyCheckboxOption> = [
+	{
+		value: "poster",
+		label: {
+			ja: "掲示板のポスターを見た",
+			en: "Saw a poster on the bulletin board",
+		},
+	},
+	{
+		value: "pamphlet",
+		label: {
+			ja: "パンフレットを見た",
+			en: "Saw a pamphlet",
+		},
+	},
+	{
+		value: "sns",
+		label: {
+			ja: "SNS を見た",
+			en: "Saw on SNS",
+		},
+	},
+	{
+		value: "friend",
+		label: {
+			ja: "知人に聞いた",
+			en: "Heard from a friend",
+		},
+	},
+	{
+		value: "other",
+		label: {
+			ja: "その他 (自由回答)",
+			en: "Other (free text)",
+		},
+	},
+];
+
 const surveyQuestions: ReadonlyArray<SurveyQuestionCopy> = [
 	{
 		id: "ratingPhotobooth",
@@ -119,6 +164,17 @@ const surveyQuestions: ReadonlyArray<SurveyQuestionCopy> = [
 		description: {
 			ja: "受付から景品受け取りまでの流れを振り返って評価してください。",
 			en: "Rate your experience from check-in to reward unlock.",
+		},
+	},
+	{
+		id: "howYouKnew",
+		heading: {
+			ja: "どこでこの企画を知りましたか？",
+			en: "How did you learn about this event?",
+		},
+		description: {
+			ja: "複数選択可能です。",
+			en: "Multiple selections possible.",
 		},
 	},
 ];
@@ -172,8 +228,14 @@ const surveyFormCopy: SurveyFormCopy = {
 		},
 	},
 	ratingOptions: surveyRatingOptions,
+	howYouKnewOptions: surveyHowYouKnewOptions,
 	questions: surveyQuestions,
 };
 
 export { surveyFormCopy };
-export type { SurveyQuestionCopy, SurveyQuestionId, SurveyRatingOption };
+export type {
+	SurveyQuestionCopy,
+	SurveyQuestionId,
+	SurveyRatingOption,
+	SurveyCheckboxOption,
+};

@@ -39,6 +39,8 @@ const surveyAnswersSchema = z.object({
 	ratingPhotobooth: z.number().int().min(1).max(5),
 	ratingAquarium: z.number().int().min(1).max(5),
 	ratingStampRally: z.number().int().min(1).max(5),
+	howYouKnew: z.array(z.string()).nullable(),
+	howYouKnewOther: z.string().nullable(),
 	freeComment: z.string().nullable(),
 });
 
@@ -61,6 +63,12 @@ const createSurveyFormData = ({
 	formData.set(entryIds.ratingPhotobooth, String(answers.ratingPhotobooth));
 	formData.set(entryIds.ratingAquarium, String(answers.ratingAquarium));
 	formData.set(entryIds.ratingStampRally, String(answers.ratingStampRally));
+	if (answers.howYouKnew) {
+		for (const value of answers.howYouKnew) {
+			formData.append(entryIds.howYouKnew, value);
+		}
+	}
+	formData.set(entryIds.howYouKnewOther, answers.howYouKnewOther ?? "");
 	formData.set(entryIds.freeComment, answers.freeComment ?? "");
 	return formData;
 };

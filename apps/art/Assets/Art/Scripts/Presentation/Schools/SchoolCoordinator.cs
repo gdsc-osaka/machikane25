@@ -70,6 +70,7 @@ namespace Art.Presentation.Schools
 
         public void ApplyVisitorInfluence(IReadOnlyList<VisitorGroup> visitors)
         {
+            // Debug.Log($"SchoolCoordinator received {visitors?.Count ?? 0} visitor groups.");
             currentVisitors = visitors ?? Array.Empty<VisitorGroup>();
             RebuildVisitorSamples();
         }

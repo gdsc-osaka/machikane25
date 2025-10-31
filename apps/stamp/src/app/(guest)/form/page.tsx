@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@radix-ui/react-checkbox";
 import { useRouter } from "next/navigation";
 import {
 	useCallback,
@@ -10,7 +11,6 @@ import {
 	useTransition,
 } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { submitSurveyAction } from "@/app/(guest)/actions/submit-survey";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,13 +44,20 @@ import {
 	type StampProgressSnapshot,
 	useStampProgress,
 } from "@/hooks/use-stamp-progress";
-import { type SurveyQuestionId, surveyFormCopy } from "@/libs/i18n/form-copy";
+import {
+	type SurveyCheckboxOption,
+	type SurveyQuestionId,
+	surveyFormCopy,
+} from "@/libs/i18n/form-copy";
 import { CHECKPOINT_LABELS, type LocaleField } from "@/libs/i18n/messages";
 import { getLogger } from "@/packages/logger";
+import { submitSurveyAction } from "../actions/submit-survey";
 
 type SurveyFormRatings = Record<SurveyQuestionId, string>;
 
 type SurveyFormValues = SurveyFormRatings & {
+	howYouKnew: string[];
+	howYouKnewOther: string;
 	freeComment: string;
 };
 
@@ -76,6 +83,7 @@ const {
 	attendeeError: ATTENDEE_ERROR_COPY,
 	submissionError: SUBMISSION_ERROR_COPY,
 	ratingOptions: SURVEY_RATING_OPTIONS,
+	howYouKnewOptions: SURVEY_HOW_YOU_KNEW_OPTIONS,
 	questions: SURVEY_QUESTIONS,
 } = surveyFormCopy;
 
@@ -151,16 +159,22 @@ const SurveyForm = ({
 		register,
 		handleSubmit,
 		reset,
+		watch,
 		formState: { errors },
 	} = useForm<SurveyFormValues>({
 		defaultValues: {
 			ratingPhotobooth: "",
 			ratingAquarium: "",
 			ratingStampRally: "",
+			howYouKnew: [],
+			howYouKnewOther: "",
 			freeComment: "",
 		},
 		shouldFocusError: true,
 	});
+
+	const howYouKnewWatch = watch("howYouKnew");
+	const isHowYouKnewOtherSelected = howYouKnewWatch.includes("other");
 
 	const onSubmit = useCallback(
 		(values: SurveyFormValues) => {
@@ -172,6 +186,8 @@ const SurveyForm = ({
 				return;
 			}
 
+			const howYouKnew = values.howYouKnew;
+			const howYouKnewOther = values.howYouKnewOther.trim();
 			const freeComment = values.freeComment.trim();
 
 			setSubmissionError(null);
@@ -183,6 +199,9 @@ const SurveyForm = ({
 						ratingPhotobooth: photobooth,
 						ratingAquarium: aquarium,
 						ratingStampRally: stampRally,
+						howYouKnew: howYouKnew.length === 0 ? null : howYouKnew,
+						howYouKnewOther:
+							howYouKnewOther.length === 0 ? null : howYouKnewOther,
 						freeComment: freeComment.length === 0 ? null : freeComment,
 					},
 				})
@@ -230,71 +249,201 @@ const SurveyForm = ({
 							</span>
 						</FieldLegend>
 						<FieldGroup>
-							{SURVEY_QUESTIONS.map((question) => (
-								<Controller
-									key={question.id}
-									control={control}
-									name={question.id}
-									rules={{
-										required: {
-											value: true,
-											message: "1 から 5 のいずれかを選択してください。",
-										},
-									}}
-									render={({ field, fieldState }) => (
-										<Field data-invalid={fieldState.invalid ? "true" : "false"}>
-											<FieldTitle className="flex flex-col gap-1">
-												<span className="text-base font-semibold">
-													{question.heading.ja}
-												</span>
-												<span className="text-xs text-muted-foreground">
-													{question.heading.en}
-												</span>
-											</FieldTitle>
-											<FieldDescription className="flex flex-col gap-1">
-												<span>{question.description.ja}</span>
-												<span className="text-xs text-muted-foreground">
-													{question.description.en}
-												</span>
-											</FieldDescription>
-											<FieldContent>
-												<RadioGroup
-													name={field.name}
-													value={field.value}
-													onValueChange={field.onChange}
-													onBlur={field.onBlur}
-													className="grid gap-3 sm:grid-cols-2"
+							{SURVEY_QUESTIONS.map((question) => {
+								if (question.id === "howYouKnew") {
+									return (
+										<Controller
+											key={question.id}
+											control={control}
+											name="howYouKnew"
+											rules={{
+												validate: (value) =>
+													value.length > 0 || "いずれかを選択してください。",
+											}}
+											render={({ field, fieldState }) => (
+												<Field
+													data-invalid={fieldState.invalid ? "true" : "false"}
 												>
-													{SURVEY_RATING_OPTIONS.map((option) => {
-														const inputId = `${field.name}-${option.value}`;
-														return (
-															<FieldLabel
-																key={option.value}
-																htmlFor={inputId}
-																className="items-center gap-3 rounded-lg border border-muted-foreground/30 p-3 transition hover:border-primary focus-within:border-primary data-[state=checked]:border-primary data-[state=checked]:bg-primary/5"
-															>
-																<RadioGroupItem
-																	id={inputId}
-																	value={option.value}
-																	aria-invalid={
-																		fieldState.invalid ? "true" : "false"
-																	}
-																/>
-																<LocaleStack copy={option.label} />
-															</FieldLabel>
-														);
-													})}
-												</RadioGroup>
-											</FieldContent>
-											<FieldError
-												errors={
-													fieldState.error ? [fieldState.error] : undefined
-												}
+													<FieldTitle className="flex flex-col gap-1">
+														<span className="text-base font-semibold">
+															{question.heading.ja}
+														</span>
+														<span className="text-xs text-muted-foreground">
+															{question.heading.en}
+														</span>
+													</FieldTitle>
+													<FieldDescription className="flex flex-col gap-1">
+														<span>{question.description.ja}</span>
+														<span className="text-xs text-muted-foreground">
+															{question.description.en}
+														</span>
+													</FieldDescription>
+													<FieldContent>
+														<div className="grid gap-3 sm:grid-cols-2">
+															{SURVEY_HOW_YOU_KNEW_OPTIONS.map((option) => {
+																const inputId = `${field.name}-${option.value}`;
+																return (
+																	<FieldLabel
+																		key={option.value}
+																		htmlFor={inputId}
+																		className="items-center gap-3 rounded-lg border border-muted-foreground/30 p-3 transition hover:border-primary focus-within:border-primary data-[state=checked]:border-primary data-[state=checked]:bg-primary/5"
+																	>
+																		<Checkbox
+																			id={inputId}
+																			checked={field.value.includes(
+																				option.value,
+																			)}
+																			onCheckedChange={(checked) => {
+																				return checked
+																					? field.onChange([
+																							...field.value,
+																							option.value,
+																						])
+																					: field.onChange(
+																							field.value.filter(
+																								(value) =>
+																									value !== option.value,
+																							),
+																						);
+																			}}
+																			aria-invalid={
+																				fieldState.invalid ? "true" : "false"
+																			}
+																		/>
+																		<LocaleStack copy={option.label} />
+																	</FieldLabel>
+																);
+															})}
+														</div>
+													</FieldContent>
+													<FieldError
+														errors={
+															fieldState.error ? [fieldState.error] : undefined
+														}
+													/>
+												</Field>
+											)}
+										/>
+									);
+								}
+								return (
+									<Controller
+										key={question.id}
+										control={control}
+										name={question.id}
+										rules={{
+											required: {
+												value: true,
+												message: "1 から 5 のいずれかを選択してください。",
+											},
+										}}
+										render={({ field, fieldState }) => (
+											<Field
+												data-invalid={fieldState.invalid ? "true" : "false"}
+											>
+												<FieldTitle className="flex flex-col gap-1">
+													<span className="text-base font-semibold">
+														{question.heading.ja}
+													</span>
+													<span className="text-xs text-muted-foreground">
+														{question.heading.en}
+													</span>
+												</FieldTitle>
+												<FieldDescription className="flex flex-col gap-1">
+													<span>{question.description.ja}</span>
+													<span className="text-xs text-muted-foreground">
+														{question.description.en}
+													</span>
+												</FieldDescription>
+												<FieldContent>
+													<RadioGroup
+														name={field.name}
+														value={field.value}
+														onValueChange={field.onChange}
+														onBlur={field.onBlur}
+														className="grid gap-3 sm:grid-cols-2"
+													>
+														{SURVEY_RATING_OPTIONS.map((option) => {
+															const inputId = `${field.name}-${option.value}`;
+															return (
+																<FieldLabel
+																	key={option.value}
+																	htmlFor={inputId}
+																	className="items-center gap-3 rounded-lg border border-muted-foreground/30 p-3 transition hover:border-primary focus-within:border-primary data-[state=checked]:border-primary data-[state=checked]:bg-primary/5"
+																>
+																	<RadioGroupItem
+																		id={inputId}
+																		value={option.value}
+																		aria-invalid={
+																			fieldState.invalid ? "true" : "false"
+																		}
+																	/>
+																	<LocaleStack copy={option.label} />
+																</FieldLabel>
+															);
+														})}
+													</RadioGroup>
+												</FieldContent>
+												<FieldError
+													errors={
+														fieldState.error ? [fieldState.error] : undefined
+													}
+												/>
+											</Field>
+										)}
+									/>
+								);
+							})}
+
+							{isHowYouKnewOtherSelected && (
+								<Field
+									data-invalid={errors.howYouKnewOther ? "true" : "false"}
+									className="flex flex-col gap-2"
+								>
+									<FieldTitle className="flex flex-col gap-1">
+										<span className="text-base font-semibold">
+											「その他」の詳細 (任意)
+										</span>
+										<span className="text-xs text-muted-foreground">
+											Details for "Other" (optional)
+										</span>
+									</FieldTitle>
+									<FieldDescription className="flex flex-col gap-1">
+										<span>どのように知ったか具体的にご記入ください。</span>
+										<span className="text-xs text-muted-foreground">
+											Please specify how you learned about it.
+										</span>
+									</FieldDescription>
+									<FieldContent>
+										<InputGroup className="min-h-24">
+											<InputGroupAddon align="block-start" className="text-xs">
+												<span>詳細</span>
+												<span className="text-muted-foreground block text-[11px]">
+													Details
+												</span>
+											</InputGroupAddon>
+											<InputGroupTextarea
+												{...register("howYouKnewOther", {
+													maxLength: {
+														value: COMMENT_MAX_LENGTH,
+														message: `${COMMENT_MAX_LENGTH} 文字以内で入力してください。`,
+													},
+												})}
+												aria-invalid={errors.howYouKnewOther ? "true" : "false"}
+												placeholder="例: 大学の授業で紹介された"
+												rows={3}
 											/>
-										</Field>
-									)}
-								/>
-							))}
+										</InputGroup>
+									</FieldContent>
+									<FieldError
+										errors={
+											errors.howYouKnewOther
+												? [errors.howYouKnewOther]
+												: undefined
+										}
+									/>
+								</Field>
+							)}
 
 							<Field
 								data-invalid={errors.freeComment ? "true" : "false"}

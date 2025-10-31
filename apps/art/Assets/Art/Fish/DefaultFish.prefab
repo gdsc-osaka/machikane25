@@ -61,8 +61,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c744b7e5c99a54fed863ff4ef0aacbc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Art::FishController
+  animator: {fileID: 1387127989822505732}
   speed: 1
-  rotationSpeed: 2
+  rotationSpeed: 0.1
 --- !u!1001 &4271719704741878251
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -73,15 +74,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.12
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 9.57
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.26
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalRotation.w

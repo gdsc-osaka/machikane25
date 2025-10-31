@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { use, useMemo } from "react";
 import useSWR from "swr";
@@ -30,6 +31,11 @@ import {
 	STAMP_MESSAGES,
 } from "@/libs/i18n/messages";
 import { cn } from "@/libs/utils";
+import logoBlue from "../../../../../public/gdg-blue.svg";
+import logoColor from "../../../../../public/gdg-color.svg";
+import logoGreen from "../../../../../public/gdg-green.svg";
+import logoRed from "../../../../../public/gdg-red.svg";
+import logoYellow from "../../../../../public/gdg-yellow.svg";
 
 type ClaimUiState =
 	| { status: "loading" }
@@ -155,6 +161,44 @@ type StampTokenPageProps = {
 	}>;
 };
 
+const stampColor = (checkpoint: StampCheckpoint) =>
+	cn(
+		"border-2 flex items-center justify-center rounded-full w-36 h-36",
+		checkpoint === "reception"
+			? "bg-[#FFE7A5] border-[#FAAB00]"
+			: checkpoint === "photobooth"
+				? "bg-[#CCF6C5] border-[#34A853]"
+				: checkpoint === "robot"
+					? "bg-[#F8D8D8] border-[#EA4336]"
+					: checkpoint === "art"
+						? "bg-[#C3ECF6] border-[#4285F4]"
+						: "border-primary text-primary",
+	);
+
+const getCheckpointLogo = (checkpoint: StampCheckpoint) => {
+	switch (checkpoint) {
+		case "reception":
+			return logoYellow;
+		case "photobooth":
+			return logoGreen;
+		case "art":
+			return logoBlue;
+		case "robot":
+			return logoRed;
+		case "survey":
+			return logoColor;
+		default:
+			return null;
+	}
+};
+
+const LocaleStack = ({ copy }: { copy: LocaleField }) => (
+	<span className="flex flex-col items-center gap-0.5 text-center">
+		<span className="text-base font-semibold">{copy.ja}</span>
+		<span className="text-xs text-muted-foreground">{copy.en}</span>
+	</span>
+);
+
 export default function StampTokenPage(props: StampTokenPageProps) {
 	const params = use(props.params);
 	const { token } = params;
@@ -238,7 +282,17 @@ export default function StampTokenPage(props: StampTokenPageProps) {
 
 				{claimState.status === "success" ? (
 					<CardContent className="flex flex-col items-center gap-6">
-						<StampProgressList progress={claimState.payload.progress} />
+						<div className={stampColor(claimState.payload.checkpoint)}>
+							<Image
+								src={getCheckpointLogo(claimState.payload.checkpoint)}
+								alt=""
+								width={84}
+							/>
+						</div>
+						<LocaleStack
+							copy={CHECKPOINT_LABELS[claimState.payload.checkpoint]}
+						/>
+
 						<Button asChild size="lg" variant="outline">
 							<Link href="/" className="flex flex-col items-center gap-1">
 								<span>{STAMP_MESSAGES.homeLink.ja}</span>

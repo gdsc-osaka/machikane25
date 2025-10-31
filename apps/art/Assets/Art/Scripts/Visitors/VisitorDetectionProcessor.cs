@@ -1,55 +1,60 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Barracuda;
 
 namespace Art.Visitors
 {
     /// <summary>
-    /// Processes camera frames, extracts visitor clusters, and maintains smoothed centroids.
+    /// Processes camera frames using YoloV3Tiny for person detection and maintains smoothed centroids.
     /// </summary>
     internal sealed class VisitorDetectionProcessor
     {
+        private readonly NNModel modelAsset;
         private readonly float mergeDistance;
         private readonly float mergeDistanceSquared;
-        private readonly float minClusterArea;
-        private readonly float detectionThreshold;
-        private readonly float backgroundLerp;
-        private readonly int sampleStride;
+        private readonly float confidenceThreshold;
         private readonly float smoothingSpeed;
         private readonly float absenceDamping;
 
-        private float[] backgroundLuma;
+        private IWorker worker;
+        private Model runtimeModel;
         private Color32[] frameBuffer;
-        private bool backgroundInitialised;
 
-        private readonly List<VisitorPoint> candidatePoints = new List<VisitorPoint>();
-        private readonly List<ClusterAccumulator> clusterScratch = new List<ClusterAccumulator>();
+        private const int YoloInputSize = 416;
+        private const int PersonClassIndex = 0;
+
         private readonly List<VisitorGroup> rawGroups = new List<VisitorGroup>();
         private readonly List<VisitorGroup> smoothedGroups = new List<VisitorGroup>();
         private readonly List<SmoothEntry> smoothEntries = new List<SmoothEntry>();
 
-        public VisitorDetectionProcessor(float mergeDistance, float minClusterArea, float detectionThreshold, float backgroundLerp, int sampleStride, float smoothingSpeed, float absenceDamping)
+        public VisitorDetectionProcessor(NNModel modelAsset, float mergeDistance, float confidenceThreshold, float smoothingSpeed, float absenceDamping)
         {
+            this.modelAsset = modelAsset ?? throw new ArgumentNullException(nameof(modelAsset));
             this.mergeDistance = Mathf.Max(0.01f, mergeDistance);
             mergeDistanceSquared = this.mergeDistance * this.mergeDistance;
-            this.minClusterArea = Mathf.Max(1f, minClusterArea);
-            this.detectionThreshold = Mathf.Clamp01(detectionThreshold);
-            this.backgroundLerp = Mathf.Clamp01(backgroundLerp);
-            this.sampleStride = Mathf.Max(1, sampleStride);
+            this.confidenceThreshold = Mathf.Clamp01(confidenceThreshold);
             this.smoothingSpeed = Mathf.Max(0.01f, smoothingSpeed);
             this.absenceDamping = Mathf.Max(0.01f, absenceDamping);
+
+            InitializeModel();
+        }
+
+        private void InitializeModel()
+        {
+            runtimeModel = ModelLoader.Load(modelAsset);
+            worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel);
         }
 
         public IReadOnlyList<VisitorGroup> Process(WebCamTexture webcam, Func<Vector2, Vector2> projector)
         {
-            if (webcam == null)
+            if (webcam == null || worker == null)
             {
                 return Array.Empty<VisitorGroup>();
             }
 
             var width = Mathf.Max(1, webcam.width);
             var height = Mathf.Max(1, webcam.height);
-            EnsureCapacity(width * height);
 
             if (frameBuffer == null || frameBuffer.Length != width * height)
             {
@@ -62,22 +67,15 @@ namespace Art.Visitors
 
         public IReadOnlyList<VisitorGroup> Process(Color32[] pixels, int width, int height, float deltaTime, float timestamp, Func<Vector2, Vector2> projector)
         {
-            if (pixels == null || pixels.Length < width * height)
+            if (pixels == null || pixels.Length < width * height || worker == null)
             {
                 return Array.Empty<VisitorGroup>();
             }
 
-            EnsureCapacity(width * height);
-
-            candidatePoints.Clear();
             rawGroups.Clear();
 
-            var areaPerSample = sampleStride * sampleStride;
-            var requiredWeight = minClusterArea / areaPerSample;
-
-            CollectForegroundPoints(pixels, width, height, areaPerSample);
-            BuildClusters(requiredWeight);
-            ProjectClusters(projector, width, height, areaPerSample);
+            var detections = RunYoloInference(pixels, width, height);
+            ConvertDetectionsToGroups(detections, projector, width, height);
             Smooth(timestamp, deltaTime);
 
             return smoothedGroups;
@@ -85,110 +83,127 @@ namespace Art.Visitors
 
         public void Reset()
         {
-            backgroundInitialised = false;
-            if (backgroundLuma != null)
-            {
-                Array.Clear(backgroundLuma, 0, backgroundLuma.Length);
-            }
-
-            candidatePoints.Clear();
-            clusterScratch.Clear();
             rawGroups.Clear();
             smoothedGroups.Clear();
             smoothEntries.Clear();
         }
 
-        private void EnsureCapacity(int pixelCount)
+        public void Dispose()
         {
-            if (backgroundLuma == null || backgroundLuma.Length != pixelCount)
+            worker?.Dispose();
+            worker = null;
+        }
+
+        private List<PersonDetection> RunYoloInference(Color32[] pixels, int width, int height)
+        {
+            var detections = new List<PersonDetection>();
+
+            var inputTensor = PreprocessImage(pixels, width, height);
+            var imageShapeTensor = new Tensor(1, 2, new float[] { height, width });
+
+            var inputs = new Dictionary<string, Tensor>
             {
-                backgroundLuma = new float[pixelCount];
-                backgroundInitialised = false;
+                { "input_1", inputTensor },
+                { "image_shape", imageShapeTensor }
+            };
+
+            worker.Execute(inputs);
+
+            var boxes = worker.PeekOutput("yolonms_layer_1");
+            var scores = worker.PeekOutput("yolonms_layer_1:1");
+            var indices = worker.PeekOutput("yolonms_layer_1:2");
+
+            ParseYoloOutput(boxes, scores, indices, width, height, detections);
+
+            inputTensor.Dispose();
+            imageShapeTensor.Dispose();
+
+            return detections;
+        }
+
+        private Tensor PreprocessImage(Color32[] pixels, int width, int height)
+        {
+            var inputData = new float[1 * 3 * YoloInputSize * YoloInputSize];
+
+            for (var y = 0; y < YoloInputSize; y++)
+            {
+                for (var x = 0; x < YoloInputSize; x++)
+                {
+                    var srcX = (int)((float)x / YoloInputSize * width);
+                    var srcY = (int)((float)y / YoloInputSize * height);
+                    var srcIndex = srcY * width + srcX;
+
+                    if (srcIndex >= 0 && srcIndex < pixels.Length)
+                    {
+                        var pixel = pixels[srcIndex];
+                        var baseIndex = y * YoloInputSize + x;
+
+                        inputData[0 * YoloInputSize * YoloInputSize + baseIndex] = pixel.r / 255f;
+                        inputData[1 * YoloInputSize * YoloInputSize + baseIndex] = pixel.g / 255f;
+                        inputData[2 * YoloInputSize * YoloInputSize + baseIndex] = pixel.b / 255f;
+                    }
+                }
+            }
+
+            return new Tensor(1, 3, YoloInputSize, YoloInputSize, inputData);
+        }
+
+        private void ParseYoloOutput(Tensor boxes, Tensor scores, Tensor indices, int originalWidth, int originalHeight, List<PersonDetection> detections)
+        {
+            var indicesShape = indices.shape.ToArray();
+            var indicesCount = indicesShape[1];
+            var indicesWidth = indicesShape[2];
+
+            var scoresShape = scores.shape.ToArray();
+            var scoresWidth = scoresShape[2];
+
+            var boxesShape = boxes.shape.ToArray();
+            var boxesWidth = boxesShape[2];
+
+            for (var i = 0; i < indicesCount; i++)
+            {
+                var classIndex = (int)indices[i * indicesWidth + 1];
+                if (classIndex != PersonClassIndex)
+                {
+                    continue;
+                }
+
+                var boxIndex = (int)indices[i * indicesWidth + 2];
+                var confidence = scores[PersonClassIndex * scoresWidth + boxIndex];
+
+                if (confidence < confidenceThreshold)
+                {
+                    continue;
+                }
+
+                var y1 = boxes[boxIndex * boxesWidth + 0];
+                var x1 = boxes[boxIndex * boxesWidth + 1];
+                var y2 = boxes[boxIndex * boxesWidth + 2];
+                var x2 = boxes[boxIndex * boxesWidth + 3];
+
+                var centerX = (x1 + x2) / 2f / originalWidth;
+                var centerY = (y1 + y2) / 2f / originalHeight;
+                var boxWidth = (x2 - x1) / originalWidth;
+                var boxHeight = (y2 - y1) / originalHeight;
+
+                detections.Add(new PersonDetection
+                {
+                    Center = new Vector2(centerX, centerY),
+                    Size = new Vector2(boxWidth, boxHeight),
+                    Confidence = confidence
+                });
             }
         }
 
-        private void CollectForegroundPoints(Color32[] pixels, int width, int height, int areaPerSample)
-        {
-            var stride = sampleStride;
-            for (var y = 0; y < height; y += stride)
-            {
-                for (var x = 0; x < width; x += stride)
-                {
-                    var index = y * width + x;
-                    var luma = GetLuminance(pixels[index]);
-
-                    if (!backgroundInitialised)
-                    {
-                        backgroundLuma[index] = luma;
-                        continue;
-                    }
-
-                    var backgroundValue = backgroundLuma[index];
-                    var difference = Mathf.Abs(luma - backgroundValue);
-                    backgroundLuma[index] = Mathf.Lerp(backgroundValue, luma, backgroundLerp);
-
-                    if (difference < detectionThreshold)
-                    {
-                        continue;
-                    }
-
-                    var normalisedX = width > 1 ? (float)x / (width - 1) : 0f;
-                    var normalisedY = height > 1 ? (float)y / (height - 1) : 0f;
-                    candidatePoints.Add(new VisitorPoint(new Vector2(normalisedX, normalisedY), difference * areaPerSample));
-                }
-            }
-
-            backgroundInitialised = true;
-        }
-
-        private void BuildClusters(float requiredWeight)
-        {
-            clusterScratch.Clear();
-            if (candidatePoints.Count == 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < candidatePoints.Count; i++)
-            {
-                var point = candidatePoints[i];
-                var assigned = false;
-                for (var j = 0; j < clusterScratch.Count; j++)
-                {
-                    var cluster = clusterScratch[j];
-                    if (Vector2.SqrMagnitude(cluster.Centroid - point.Position) <= mergeDistanceSquared)
-                    {
-                        cluster.Add(point.Position, point.Weight);
-                        clusterScratch[j] = cluster;
-                        assigned = true;
-                        break;
-                    }
-                }
-
-                if (!assigned)
-                {
-                    clusterScratch.Add(ClusterAccumulator.From(point.Position, point.Weight));
-                }
-            }
-
-            for (var i = clusterScratch.Count - 1; i >= 0; i--)
-            {
-                if (clusterScratch[i].TotalWeight < requiredWeight)
-                {
-                    clusterScratch.RemoveAt(i);
-                }
-            }
-        }
-
-        private void ProjectClusters(Func<Vector2, Vector2> projector, int width, int height, int areaPerSample)
+        private void ConvertDetectionsToGroups(List<PersonDetection> detections, Func<Vector2, Vector2> projector, int width, int height)
         {
             rawGroups.Clear();
-            for (var i = 0; i < clusterScratch.Count; i++)
+
+            for (var i = 0; i < detections.Count; i++)
             {
-                var cluster = clusterScratch[i];
-                var centroid = cluster.Centroid;
-                var mapped = projector != null ? projector(centroid) : centroid;
-                var magnitude = Mathf.Clamp01(cluster.TotalWeight / (width * height));
+                var detection = detections[i];
+                var mapped = projector != null ? projector(detection.Center) : detection.Center;
+                var magnitude = Mathf.Clamp01(detection.Confidence * detection.Size.x * detection.Size.y);
                 rawGroups.Add(new VisitorGroup(mapped, magnitude));
             }
         }
@@ -272,45 +287,11 @@ namespace Art.Visitors
             }
         }
 
-        private static float GetLuminance(Color32 color)
+        private struct PersonDetection
         {
-            return (0.2989f * color.r + 0.587f * color.g + 0.114f * color.b) / 255f;
-        }
-
-        private readonly struct VisitorPoint
-        {
-            public VisitorPoint(Vector2 position, float weight)
-            {
-                Position = position;
-                Weight = weight;
-            }
-
-            public Vector2 Position { get; }
-
-            public float Weight { get; }
-        }
-
-        private struct ClusterAccumulator
-        {
-            private Vector2 sum;
-            private float totalWeight;
-
-            public Vector2 Centroid => totalWeight > Mathf.Epsilon ? sum / totalWeight : sum;
-
-            public float TotalWeight => totalWeight;
-
-            public void Add(Vector2 point, float weight)
-            {
-                sum += point * weight;
-                totalWeight += weight;
-            }
-
-            public static ClusterAccumulator From(Vector2 point, float weight)
-            {
-                var cluster = new ClusterAccumulator();
-                cluster.Add(point, weight);
-                return cluster;
-            }
+            public Vector2 Center;
+            public Vector2 Size;
+            public float Confidence;
         }
 
         private struct SmoothEntry

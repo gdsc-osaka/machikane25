@@ -22,4 +22,4 @@ MonoBehaviour:
   rareSpawnChance: 0.05
   rareSpawnCooldownSeconds: 300
   sentryDsn: https://dbd643a55ee51e019451d5644ff3f40a@o4510180282335232.ingest.us.sentry.io/4510180284366848
-  visitorDetectionIntervalSeconds: 0.5
+  visitorDetectionIntervalSeconds: 1

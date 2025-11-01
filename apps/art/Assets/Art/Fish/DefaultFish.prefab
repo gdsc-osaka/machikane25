@@ -64,8 +64,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Art::FishController
   animator: {fileID: 1387127989822505732}
-  speed: 1
-  rotationSpeed: 0.1
+  speed: 3
+  rotationSpeed: 0.5
   obstacleDetectionDistance: 2
   avoidanceForce: 5
   obstacleLayer:

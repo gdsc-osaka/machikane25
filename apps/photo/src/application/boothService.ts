@@ -61,6 +61,7 @@ export const startGeneration = async (
 	options: Record<string, string>,
 ): Promise<void> => {
 	await updateBoothState(boothId, { state: "generating" });
+	console.debug("Booth state updated to 'generating'");
 
 	// Generate image and wait for completion
 	const generatedPhotoId = await generateImage(
@@ -68,12 +69,14 @@ export const startGeneration = async (
 		uploadedPhotoId,
 		options,
 	);
+	console.debug("Generated photo ID:", generatedPhotoId);
 
 	// Automatically transition to completed state
 	await updateBoothState(boothId, {
 		state: "completed",
 		latestPhotoId: generatedPhotoId,
 	});
+	console.debug("Booth state updated to 'completed'");
 
 	// Cleanup uploaded photo in the background
 	// FIXME: cleanerあるからこれ要らん

@@ -10,6 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7311849625902453531}
   - component: {fileID: 6013126866786127480}
+  - component: {fileID: 551989296996608085}
+  - component: {fileID: 8476054768162358888}
+  - component: {fileID: 2201882716845696366}
   m_Layer: 0
   m_Name: DefaultFish
   m_TagString: Untagged
@@ -48,6 +51,74 @@ MonoBehaviour:
   bodyRenderer: {fileID: 2355337931211704734}
   animator: {fileID: 1387127989822505732}
   animationSpeedMultiplier: 1
+--- !u!114 &551989296996608085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2731592338399418175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c744b7e5c99a54fed863ff4ef0aacbc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Art::FishController
+  animator: {fileID: 1387127989822505732}
+  speed: 3
+  rotationSpeed: 0.5
+  obstacleDetectionDistance: 2
+  avoidanceForce: 5
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!65 &8476054768162358888
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2731592338399418175}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 4.241901}
+  m_Center: {x: -1.878746e-10, y: 0, z: -0.12724227}
+--- !u!54 &2201882716845696366
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2731592338399418175}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &4271719704741878251
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -58,31 +129,31 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.12
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 9.57
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.26
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.53698975
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.8435888
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1369a76e6e5774157967d8cda846b4b2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

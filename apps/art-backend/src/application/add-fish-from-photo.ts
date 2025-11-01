@@ -96,12 +96,14 @@ export const createAddFishFromPhoto = (
 				log("error", "addFishFromPhoto.failed", {
 					code: error.code,
 					name: error.name,
+					error,
 				});
 				throw error;
 			}
 
 			log("error", "addFishFromPhoto.unexpected", {
 				name: error instanceof Error ? error.name : "UnknownError",
+				error,
 			});
 
 			throw new UseCaseError({

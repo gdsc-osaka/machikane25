@@ -45,6 +45,16 @@ const RewardBody = ({ copy }: { copy: LocaleField }) => (
 	<div className="flex flex-col items-center gap-2 text-center text-sm">
 		<p>{copy.ja}</p>
 		<p className="text-muted-foreground text-xs">{copy.en}</p>
+		<p className="font-bold">キングオブ阪大にぜひご投票ください！</p>
+		<p className="font-bold text-muted-foreground text-xs">
+			Please vote for the King of Handai!
+		</p>
+		<Link href="https://machikanesai.com/25/search/191/">
+			<Button>投票する！</Button>
+		</Link>
+		<Link href="https://machikanesai.com/25/en/search/191/">
+			<Button>Vote!</Button>
+		</Link>
 	</div>
 );
 

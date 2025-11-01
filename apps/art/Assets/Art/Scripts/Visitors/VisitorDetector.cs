@@ -4,14 +4,18 @@ using System.Collections.Generic;
 using Art.App;
 using Art.Telemetry;
 using UnityEngine;
+using Unity.Barracuda;
 
 namespace Art.Visitors
 {
     /// <summary>
-    /// Captures webcam frames, detects visitor clusters, and raises attractor updates for the boid system.
+    /// Captures webcam frames, detects visitor clusters using YoloV3Tiny, and raises attractor updates for the boid system.
     /// </summary>
     public sealed class VisitorDetector : MonoBehaviour
     {
+        [Header("Model")]
+        [SerializeField] private NNModel yoloModel;
+
         [Header("Calibration")]
         [SerializeField] private CameraCalibration calibration;
         [SerializeField] private string preferredCameraName;
@@ -19,11 +23,8 @@ namespace Art.Visitors
         [Header("Processing")]
         [SerializeField] private int targetWidth = 640;
         [SerializeField] private int targetHeight = 360;
-        [SerializeField] private float minContourArea = 800f;
         [SerializeField] private float mergeDistance = 0.2f;
-        [SerializeField] private float detectionThreshold = 0.18f;
-        [SerializeField] private float backgroundLerp = 0.05f;
-        [SerializeField] private int sampleStride = 4;
+        [SerializeField] private float confidenceThreshold = 0.5f;
         [SerializeField] private float smoothingSpeed = 6f;
         [SerializeField] private float absenceDamping = 3f;
 
@@ -89,6 +90,8 @@ namespace Art.Visitors
             if (processor != null)
             {
                 processor.Reset();
+                processor.Dispose();
+                processor = null;
             }
 
             cachedVisitors.Clear();
@@ -168,6 +171,11 @@ namespace Art.Visitors
                 return null;
             }
 
+            for (var i = 0; i < devices.Length; i++)
+            {
+                telemetry?.LogInfo($"VisitorDetector found webcam device: {devices[i].name} (FrontFacing={devices[i].isFrontFacing})");
+            }
+                
             WebCamDevice selectedDevice = devices[0];
             var hasSelection = false;
 
@@ -201,6 +209,8 @@ namespace Art.Visitors
             {
                 selectedDevice = devices[0];
             }
+            
+            telemetry?.LogInfo($"VisitorDetector selected webcam device: {selectedDevice.name} (FrontFacing={selectedDevice.isFrontFacing})");
 
             return new WebCamTexture(selectedDevice.name, targetWidth, targetHeight, 15);
         }
@@ -235,7 +245,13 @@ namespace Art.Visitors
                 return;
             }
 
-            processor = new VisitorDetectionProcessor(mergeDistance, minContourArea, detectionThreshold, backgroundLerp, sampleStride, smoothingSpeed, absenceDamping);
+            if (yoloModel == null)
+            {
+                telemetry?.LogWarning("VisitorDetector: YoloV3Tiny model asset is not assigned.");
+                return;
+            }
+
+            processor = new VisitorDetectionProcessor(yoloModel, mergeDistance, confidenceThreshold, smoothingSpeed, absenceDamping);
         }
 
         private Vector2 ApplyCalibration(Vector2 normalised)

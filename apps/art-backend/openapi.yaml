@@ -1,0 +1,63 @@
+openapi: 3.0.0
+info:
+  title: インタラクティブアート水族館 Backend API
+  version: 1.0.0
+paths:
+  /upload-photo:
+    post:
+      summary: Upload a photo to generate fish data
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: The photo file to upload
+      responses:
+        '200':
+          description: Photo uploaded successfully and fish data generated
+        '400':
+          description: Bad request (e.g., missing photo)
+        '500':
+          description: Internal server error
+  /get-fish:
+    get:
+      summary: Get fish data for rendering
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Successful response with fish data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fish'
+        '500':
+          description: Internal server error
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    Fish:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The fish ID
+        imageUrl:
+          type: string
+          description: URL of the fish image
+        color:
+          type: string
+          description: Color of the fish in HEX format

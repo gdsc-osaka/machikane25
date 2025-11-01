@@ -55,5 +55,10 @@ service firebase.storage {
       allow read: if true;
       allow create, delete: if isAdmin();
     }
+
+    match /fish_images/{fishId}/{fileName} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+    }
   }
 }

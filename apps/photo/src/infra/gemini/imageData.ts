@@ -89,32 +89,40 @@ const fetchFromUrl = async (url: string): Promise<ImageData> => {
 const getUploadedPhotoImage = async (
 	photoId: string,
 ): Promise<ImageData | null> => {
-	const snapshot = await queryUploadedPhotosByPhotoId(photoId).get();
-	console.debug(`Uploaded photo query returned ${snapshot.size} documents`);
-	const firstDoc = snapshot.docs[0];
-	if (!firstDoc) {
+	try {
+		const snapshot = await queryUploadedPhotosByPhotoId(photoId).get();
+		console.debug(`Uploaded photo query returned ${snapshot.size} documents`);
+		const firstDoc = snapshot.docs[0];
+		if (!firstDoc) {
+			return null;
+		}
+		const data = firstDoc.data();
+
+		// Try imagePath first (works better with emulator and Storage SDK)
+		const imagePath = readStringField(data, "imagePath");
+		if (imagePath) {
+			const { buffer, mimeType } = await fetchFromStorage(imagePath);
+			console.debug(`Fetched image from storage path: ${imagePath}`);
+			return {
+				mimeType,
+				data: buffer.toString("base64"),
+			};
+		}
+
+		// Fallback to imageUrl
+		const imageUrl = readStringField(data, "imageUrl");
+		if (imageUrl) {
+			return fetchFromUrl(imageUrl);
+		}
+
+		return null;
+	} catch (error) {
+		console.error(
+			`Error fetching uploaded photo image for photoId ${photoId}:`,
+			error,
+		);
 		return null;
 	}
-	const data = firstDoc.data();
-
-	// Try imagePath first (works better with emulator and Storage SDK)
-	const imagePath = readStringField(data, "imagePath");
-	if (imagePath) {
-		const { buffer, mimeType } = await fetchFromStorage(imagePath);
-		console.debug(`Fetched image from storage path: ${imagePath}`);
-		return {
-			mimeType,
-			data: buffer.toString("base64"),
-		};
-	}
-
-	// Fallback to imageUrl
-	const imageUrl = readStringField(data, "imageUrl");
-	if (imageUrl) {
-		return fetchFromUrl(imageUrl);
-	}
-
-	return null;
 };
 
 const getOptionImage = async (optionId: string): Promise<ImageData | null> => {

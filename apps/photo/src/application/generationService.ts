@@ -163,8 +163,11 @@ export const generateImage = async (
 	uploadedPhotoId: string,
 	options: Record<string, string>,
 ): Promise<string> => {
+	console.debug("generateImage");
 	const apiKey = ensureApiKey();
+	console.debug("API key ensured");
 	const baseImage = await getImageDataFromId(uploadedPhotoId);
+	console.debug("Base image data retrieved");
 
 	const optionEntries = Object.entries(options);
 	const optionData = await Promise.all(
@@ -173,6 +176,7 @@ export const generateImage = async (
 			return { key, inlineData };
 		}),
 	);
+	console.debug("Option image data retrieved");
 
 	const parts = toParts(
 		{
@@ -197,6 +201,7 @@ export const generateImage = async (
 				},
 			},
 		});
+		console.debug("Gemini response received: ", response);
 
 		const inlineData = extractInlineData(response);
 		if (!inlineData) {
@@ -209,6 +214,7 @@ export const generateImage = async (
 			boothId,
 			inlineData.mimeType,
 		);
+		console.log("Generated image stored at: ", imagePath);
 
 		const photoId = derivePhotoId(imagePath);
 
@@ -218,18 +224,12 @@ export const generateImage = async (
 			imagePath,
 			imageUrl,
 		});
+		console.log("Generated photo metadata created with ID: ", photoId);
 
 		return photoId;
 	} catch (error) {
+		console.error("Image generation failed: ", error);
 		if (error instanceof Error) {
-			captureException(error, {
-				tags: { feature: "image-generation" },
-				extra: {
-					boothId,
-					uploadedPhotoId,
-					options,
-				},
-			});
 			throw error;
 		}
 		const unknownError = new Error(

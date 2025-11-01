@@ -90,6 +90,7 @@ const getUploadedPhotoImage = async (
 	photoId: string,
 ): Promise<ImageData | null> => {
 	const snapshot = await queryUploadedPhotosByPhotoId(photoId).get();
+	console.debug(`Uploaded photo query returned ${snapshot.size} documents`);
 	const firstDoc = snapshot.docs[0];
 	if (!firstDoc) {
 		return null;
@@ -100,6 +101,7 @@ const getUploadedPhotoImage = async (
 	const imagePath = readStringField(data, "imagePath");
 	if (imagePath) {
 		const { buffer, mimeType } = await fetchFromStorage(imagePath);
+		console.debug(`Fetched image from storage path: ${imagePath}`);
 		return {
 			mimeType,
 			data: buffer.toString("base64"),
@@ -118,6 +120,7 @@ const getUploadedPhotoImage = async (
 const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 	const firestore = getAdminFirestore();
 	const snapshot = await firestore.collection("options").doc(optionId).get();
+	console.debug(`Option document fetched for id: ${optionId}`);
 	if (!snapshot.exists) {
 		return null;
 	}
@@ -131,6 +134,7 @@ const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 	const imagePath = readStringField(data, "imagePath");
 	if (imagePath) {
 		const { buffer, mimeType } = await fetchFromStorage(imagePath);
+		console.debug(`Fetched option image from storage path: ${imagePath}`);
 		return {
 			mimeType,
 			data: buffer.toString("base64"),
@@ -147,11 +151,13 @@ const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 };
 
 export const getImageDataFromId = async (id: string): Promise<ImageData> => {
+	console.debug("getImageDataFromId");
 	const uploadedPhoto = await getUploadedPhotoImage(id);
 	if (uploadedPhoto) {
 		return uploadedPhoto;
 	}
 
+	console.debug("Not found in uploadedPhotos, checking options...");
 	const optionImage = await getOptionImage(id);
 	if (optionImage) {
 		return optionImage;

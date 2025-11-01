@@ -40,7 +40,7 @@ let firebaseApp: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let firestore: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
-let isConnectedToEmulator = false;
+const isConnectedToEmulator = false;
 
 /**
  * Initialize Firebase Client SDK

@@ -171,6 +171,11 @@ namespace Art.Visitors
                 return null;
             }
 
+            for (var i = 0; i < devices.Length; i++)
+            {
+                telemetry?.LogInfo($"VisitorDetector found webcam device: {devices[i].name} (FrontFacing={devices[i].isFrontFacing})");
+            }
+                
             WebCamDevice selectedDevice = devices[0];
             var hasSelection = false;
 
@@ -204,6 +209,8 @@ namespace Art.Visitors
             {
                 selectedDevice = devices[0];
             }
+            
+            telemetry?.LogInfo($"VisitorDetector selected webcam device: {selectedDevice.name} (FrontFacing={selectedDevice.isFrontFacing})");
 
             return new WebCamTexture(selectedDevice.name, targetWidth, targetHeight, 15);
         }

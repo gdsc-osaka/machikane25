@@ -68,21 +68,6 @@ export const initializeFirebaseClient = (): void => {
 		storage = getStorage(firebaseApp);
 	}
 
-	// Connect to emulators in development and test modes (only once)
-	if (process.env.NODE_ENV !== "production" && !isConnectedToEmulator) {
-		// Connect to Auth Emulator (port from firebase.json)
-		connectAuthEmulator(auth, "http://localhost:11000", {
-			disableWarnings: true,
-		});
-
-		// Connect to Firestore Emulator (port from firebase.json)
-		connectFirestoreEmulator(firestore, "localhost", 11002);
-
-		// Connect to Storage Emulator (port from firebase.json)
-		connectStorageEmulator(storage, "localhost", 11004);
-
-		isConnectedToEmulator = true;
-	}
 };
 
 /**

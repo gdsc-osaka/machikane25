@@ -1,4 +1,25 @@
 {
-	"indexes": [],
+	"indexes": [
+		{
+			"collectionGroup": "uploadedPhotos",
+			"queryScope": "COLLECTION_GROUP",
+			"fields": [
+				{
+					"fieldPath": "photoId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "generatedPhotos",
+			"queryScope": "COLLECTION_GROUP",
+			"fields": [
+				{
+					"fieldPath": "photoId",
+					"order": "ASCENDING"
+				}
+			]
+		}
+	],
 	"fieldOverrides": []
 }

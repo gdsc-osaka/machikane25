@@ -185,6 +185,13 @@ const GiftPage = () => {
 						</>
 					)}
 
+					<div className="flex gap-2">
+						<span>User ID:</span>
+						<code className="border-muted-foreground/30 text-muted-foreground inline-flex max-w-xs items-center justify-center break-all rounded-md border bg-muted/40 px-3 py-1 text-xs">
+							{attendeeId}
+						</code>
+					</div>
+
 					<Button asChild variant="outline" className="mt-4">
 						<Link href="/">
 							<span>{giftPageCopy.homeButton.ja}</span>

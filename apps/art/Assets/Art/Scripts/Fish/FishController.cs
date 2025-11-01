@@ -8,7 +8,7 @@ public class FishController : MonoBehaviour
     [SerializeField] private float obstacleDetectionDistance = 2.0f;
     [SerializeField] private float avoidanceForce = 5.0f;
     [SerializeField] private LayerMask obstacleLayer = -1; // デフォルトは全レイヤー
-    private Vector3 targetPosition;
+    public Vector3 targetPosition;
     private bool isSwimming = true; // アイドル状態との切り替え用
 
     void Start()

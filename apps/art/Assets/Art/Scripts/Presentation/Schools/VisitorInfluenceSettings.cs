@@ -20,7 +20,9 @@ namespace Art.Presentation.Schools
 
         public Vector3 ToWorldPosition(Vector2 normalised)
         {
-            var centred = new Vector2(normalised.x - planePivot.x, normalised.y - planePivot.y);
+            // xを左右反転
+            var trueX = 1f - normalised.x;
+            var centred = new Vector2(normalised.x - trueX, normalised.y - planePivot.y);
             var x = centred.x * planeExtents.x;
             var z = centred.y * planeExtents.y;
             return new Vector3(x, planeHeight, z);

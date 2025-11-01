@@ -46,6 +46,7 @@
 		"react-hook-form": "^7.65.0",
 		"react-qr-code": "^2.0.15",
 		"react-webcam": "^7.2.0",
+		"require-in-the-middle": "^8.0.1",
 		"sonner": "^2.0.7",
 		"swr": "^2.3.6",
 		"tailwind-merge": "^3.3.1",

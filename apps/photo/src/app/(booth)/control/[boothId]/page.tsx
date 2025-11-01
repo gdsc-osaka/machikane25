@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
 	useCallback,
@@ -13,7 +12,6 @@ import {
 } from "react";
 import QRCode from "react-qr-code";
 import {
-	completeCapture,
 	discardSession,
 	startCapture,
 	startGeneration,
@@ -21,16 +19,13 @@ import {
 } from "@/app/actions/boothActions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { BackIcon, CameraIcon, CheckIcon } from "@/components/ui/icons";
+import { Progress } from "@/components/ui/progress";
 import { useBoothState } from "@/hooks/useBoothState";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
 
 type SelectedOptions = Record<string, string>;
-
-const IDLE_PROMPT = "フォトブースを始める";
-const GENERATING_MESSAGE = "AIが写真を生成中...";
-const CAPTURING_MESSAGE = "撮影中...";
 
 const ensureBoothId = (value: unknown): string =>
 	typeof value === "string" ? value : "";
@@ -146,137 +141,198 @@ export default function ControlPage() {
 			([typeId]) => typeof selectedOptions[typeId] !== "string",
 		);
 
+	const renderSelectedOptionsThumbnails = () => {
+		const selectedOptionsList = Object.entries(selectedOptions)
+			.map(([typeId, optionId]) => {
+				const option = options[typeId]?.find((opt) => opt.id === optionId);
+				return option?.imageUrl ? option : null;
+			})
+			.filter((opt): opt is NonNullable<typeof opt> => opt !== null);
+
+		if (selectedOptionsList.length === 0) return null;
+
+		return (
+			<div className="flex gap-2 overflow-x-auto">
+				{selectedOptionsList.map((option) => (
+					<div key={option.id} className="h-16 w-16 flex-shrink-0">
+						<Image
+							src={option.imageUrl ?? ""}
+							alt={option.displayName}
+							width={64}
+							height={64}
+							className="h-full w-full rounded object-cover"
+						/>
+					</div>
+				))}
+			</div>
+		);
+	};
+
 	const renderIdle = () => (
-		<div className="flex flex-col items-center gap-6">
-			<p className="text-lg text-muted-foreground">
-				来場者の準備ができたらフォトブースを開始してください。
+		<button
+			type="button"
+			onClick={handleStartSession}
+			disabled={isPending}
+			className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] transition-all active:scale-[0.99]"
+		>
+			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-6xl font-bold text-transparent drop-shadow-lg md:text-7xl">
+				Gemini AI フォトブース
+			</h1>
+			<p className="animate-pulse text-3xl font-semibold text-[#e3e3e3] drop-shadow-md md:text-4xl">
+				画面をタップしてスタート
 			</p>
-			<Button onClick={handleStartSession} disabled={isPending}>
-				{IDLE_PROMPT}
-			</Button>
-		</div>
-	);
-
-	const renderPhotos = () => (
-		<div className="grid grid-cols-2 gap-4">
-			{photos.map((photo) => {
-				const isSelected = selectedPhotoId === photo.photoId;
-				const hasValidImageUrl = photo.imageUrl && photo.imageUrl.length > 0;
-
-				return (
-					<button
-						type="button"
-						key={photo.photoId}
-						onClick={() => setSelectedPhotoId(photo.photoId)}
-						className={[
-							"rounded border p-2 transition",
-							isSelected ? "border-primary" : "border-muted",
-						].join(" ")}
-					>
-						{hasValidImageUrl ? (
-							<Image
-								src={photo.imageUrl}
-								alt="アップロード済みの写真"
-								width={560}
-								height={560}
-								sizes="(max-width: 768px) 50vw, 240px"
-								className="h-70 w-full rounded object-cover"
-							/>
-						) : (
-							<div className="flex h-24 w-full items-center justify-center rounded bg-muted text-sm text-muted-foreground">
-								読み込み中...
-							</div>
-						)}
-					</button>
-				);
-			})}
-		</div>
-	);
-
-	const renderOptions = () => (
-		<div className="flex flex-col gap-4">
-			{generationSections.map(([typeId, items]) => (
-				<Card key={typeId}>
-					<CardHeader>
-						<CardTitle className="text-base font-semibold">
-							{typeId.toUpperCase()}
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-wrap gap-2">
-						{items.map((option) => {
-							const isSelected = selectedOptions[typeId] === option.id;
-							return (
-								<Button
-									variant={isSelected ? "default" : "outline"}
-									type="button"
-									key={option.id}
-									onClick={() =>
-										setSelectedOptions((current) => ({
-											...current,
-											[typeId]: option.id,
-										}))
-									}
-								>
-									{option.displayName}
-								</Button>
-							);
-						})}
-					</CardContent>
-				</Card>
-			))}
-		</div>
+		</button>
 	);
 
 	const renderMenu = () => (
-		<div className="flex w-full flex-col gap-8">
-			<div className="flex flex-col gap-4">
-				<p className="text-sm text-muted-foreground">
-					隣のディスプレイを確認しながら操作してください。
-				</p>
-				<div className="flex flex-wrap gap-4">
-					<Button onClick={handleStartCapture} disabled={isPending}>
-						撮影開始
-					</Button>
-					<Button
-						variant="secondary"
-						onClick={handleStartGeneration}
-						disabled={isGenerateDisabled}
-					>
-						AI生成を開始
-					</Button>
-				</div>
-			</div>
-			<Separator />
-			<div className="flex flex-col gap-6">
-				<h2 className="text-lg font-semibold">生成に使用する画像</h2>
+		<div className="flex h-full w-full bg-[#303030]">
+			{/* Back Button */}
+			<button
+				type="button"
+				onClick={handleDiscardSession}
+				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
+			>
+				<BackIcon size="sm" />
+				<span className="text-sm font-medium">ホーム</span>
+			</button>
+
+			{/* Left Side - Uploaded Images */}
+			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto border-r border-[#444746] bg-[#303030] p-6">
+				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
+					画像を選ぶ
+				</h2>
 				{photos.length > 0 ? (
-					renderPhotos()
+					<div className="flex flex-col gap-3">
+						{photos.map((photo) => {
+							const isSelected = selectedPhotoId === photo.photoId;
+							const hasValidImageUrl =
+								photo.imageUrl && photo.imageUrl.length > 0;
+
+							return (
+								<button
+									type="button"
+									key={photo.photoId}
+									onClick={() => setSelectedPhotoId(photo.photoId)}
+									className={[
+										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all",
+										isSelected
+											? "border-[#4796E3] shadow-lg shadow-[#4796E3]/50"
+											: "border-[#444746] hover:border-[#9177C7]",
+									].join(" ")}
+								>
+									{hasValidImageUrl ? (
+										<Image
+											src={photo.imageUrl}
+											alt="アップロード済みの写真"
+											width={400}
+											height={500}
+											sizes="(max-width: 768px) 50vw, 300px"
+											className="h-full w-full object-cover"
+										/>
+									) : (
+										<div className="flex h-full w-full items-center justify-center bg-[#444746] text-sm text-[#e3e3e3]">
+											読み込み中...
+										</div>
+									)}
+								</button>
+							);
+						})}
+					</div>
 				) : (
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-[#e3e3e3]/60">
 						QRコードから写真をアップロードするとここに表示されます。
 					</p>
 				)}
 			</div>
-			<Separator />
-			<div className="flex flex-col gap-6">
-				<h2 className="text-lg font-semibold">テーマを選択</h2>
-				{generationSections.length > 0 ? (
-					renderOptions()
-				) : (
-					<p className="text-sm text-muted-foreground">
-						選択肢を読み込み中です…
-					</p>
-				)}
+
+			{/* Right Side - Options and Actions */}
+			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto bg-[#303030] p-6">
+				{/* Generation Options */}
+				<div className="flex-1 space-y-4">
+					<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
+						テーマを選択
+					</h2>
+					{generationSections.length > 0 ? (
+						generationSections.map(([typeId, items]) => (
+							<Card key={typeId} className="border-[#444746] bg-[#303030]">
+								<CardHeader>
+									<CardTitle className="text-base font-semibold text-[#e3e3e3]">
+										{typeId.toUpperCase()}
+									</CardTitle>
+								</CardHeader>
+								<CardContent className="flex flex-wrap gap-2">
+									{items.map((option) => {
+										const isSelected = selectedOptions[typeId] === option.id;
+										return (
+											<Button
+												variant={isSelected ? "default" : "outline"}
+												type="button"
+												key={option.id}
+												onClick={() =>
+													setSelectedOptions((current) => ({
+														...current,
+														[typeId]: option.id,
+													}))
+												}
+												size="sm"
+												className={
+													isSelected
+														? "bg-[#4796E3] text-white hover:bg-[#9177C7]"
+														: "border-[#444746] bg-[#303030] text-[#e3e3e3] hover:border-[#4796E3] hover:bg-[#444746]"
+												}
+											>
+												{option.displayName}
+											</Button>
+										);
+									})}
+								</CardContent>
+							</Card>
+						))
+					) : (
+						<p className="text-sm text-[#e3e3e3]/60">選択肢を読み込み中です…</p>
+					)}
+				</div>
+
+				{/* Selected Options Thumbnails */}
+				{renderSelectedOptionsThumbnails()}
+
+				{/* Action Buttons */}
+				<div className="flex gap-3">
+					<Button
+						onClick={handleStartCapture}
+						disabled={isPending}
+						size="lg"
+						className="flex-1 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
+					>
+						<CameraIcon size="md" />
+						写真を撮る
+					</Button>
+					<Button
+						onClick={handleStartGeneration}
+						disabled={isGenerateDisabled}
+						size="lg"
+						className="flex-1 gap-2 bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] text-lg text-white hover:opacity-90 disabled:from-[#444746] disabled:to-[#444746] disabled:text-[#e3e3e3]/50"
+					>
+						<CheckIcon size="md" />
+						決定
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
 
 	const renderCapturing = () => (
-		<div className="flex flex-col items-center gap-6">
-			<p className="text-xl font-semibold">{CAPTURING_MESSAGE}</p>
-			<p className="text-sm text-muted-foreground">
-				ディスプレイ（大画面）を見てください
-			</p>
+		<div className="flex h-full w-full flex-col items-center justify-center bg-[#303030]">
+			{/* Back Button */}
+			<button
+				type="button"
+				onClick={handleDiscardSession}
+				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
+			>
+				<BackIcon size="sm" />
+				<span className="text-sm font-medium">ホーム</span>
+			</button>
+
 			<AnimatePresence mode="wait">
 				{countdown !== null && countdown >= 0 && (
 					<motion.div
@@ -285,34 +341,32 @@ export default function ControlPage() {
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, scale: 1.5 }}
 						transition={{ duration: 0.3 }}
-						className="flex items-center justify-center"
 					>
-						<span className="text-[120px] font-bold text-primary">
+						<span className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-[200px] font-bold text-transparent drop-shadow-2xl">
 							{countdown > 0 ? countdown : "📸"}
 						</span>
 					</motion.div>
 				)}
 			</AnimatePresence>
-			<Button
-				variant="secondary"
-				onClick={() => {
-					startTransition(async () => {
-						await completeCapture({ boothId });
-					});
-				}}
-				disabled={isPending}
-			>
-				撮影完了に戻る
-			</Button>
 		</div>
 	);
 
 	const renderGenerating = () => (
-		<div className="flex flex-col items-center gap-4">
-			<p className="text-xl font-semibold">{GENERATING_MESSAGE}</p>
-			<p className="text-sm text-muted-foreground">
-				生成が完了すると最新のプレビューが表示されます。
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+			{/* Back Button */}
+			<button
+				type="button"
+				onClick={handleDiscardSession}
+				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
+			>
+				<BackIcon size="sm" />
+				<span className="text-sm font-medium">ホーム</span>
+			</button>
+
+			<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
+				画像を生成中...
 			</p>
+			<Progress value={undefined} className="w-96 bg-[#444746]" />
 		</div>
 	);
 
@@ -332,39 +386,48 @@ export default function ControlPage() {
 				: downloadPath;
 
 		return (
-			<div className="flex flex-col items-center gap-6">
-				<p className="text-xl font-semibold">生成が完了しました！</p>
-				{latestGeneratedPhotoUrl ? (
-					<Image
-						src={latestGeneratedPhotoUrl}
-						alt="生成された写真のプレビュー"
-						width={192}
-						height={192}
-						sizes="192px"
-						className="h-48 w-48 rounded object-cover shadow-lg"
-					/>
-				) : null}
+			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+				{/* Back Button */}
+				<button
+					type="button"
+					onClick={handleDiscardSession}
+					className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
+				>
+					<BackIcon size="sm" />
+					<span className="text-sm font-medium">ホーム</span>
+				</button>
+
+				<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
+					画像のダウンロードはこちらから
+				</p>
 				{qrValue ? (
-					<div className="flex flex-col items-center gap-3">
-						<QRCode value={qrValue} />
-						{downloadPath ? (
-							<Link href={downloadPath} className="text-primary underline">
-								ダウンロードページを開く
-							</Link>
-						) : null}
-						<p className="text-xs text-muted-foreground">{qrValue}</p>
+					<div className="rounded-2xl border-2 border-[#444746] bg-[#444746] p-8 shadow-2xl">
+						<QRCode value={qrValue} size={256} />
 					</div>
 				) : null}
-				<Button onClick={handleDiscardSession} variant="secondary">
-					次の来場者を案内する
-				</Button>
+				{latestGeneratedPhotoUrl ? (
+					<div className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30">
+						<Image
+							src={latestGeneratedPhotoUrl}
+							alt="生成された写真のプレビュー"
+							width={240}
+							height={240}
+							sizes="240px"
+							className="h-60 w-60 rounded object-cover"
+						/>
+					</div>
+				) : null}
 			</div>
 		);
 	};
 
 	const renderContent = () => {
 		if (isLoading) {
-			return <p className="text-sm text-muted-foreground">読み込み中...</p>;
+			return (
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+					<p className="text-xl text-[#e3e3e3]">読み込み中...</p>
+				</div>
+			);
 		}
 
 		const detectedError = error;
@@ -372,11 +435,18 @@ export default function ControlPage() {
 		if (detectedError) {
 			console.error(detectedError);
 			return (
-				<div className="flex flex-col gap-4">
-					<p className="text-sm text-destructive">
-						エラーが発生しました: {detectedError.message}
-					</p>
-					<Button onClick={() => window.location.reload()}>再読み込み</Button>
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+					<div className="flex flex-col gap-4">
+						<p className="text-sm text-[#CA6673]">
+							エラーが発生しました: {detectedError.message}
+						</p>
+						<Button
+							onClick={() => window.location.reload()}
+							className="bg-[#4796E3] text-white hover:bg-[#9177C7]"
+						>
+							再読み込み
+						</Button>
+					</div>
 				</div>
 			);
 		}
@@ -405,14 +475,8 @@ export default function ControlPage() {
 	};
 
 	return (
-		<main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-8 p-6 md:p-10">
-			<header className="flex flex-col gap-2">
-				<h1 className="text-3xl font-bold">Control</h1>
-				<p className="text-sm text-muted-foreground">
-					スタッフ用コントロールパネル。ブースID: {boothId || "未設定"}
-				</p>
-			</header>
-			<section className="flex-1">{renderContent()}</section>
+		<main className="relative flex h-screen w-full overflow-hidden">
+			{renderContent()}
 		</main>
 	);
 }

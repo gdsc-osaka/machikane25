@@ -21,6 +21,7 @@ namespace Art.Presentation.Schools
         private readonly HashSet<FishAgent> agents = new HashSet<FishAgent>();
         private readonly List<FishAgent> pruneScratch = new List<FishAgent>();
         private IReadOnlyList<VisitorGroup> currentVisitors = Array.Empty<VisitorGroup>();
+        private readonly Dictionary<FishAgent, Vector3> agentVelocities = new Dictionary<FishAgent, Vector3>();
 
         public IReadOnlyCollection<FishAgent> ActiveAgents => agents;
 
@@ -63,6 +64,7 @@ namespace Art.Presentation.Schools
             }
 
             agents.Remove(agent);
+            agentVelocities.Remove(agent);
         }
 
         public void ApplyVisitorInfluence(IReadOnlyList<VisitorGroup> visitors)
@@ -117,45 +119,73 @@ namespace Art.Presentation.Schools
 
             pruneScratch.Clear();
 
-            // If there are visitors, update fish target positions
             if (currentVisitors != null && currentVisitors.Count > 0)
             {
-                Debug.Log($"Updating {agents.Count} fish agents with {currentVisitors.Count} visitors");
+                Debug.Log($"Updating {agents.Count} fish agents with {currentVisitors.Count} visitors using boid algorithm");
+            }
 
-                foreach (var agent in agents)
+            foreach (var agent in agents)
+            {
+                if (agent == null)
                 {
-                    if (agent == null)
-                    {
-                        pruneScratch.Add(agent);
-                        continue;
-                    }
-
-                    // Get FishController component
-                    var fishController = agent.GetComponent<FishController>();
-                    if (fishController == null)
-                    {
-                        Debug.LogWarning($"FishAgent {agent.name} doesn't have a FishController component");
-                        continue;
-                    }
-
-                    // Use the first visitor's position (simplified logic)
-                    var visitor = currentVisitors[0];
-
-                    // Transform visitor position: (position - pivot) * placeExtent
-                    Vector3 targetPosition = visitorInfluence.ToWorldPosition(visitor.Position);
-
-                    // Add noise for natural movement
-                    targetPosition += new Vector3(
-                        UnityEngine.Random.Range(-noiseRange, noiseRange),
-                        UnityEngine.Random.Range(-noiseRange, noiseRange),
-                        UnityEngine.Random.Range(-noiseRange, noiseRange)
-                    );
-
-                    // Directly set the target position
-                    fishController.targetPosition = targetPosition;
-
-                    Debug.Log($"Fish {agent.name} target set to {targetPosition} (visitor at {visitor.Position})");
+                    pruneScratch.Add(agent);
+                    continue;
                 }
+
+                var fishController = agent.GetComponent<FishController>();
+                if (fishController == null)
+                {
+                    Debug.LogWarning($"FishAgent {agent.name} doesn't have a FishController component");
+                    continue;
+                }
+
+                // Calculate boid forces
+                Vector3 separation = CalculateSeparation(agent);
+                Vector3 alignment = CalculateAlignment(agent);
+                Vector3 cohesion = CalculateCohesion(agent);
+                Vector3 visitorAttraction = CalculateVisitorAttraction(agent);
+
+                // Combine forces with weights
+                Vector3 combinedForce = Vector3.zero;
+                if (settings != null)
+                {
+                    combinedForce += separation * settings.SeparationWeight;
+                    combinedForce += alignment * settings.AlignmentWeight;
+                    combinedForce += cohesion * settings.CohesionWeight;
+                    combinedForce += visitorAttraction * settings.VisitorAttractionWeight;
+                }
+                else
+                {
+                    combinedForce = visitorAttraction;
+                }
+
+                // Update velocity
+                if (!agentVelocities.ContainsKey(agent))
+                {
+                    agentVelocities[agent] = agent.transform.forward * settings.MinSpeed;
+                }
+
+                Vector3 velocity = agentVelocities[agent];
+                velocity += combinedForce * Time.deltaTime;
+
+                // Clamp speed
+                float speed = velocity.magnitude;
+                if (speed > settings.MaxSpeed)
+                {
+                    velocity = velocity.normalized * settings.MaxSpeed;
+                }
+                else if (speed < settings.MinSpeed)
+                {
+                    velocity = velocity.normalized * settings.MinSpeed;
+                }
+
+                agentVelocities[agent] = velocity;
+
+                // Set target position based on velocity
+                Vector3 targetPosition = agent.transform.position + velocity;
+                fishController.targetPosition = targetPosition;
+
+                Debug.Log($"Fish {agent.name} boid forces - Sep:{separation.magnitude:F2} Align:{alignment.magnitude:F2} Coh:{cohesion.magnitude:F2} Visitor:{visitorAttraction.magnitude:F2}");
             }
 
             // Remove null agents
@@ -164,9 +194,146 @@ namespace Art.Presentation.Schools
                 foreach (var stale in pruneScratch)
                 {
                     agents.Remove(stale);
+                    agentVelocities.Remove(stale);
                 }
                 pruneScratch.Clear();
             }
+        }
+
+        private Vector3 CalculateSeparation(FishAgent agent)
+        {
+            Vector3 steer = Vector3.zero;
+            int count = 0;
+
+            foreach (var other in agents)
+            {
+                if (other == null || other == agent)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(agent.transform.position, other.transform.position);
+                if (distance > 0f && distance < settings.AvoidanceRadius)
+                {
+                    // Calculate vector pointing away from neighbor
+                    Vector3 diff = agent.transform.position - other.transform.position;
+                    diff.Normalize();
+                    diff /= distance; // Weight by distance (closer = stronger)
+                    steer += diff;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                steer /= count;
+            }
+
+            return steer;
+        }
+
+        private Vector3 CalculateAlignment(FishAgent agent)
+        {
+            Vector3 averageVelocity = Vector3.zero;
+            int count = 0;
+
+            foreach (var other in agents)
+            {
+                if (other == null || other == agent)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(agent.transform.position, other.transform.position);
+                if (distance > 0f && distance < settings.NeighbourRadius)
+                {
+                    if (agentVelocities.ContainsKey(other))
+                    {
+                        averageVelocity += agentVelocities[other];
+                        count++;
+                    }
+                }
+            }
+
+            if (count > 0)
+            {
+                averageVelocity /= count;
+                Vector3 steer = averageVelocity - (agentVelocities.ContainsKey(agent) ? agentVelocities[agent] : Vector3.zero);
+                return steer.normalized;
+            }
+
+            return Vector3.zero;
+        }
+
+        private Vector3 CalculateCohesion(FishAgent agent)
+        {
+            Vector3 centerOfMass = Vector3.zero;
+            int count = 0;
+
+            foreach (var other in agents)
+            {
+                if (other == null || other == agent)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(agent.transform.position, other.transform.position);
+                if (distance > 0f && distance < settings.NeighbourRadius)
+                {
+                    centerOfMass += other.transform.position;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                centerOfMass /= count;
+                Vector3 steer = centerOfMass - agent.transform.position;
+                return steer.normalized;
+            }
+
+            return Vector3.zero;
+        }
+
+        private Vector3 CalculateVisitorAttraction(FishAgent agent)
+        {
+            if (currentVisitors == null || currentVisitors.Count == 0 || visitorInfluence == null)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 totalAttraction = Vector3.zero;
+
+            foreach (var visitor in currentVisitors)
+            {
+                // Transform visitor position to world space
+                Vector3 visitorWorldPos = visitorInfluence.ToWorldPosition(visitor.Position);
+
+                // Calculate distance and direction
+                Vector3 toVisitor = visitorWorldPos - agent.transform.position;
+                float distance = toVisitor.magnitude;
+
+                if (distance < visitorInfluence.MaxDistance && distance > 0.01f)
+                {
+                    // Apply falloff based on distance
+                    float falloff = 1f - Mathf.Pow(distance / visitorInfluence.MaxDistance, visitorInfluence.FalloffPower);
+                    falloff = Mathf.Max(0f, falloff);
+
+                    // Weight by visitor magnitude
+                    float strength = visitorInfluence.AttractionStrength * visitor.Magnitude * falloff;
+
+                    totalAttraction += toVisitor.normalized * strength;
+                }
+            }
+
+            // Add some noise for natural variation
+            totalAttraction += new Vector3(
+                UnityEngine.Random.Range(-noiseRange, noiseRange),
+                UnityEngine.Random.Range(-noiseRange, noiseRange),
+                UnityEngine.Random.Range(-noiseRange, noiseRange)
+            ) * 0.1f;
+
+            return totalAttraction;
         }
 
     }

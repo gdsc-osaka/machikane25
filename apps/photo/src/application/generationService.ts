@@ -1,3 +1,4 @@
+import { GoogleGenAI, type Part } from "@google/genai";
 import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
@@ -18,10 +19,6 @@ type GeminiInlineData = {
 	mimeType: string;
 	data: string;
 };
-
-type GeminiPart =
-	| { text: string }
-	| { inline_data: { mime_type: string; data: string } };
 
 type GeneratedPhotoInfo = {
 	id: string;
@@ -59,8 +56,8 @@ const ensureApiKey = (): string => {
 const toParts = (
 	baseImage: GeminiInlineData,
 	optionEntries: Array<{ key: string; inlineData: GeminiInlineData }>,
-): GeminiPart[] => {
-	const optionParts = optionEntries.flatMap<GeminiPart>((entry) => [
+): Part[] => {
+	const optionParts = optionEntries.flatMap<Part>((entry) => [
 		{ text: `This image is for the '${entry.key}':` },
 		{
 			inline_data: {
@@ -72,7 +69,7 @@ const toParts = (
 
 	return [
 		{ text: "This is the base 'reference_image' person:" },
-		{ inline_data: { mime_type: baseImage.mimeType, data: baseImage.data } },
+		{ inlineData: { mimeType: baseImage.mimeType, data: baseImage.data } },
 		...optionParts,
 		{
 			text: "Generate an image using the 'reference_image' person. Beside the 'reference_image' person, add the 'person' to create a two-shot scene. The 'reference_image' person should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
@@ -185,56 +182,70 @@ export const generateImage = async (
 		optionData,
 	);
 
-	const response = await fetch(GEMINI_ENDPOINT, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"x-goog-api-key": apiKey,
-		},
-		body: JSON.stringify({
+	const ai = new GoogleGenAI({ apiKey: apiKey });
+	try {
+		const response = await ai.models.generateContent({
+			model: "gemini-2.5-flash-image",
 			contents: [
 				{
 					parts,
 				},
 			],
-			generationConfig: {
+			config: {
 				imageConfig: {
 					aspectRatio: "3:4",
 				},
 			},
-		}),
-	});
+		});
 
-	if (!response.ok) {
-		const errorPayload = await response.text().catch(() => "");
-		throw new Error(
-			`Gemini API request failed: ${response.status} ${errorPayload}`,
+		const inlineData = extractInlineData(response);
+		if (!inlineData) {
+			throw new Error("Gemini response missing image data");
+		}
+
+		const imageBuffer = Buffer.from(inlineData.data, "base64");
+		const { imagePath, imageUrl } = await handleGeminiResponse(
+			imageBuffer,
+			boothId,
+			inlineData.mimeType,
 		);
+
+		const photoId = derivePhotoId(imagePath);
+
+		await createGeneratedPhoto({
+			boothId,
+			photoId,
+			imagePath,
+			imageUrl,
+		});
+
+		return photoId;
+	} catch (error) {
+		if (error instanceof Error) {
+			captureException(error, {
+				tags: { feature: "image-generation" },
+				extra: {
+					boothId,
+					uploadedPhotoId,
+					options,
+				},
+			});
+			throw error;
+		}
+		const unknownError = new Error(
+			"Image generation failed due to unknown error",
+		);
+		captureException(unknownError, {
+			tags: { feature: "image-generation" },
+			extra: {
+				boothId,
+				uploadedPhotoId,
+				options,
+				error,
+			},
+		});
+		throw unknownError;
 	}
-
-	const payload = await response.json();
-	const inlineData = extractInlineData(payload);
-	if (!inlineData) {
-		throw new Error("Gemini response missing image data");
-	}
-
-	const imageBuffer = Buffer.from(inlineData.data, "base64");
-	const { imagePath, imageUrl } = await handleGeminiResponse(
-		imageBuffer,
-		boothId,
-		inlineData.mimeType,
-	);
-
-	const photoId = derivePhotoId(imagePath);
-
-	await createGeneratedPhoto({
-		boothId,
-		photoId,
-		imagePath,
-		imageUrl,
-	});
-
-	return photoId;
 };
 
 type AquariumConfig = {

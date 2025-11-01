@@ -60,8 +60,8 @@ const toParts = (
 	const optionParts = optionEntries.flatMap<Part>((entry) => [
 		{ text: `This image is for the '${entry.key}':` },
 		{
-			inline_data: {
-				mime_type: entry.inlineData.mimeType,
+			inlineData: {
+				mimeType: entry.inlineData.mimeType,
 				data: entry.inlineData.data,
 			},
 		},
@@ -69,7 +69,12 @@ const toParts = (
 
 	return [
 		{ text: "This is the base 'reference_image' person:" },
-		{ inlineData: { mimeType: baseImage.mimeType, data: baseImage.data } },
+		{
+			inlineData: {
+				mimeType: baseImage.mimeType,
+				data: baseImage.data,
+			},
+		},
 		...optionParts,
 		{
 			text: "Generate an image using the 'reference_image' person. Beside the 'reference_image' person, add the 'person' to create a two-shot scene. The 'reference_image' person should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",

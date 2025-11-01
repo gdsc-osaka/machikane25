@@ -173,32 +173,34 @@ export default function ControlPage() {
 			type="button"
 			onClick={handleStartSession}
 			disabled={isPending}
-			className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-blue-500 to-purple-600 text-white transition-all hover:from-blue-600 hover:to-purple-700 active:scale-[0.99]"
+			className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] transition-all active:scale-[0.99]"
 		>
-			<h1 className="text-6xl font-bold drop-shadow-lg md:text-7xl">
+			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-6xl font-bold text-transparent drop-shadow-lg md:text-7xl">
 				Gemini AI フォトブース
 			</h1>
-			<p className="animate-pulse text-3xl font-semibold drop-shadow-md md:text-4xl">
+			<p className="animate-pulse text-3xl font-semibold text-[#e3e3e3] drop-shadow-md md:text-4xl">
 				画面をタップしてスタート
 			</p>
 		</button>
 	);
 
 	const renderMenu = () => (
-		<div className="flex h-full w-full">
+		<div className="flex h-full w-full bg-[#303030]">
 			{/* Back Button */}
 			<button
 				type="button"
 				onClick={handleDiscardSession}
-				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white backdrop-blur-sm transition-all hover:bg-white/30"
+				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
 			>
 				<BackIcon size="sm" />
 				<span className="text-sm font-medium">ホーム</span>
 			</button>
 
 			{/* Left Side - Uploaded Images */}
-			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto p-6">
-				<h2 className="text-xl font-bold">画像を選ぶ</h2>
+			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto border-r border-[#444746] bg-[#303030] p-6">
+				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
+					画像を選ぶ
+				</h2>
 				{photos.length > 0 ? (
 					<div className="flex flex-col gap-3">
 						{photos.map((photo) => {
@@ -214,8 +216,8 @@ export default function ControlPage() {
 									className={[
 										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all",
 										isSelected
-											? "border-blue-500 shadow-lg"
-											: "border-transparent hover:border-gray-300",
+											? "border-[#4796E3] shadow-lg shadow-[#4796E3]/50"
+											: "border-[#444746] hover:border-[#9177C7]",
 									].join(" ")}
 								>
 									{hasValidImageUrl ? (
@@ -228,7 +230,7 @@ export default function ControlPage() {
 											className="h-full w-full object-cover"
 										/>
 									) : (
-										<div className="flex h-full w-full items-center justify-center bg-gray-100 text-sm text-gray-500">
+										<div className="flex h-full w-full items-center justify-center bg-[#444746] text-sm text-[#e3e3e3]">
 											読み込み中...
 										</div>
 									)}
@@ -237,22 +239,24 @@ export default function ControlPage() {
 						})}
 					</div>
 				) : (
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-[#e3e3e3]/60">
 						QRコードから写真をアップロードするとここに表示されます。
 					</p>
 				)}
 			</div>
 
 			{/* Right Side - Options and Actions */}
-			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto p-6">
+			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto bg-[#303030] p-6">
 				{/* Generation Options */}
 				<div className="flex-1 space-y-4">
-					<h2 className="text-xl font-bold">テーマを選択</h2>
+					<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
+						テーマを選択
+					</h2>
 					{generationSections.length > 0 ? (
 						generationSections.map(([typeId, items]) => (
-							<Card key={typeId}>
+							<Card key={typeId} className="border-[#444746] bg-[#303030]">
 								<CardHeader>
-									<CardTitle className="text-base font-semibold">
+									<CardTitle className="text-base font-semibold text-[#e3e3e3]">
 										{typeId.toUpperCase()}
 									</CardTitle>
 								</CardHeader>
@@ -271,6 +275,11 @@ export default function ControlPage() {
 													}))
 												}
 												size="sm"
+												className={
+													isSelected
+														? "bg-[#4796E3] text-white hover:bg-[#9177C7]"
+														: "border-[#444746] bg-[#303030] text-[#e3e3e3] hover:border-[#4796E3] hover:bg-[#444746]"
+												}
 											>
 												{option.displayName}
 											</Button>
@@ -280,9 +289,7 @@ export default function ControlPage() {
 							</Card>
 						))
 					) : (
-						<p className="text-sm text-muted-foreground">
-							選択肢を読み込み中です…
-						</p>
+						<p className="text-sm text-[#e3e3e3]/60">選択肢を読み込み中です…</p>
 					)}
 				</div>
 
@@ -295,7 +302,7 @@ export default function ControlPage() {
 						onClick={handleStartCapture}
 						disabled={isPending}
 						size="lg"
-						className="flex-1 gap-2 text-lg"
+						className="flex-1 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
 					>
 						<CameraIcon size="md" />
 						写真を撮る
@@ -304,7 +311,7 @@ export default function ControlPage() {
 						onClick={handleStartGeneration}
 						disabled={isGenerateDisabled}
 						size="lg"
-						className="flex-1 gap-2 text-lg"
+						className="flex-1 gap-2 bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] text-lg text-white hover:opacity-90 disabled:from-[#444746] disabled:to-[#444746] disabled:text-[#e3e3e3]/50"
 					>
 						<CheckIcon size="md" />
 						決定
@@ -315,12 +322,12 @@ export default function ControlPage() {
 	);
 
 	const renderCapturing = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center bg-black">
+		<div className="flex h-full w-full flex-col items-center justify-center bg-[#303030]">
 			{/* Back Button */}
 			<button
 				type="button"
 				onClick={handleDiscardSession}
-				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white backdrop-blur-sm transition-all hover:bg-white/30"
+				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
 			>
 				<BackIcon size="sm" />
 				<span className="text-sm font-medium">ホーム</span>
@@ -335,7 +342,7 @@ export default function ControlPage() {
 						exit={{ opacity: 0, scale: 1.5 }}
 						transition={{ duration: 0.3 }}
 					>
-						<span className="text-[200px] font-bold text-white drop-shadow-2xl">
+						<span className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-[200px] font-bold text-transparent drop-shadow-2xl">
 							{countdown > 0 ? countdown : "📸"}
 						</span>
 					</motion.div>
@@ -345,21 +352,21 @@ export default function ControlPage() {
 	);
 
 	const renderGenerating = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-purple-500 to-pink-500">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
 			{/* Back Button */}
 			<button
 				type="button"
 				onClick={handleDiscardSession}
-				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white backdrop-blur-sm transition-all hover:bg-white/30"
+				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
 			>
 				<BackIcon size="sm" />
 				<span className="text-sm font-medium">ホーム</span>
 			</button>
 
-			<p className="text-4xl font-semibold text-white drop-shadow-lg">
+			<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
 				画像を生成中...
 			</p>
-			<Progress value={undefined} className="w-96 bg-white/30" />
+			<Progress value={undefined} className="w-96 bg-[#444746]" />
 		</div>
 	);
 
@@ -379,34 +386,34 @@ export default function ControlPage() {
 				: downloadPath;
 
 		return (
-			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-green-500 to-blue-500">
+			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
 				{/* Back Button */}
 				<button
 					type="button"
 					onClick={handleDiscardSession}
-					className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white backdrop-blur-sm transition-all hover:bg-white/30"
+					className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
 				>
 					<BackIcon size="sm" />
 					<span className="text-sm font-medium">ホーム</span>
 				</button>
 
-				<p className="text-4xl font-semibold text-white drop-shadow-lg">
+				<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
 					画像のダウンロードはこちらから
 				</p>
 				{qrValue ? (
-					<div className="rounded-2xl bg-white p-8 shadow-2xl">
+					<div className="rounded-2xl border-2 border-[#444746] bg-[#444746] p-8 shadow-2xl">
 						<QRCode value={qrValue} size={256} />
 					</div>
 				) : null}
 				{latestGeneratedPhotoUrl ? (
-					<div className="rounded-lg bg-white/10 p-4">
+					<div className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30">
 						<Image
 							src={latestGeneratedPhotoUrl}
 							alt="生成された写真のプレビュー"
 							width={240}
 							height={240}
 							sizes="240px"
-							className="h-60 w-60 rounded object-cover shadow-lg"
+							className="h-60 w-60 rounded object-cover"
 						/>
 					</div>
 				) : null}
@@ -417,8 +424,8 @@ export default function ControlPage() {
 	const renderContent = () => {
 		if (isLoading) {
 			return (
-				<div className="flex h-full w-full items-center justify-center">
-					<p className="text-xl text-muted-foreground">読み込み中...</p>
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+					<p className="text-xl text-[#e3e3e3]">読み込み中...</p>
 				</div>
 			);
 		}
@@ -428,12 +435,17 @@ export default function ControlPage() {
 		if (detectedError) {
 			console.error(detectedError);
 			return (
-				<div className="flex h-full w-full items-center justify-center">
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
 					<div className="flex flex-col gap-4">
-						<p className="text-sm text-destructive">
+						<p className="text-sm text-[#CA6673]">
 							エラーが発生しました: {detectedError.message}
 						</p>
-						<Button onClick={() => window.location.reload()}>再読み込み</Button>
+						<Button
+							onClick={() => window.location.reload()}
+							className="bg-[#4796E3] text-white hover:bg-[#9177C7]"
+						>
+							再読み込み
+						</Button>
 					</div>
 				</div>
 			);

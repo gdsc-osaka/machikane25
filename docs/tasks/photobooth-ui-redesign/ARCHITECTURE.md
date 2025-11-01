@@ -29,10 +29,18 @@ Transitions:
 ## Design Requirements
 
 ### Design Philosophy
-- Pop and fun to use
+- Pop and fun to use with sophisticated dark theme
 - Use images and icons for visual appeal
 - Fixed layout (no scrolling)
 - Touch-friendly interface for tablet
+
+### Color Palette (Dark Theme)
+- **Primary**: Blue (#4796E3)
+- **Secondary**: Purple (#9177C7), Red (#CA6673)
+- **Base Background**: Dark grey (#303030)
+- **Borders**: #444746
+- **Foreground Text**: #e3e3e3
+- **Gradients**: Blue → Purple → Red for headings and important text
 
 ### Control Page States
 

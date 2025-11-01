@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const createGeneratedPhotoMock = vi.fn();
 const getImageDataFromIdMock = vi.fn();
 const handleGeminiResponseMock = vi.fn();
+const generateContentMock = vi.fn();
 
 vi.mock("@/infra/firebase/photoRepository", () => ({
 	createGeneratedPhoto: createGeneratedPhotoMock,
@@ -17,17 +18,23 @@ vi.mock("@/infra/gemini/storage", () => ({
 	handleGeminiResponse: handleGeminiResponseMock,
 }));
 
+vi.mock("@google/genai", () => ({
+	GoogleGenAI: vi.fn().mockImplementation(() => ({
+		models: {
+			generateContent: generateContentMock,
+		},
+	})),
+}));
+
 describe("GenerationService.generateImage", () => {
 	const originalEnv = { ...process.env };
-	const fetchMock = vi.fn();
 
 	beforeEach(() => {
 		process.env = {
 			...originalEnv,
 			GEMINI_API_KEY: "test-api-key",
 		};
-		global.fetch = fetchMock as typeof fetch;
-		fetchMock.mockReset();
+		generateContentMock.mockReset();
 		getImageDataFromIdMock.mockReset();
 		handleGeminiResponseMock.mockReset();
 		createGeneratedPhotoMock.mockReset();
@@ -35,7 +42,6 @@ describe("GenerationService.generateImage", () => {
 
 	afterEach(() => {
 		process.env = { ...originalEnv };
-		Reflect.deleteProperty(global, "fetch");
 	});
 
 	it("constructs interleaved Gemini request and stores generated photo metadata", async () => {
@@ -65,24 +71,21 @@ describe("GenerationService.generateImage", () => {
 
 		const generatedBase64 = "aGVsbG8gd29ybGQ="; // "hello world" in base64 for deterministic buffer
 
-		fetchMock.mockResolvedValue({
-			ok: true,
-			json: async () => ({
-				candidates: [
-					{
-						content: {
-							parts: [
-								{
-									inlineData: {
-										mimeType: "image/png",
-										data: generatedBase64,
-									},
+		generateContentMock.mockResolvedValue({
+			candidates: [
+				{
+					content: {
+						parts: [
+							{
+								inlineData: {
+									mimeType: "image/png",
+									data: generatedBase64,
 								},
-							],
-						},
+							},
+						],
 					},
-				],
-			}),
+				},
+			],
 		});
 
 		handleGeminiResponseMock.mockResolvedValue({
@@ -95,28 +98,20 @@ describe("GenerationService.generateImage", () => {
 			outfit: "outfit-id",
 		});
 
-		expect(fetchMock).toHaveBeenCalledOnce();
-		const [requestedUrl, requestInit] = fetchMock.mock.calls[0] ?? [];
-		expect(requestedUrl).toBe(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
-		);
-		expect(requestInit?.method).toBe("POST");
-		expect(requestInit?.headers).toMatchObject({
-			"Content-Type": "application/json",
-			"x-goog-api-key": "test-api-key",
+		expect(generateContentMock).toHaveBeenCalledOnce();
+		const callArgs = generateContentMock.mock.calls[0]?.[0];
+
+		expect(callArgs.model).toBe("gemini-2.5-flash-image");
+		expect(callArgs.config).toEqual({
+			imageConfig: {
+				aspectRatio: "3:4",
+			},
 		});
-
-		const requestBody =
-			typeof requestInit?.body === "string"
-				? JSON.parse(requestInit.body)
-				: null;
-
-		expect(requestBody).not.toBeNull();
-		expect(requestBody?.contents?.[0]?.parts).toEqual([
+		expect(callArgs.contents?.[0]?.parts).toEqual([
 			{ text: "This is the base 'reference_image' person:" },
 			{
-				inline_data: {
-					mime_type: "image/jpeg",
+				inlineData: {
+					mimeType: "image/jpeg",
 					data: "base-image-base64",
 				},
 			},
@@ -165,21 +160,18 @@ describe("GenerationService.generateImage", () => {
 			data: "base-image",
 		});
 
-		fetchMock.mockResolvedValue({
-			ok: true,
-			json: async () => ({
-				candidates: [
-					{
-						content: {
-							parts: [
-								{
-									text: "no inline data here",
-								},
-							],
-						},
+		generateContentMock.mockResolvedValue({
+			candidates: [
+				{
+					content: {
+						parts: [
+							{
+								text: "no inline data here",
+							},
+						],
 					},
-				],
-			}),
+				},
+			],
 		});
 
 		await expect(generateImage("booth-x", "photo-y", {})).rejects.toThrowError(

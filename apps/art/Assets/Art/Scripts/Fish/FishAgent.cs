@@ -128,6 +128,7 @@ namespace Art.Fish
 
         public void ApplyVisitorSteering(Vector3 steering)
         {
+            Debug.Log($"Applying visitor steering {steering} to fish {gameObject.name}");
             visitorSteering = steering;
         }
 

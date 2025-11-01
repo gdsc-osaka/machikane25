@@ -13,6 +13,8 @@ namespace Art.Presentation.Schools
     {
         [SerializeField] private BoidSettings settings;
         [SerializeField] private VisitorInfluenceSettings visitorInfluence;
+        [SerializeField] [Tooltip("Fish agents placed in the hierarchy to be automatically registered on startup.")]
+        private FishAgent[] defaultFishAgents = Array.Empty<FishAgent>();
 
         private readonly HashSet<FishAgent> agents = new HashSet<FishAgent>();
         private readonly Dictionary<FishAgent, Vector3> visitorSteering = new Dictionary<FishAgent, Vector3>();
@@ -80,14 +82,36 @@ namespace Art.Presentation.Schools
                 }
             }
             Debug.Log(log);
-            // Debug.Log($"SchoolCoordinator received {visitors?.Count ?? 0} visitor groups.");
             currentVisitors = visitors ?? Array.Empty<VisitorGroup>();
             RebuildVisitorSamples();
+        }
+
+        private void Awake()
+        {
+            RegisterDefaultFishAgents();
         }
 
         private void Update()
         {
             UpdateAgents();
+        }
+
+        private void RegisterDefaultFishAgents()
+        {
+            if (defaultFishAgents == null || defaultFishAgents.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var fishAgent in defaultFishAgents)
+            {
+                if (fishAgent != null)
+                {
+                    RegisterAgent(fishAgent);
+                }
+            }
+
+            Debug.Log($"SchoolCoordinator registered {agents.Count} default fish agents from hierarchy.");
         }
 
         private void UpdateAgents()
@@ -99,8 +123,10 @@ namespace Art.Presentation.Schools
 
             var deltaTime = Time.deltaTime;
             pruneScratch.Clear();
+            // Debug.Log($"Updating {agents.Count} fish agents with visitor influence. Visitor samples count: {visitorSamples.Count}");
             foreach (var agent in agents)
             {
+                // Debug.Log("Update agent: " + (agent != null ? agent.name : "null"));
                 if (agent == null)
                 {
                     pruneScratch.Add(agent);
@@ -112,6 +138,7 @@ namespace Art.Presentation.Schools
                 var blendedForce = SmoothSteering(currentForce, targetForce, deltaTime);
                 visitorSteering[agent] = blendedForce;
                 agent.ApplyVisitorSteering(blendedForce);
+                // Debug.Log($"Agent {agent.name}: targetForce={targetForce.magnitude:F3}, blendedForce={blendedForce.magnitude:F3}");
             }
 
             if (pruneScratch.Count > 0)
@@ -162,6 +189,7 @@ namespace Art.Presentation.Schools
                 var weight = visitor.Magnitude * falloff;
                 accumulated += direction.normalized * weight;
                 totalWeight += weight;
+                // Debug.Log($"Visitor {i}: distance={distance:F2}, falloff={falloff:F3}, visitorMag={visitor.Magnitude:F3}, weight={weight:F3}");
             }
 
             if (totalWeight <= 0f)
@@ -169,7 +197,9 @@ namespace Art.Presentation.Schools
                 return Vector3.zero;
             }
 
-            return accumulated.normalized * (attraction * totalWeight);
+            var finalForce = accumulated.normalized * (attraction * totalWeight);
+            // Debug.Log($"CalculateSteering: totalWeight={totalWeight:F3}, attraction={attraction}, accumulatedMag={accumulated.magnitude:F3}, finalForceMag={finalForce.magnitude:F3}");
+            return finalForce;
         }
 
         private Vector3 SmoothSteering(Vector3 current, Vector3 target, float deltaTime)

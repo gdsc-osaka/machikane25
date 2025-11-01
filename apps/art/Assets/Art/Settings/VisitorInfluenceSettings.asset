@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8889629eade1448581f809698113b9db, type: 3}
   m_Name: VisitorInfluenceSettings
   m_EditorClassIdentifier: Art::Art.Presentation.Schools.VisitorInfluenceSettings
-  planeExtents: {x: 12, y: 6}
+  planeExtents: {x: 40, y: 12}
   planePivot: {x: 0.5, y: 0.5}
-  planeHeight: 0
-  attractionStrength: 4
-  maxDistance: 10
-  falloffPower: 1.5
+  planeHeight: 4
+  attractionStrength: 20
+  maxDistance: 15
+  falloffPower: 1.2
   steeringResponsiveness: 6
   absenceDamping: 3
   minimumMagnitude: 0.05

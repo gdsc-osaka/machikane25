@@ -363,7 +363,11 @@ namespace Art.Visitors
             for (var i = 0; i < smoothEntries.Count; i++)
             {
                 var entry = smoothEntries[i];
-                smoothedGroups.Add(new VisitorGroup(entry.Position, entry.Magnitude));
+                // Only include entries that were matched with current detections
+                if (entry.Marked)
+                {
+                    smoothedGroups.Add(new VisitorGroup(entry.Position, entry.Magnitude));
+                }
             }
         }
 

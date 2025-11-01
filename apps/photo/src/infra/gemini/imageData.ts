@@ -49,17 +49,28 @@ const resolveBucket = () => {
 export const fetchFromStorage = async (
 	path: string,
 ): Promise<StorageDownloadResult> => {
+	console.log(`[fetchFromStorage] Downloading file from path: ${path}`);
 	const bucket = resolveBucket();
+	const bucketName = bucket.name;
+	console.log(`[fetchFromStorage] Using bucket: ${bucketName}`);
 	const file = bucket.file(path);
 
 	try {
 		const [buffer] = await file.download();
+		console.log(
+			`[fetchFromStorage] Successfully downloaded file, size: ${buffer.length} bytes`,
+		);
 		const [metadata] = await file.getMetadata().catch(() => [null]);
 		const mimeType =
 			readStringField(metadata, "contentType") ?? inferMimeTypeFromPath(path);
+		console.log(`[fetchFromStorage] File mimeType: ${mimeType}`);
 
 		return { buffer, mimeType };
-	} catch (_error) {
+	} catch (error) {
+		console.error(
+			`[fetchFromStorage] Failed to download file from path: ${path}`,
+			error,
+		);
 		throw new Error(`Storage object not found at path: ${path}`);
 	}
 };
@@ -90,19 +101,33 @@ const getUploadedPhotoImage = async (
 	photoId: string,
 ): Promise<ImageData | null> => {
 	try {
+		console.log(`[getUploadedPhotoImage] Fetching photo with id: ${photoId}`);
 		const snapshot = await queryUploadedPhotosByPhotoId(photoId).get();
-		console.debug(`Uploaded photo query returned ${snapshot.size} documents`);
+		console.log(
+			`[getUploadedPhotoImage] Query returned ${snapshot.docs.length} documents`,
+		);
+
 		const firstDoc = snapshot.docs[0];
 		if (!firstDoc) {
+			console.log(
+				`[getUploadedPhotoImage] No document found for photoId: ${photoId}`,
+			);
 			return null;
 		}
 		const data = firstDoc.data();
+		console.log(`[getUploadedPhotoImage] Document data:`, {
+			hasImagePath: !!data.imagePath,
+			hasImageUrl: !!data.imageUrl,
+			documentId: firstDoc.id,
+		});
 
 		// Try imagePath first (works better with emulator and Storage SDK)
 		const imagePath = readStringField(data, "imagePath");
 		if (imagePath) {
+			console.log(
+				`[getUploadedPhotoImage] Fetching from storage path: ${imagePath}`,
+			);
 			const { buffer, mimeType } = await fetchFromStorage(imagePath);
-			console.debug(`Fetched image from storage path: ${imagePath}`);
 			return {
 				mimeType,
 				data: buffer.toString("base64"),
@@ -112,64 +137,101 @@ const getUploadedPhotoImage = async (
 		// Fallback to imageUrl
 		const imageUrl = readStringField(data, "imageUrl");
 		if (imageUrl) {
+			console.log(`[getUploadedPhotoImage] Fetching from URL: ${imageUrl}`);
 			return fetchFromUrl(imageUrl);
 		}
 
+		console.log(
+			`[getUploadedPhotoImage] No imagePath or imageUrl found for photoId: ${photoId}`,
+		);
 		return null;
 	} catch (error) {
 		console.error(
-			`Error fetching uploaded photo image for photoId ${photoId}:`,
-			error,
+			`[(getUploadedPhotoImage)] Error fetching uploaded photo image for photoId ${photoId}:`,
+			JSON.stringify(error),
 		);
-		return null;
+		// Re-throw the error to propagate it up and provide better debugging
+		throw error;
 	}
 };
 
 const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
-	const firestore = getAdminFirestore();
-	const snapshot = await firestore.collection("options").doc(optionId).get();
-	console.debug(`Option document fetched for id: ${optionId}`);
-	if (!snapshot.exists) {
+	try {
+		console.log(`[getOptionImage] Fetching option with id: ${optionId}`);
+		const firestore = getAdminFirestore();
+		const snapshot = await firestore.collection("options").doc(optionId).get();
+
+		if (!snapshot.exists) {
+			console.log(
+				`[getOptionImage] Option document does not exist: ${optionId}`,
+			);
+			return null;
+		}
+
+		const data = snapshot.data();
+		if (!data) {
+			console.log(`[getOptionImage] Option document has no data: ${optionId}`);
+			return null;
+		}
+		console.log(`[getOptionImage] Option data:`, {
+			hasImagePath: !!data.imagePath,
+			hasImageUrl: !!data.imageUrl,
+		});
+
+		// Try imagePath first (works better with emulator and Storage SDK)
+		const imagePath = readStringField(data, "imagePath");
+		if (imagePath) {
+			console.log(`[getOptionImage] Fetching from storage path: ${imagePath}`);
+			const { buffer, mimeType } = await fetchFromStorage(imagePath);
+			return {
+				mimeType,
+				data: buffer.toString("base64"),
+			};
+		}
+
+		// Fallback to imageUrl
+		const imageUrl = readStringField(data, "imageUrl");
+		if (imageUrl) {
+			console.log(`[getOptionImage] Fetching from URL: ${imageUrl}`);
+			return fetchFromUrl(imageUrl);
+		}
+
+		console.log(
+			`[getOptionImage] No imagePath or imageUrl found for optionId: ${optionId}`,
+		);
 		return null;
+	} catch (error) {
+		console.error(
+			`[getOptionImage] Error fetching option image for optionId ${optionId}:`,
+			error,
+		);
+		throw error;
 	}
-
-	const data = snapshot.data();
-	if (!data) {
-		return null;
-	}
-
-	// Try imagePath first (works better with emulator and Storage SDK)
-	const imagePath = readStringField(data, "imagePath");
-	if (imagePath) {
-		const { buffer, mimeType } = await fetchFromStorage(imagePath);
-		console.debug(`Fetched option image from storage path: ${imagePath}`);
-		return {
-			mimeType,
-			data: buffer.toString("base64"),
-		};
-	}
-
-	// Fallback to imageUrl
-	const imageUrl = readStringField(data, "imageUrl");
-	if (imageUrl) {
-		return fetchFromUrl(imageUrl);
-	}
-
-	return null;
 };
 
 export const getImageDataFromId = async (id: string): Promise<ImageData> => {
-	console.debug("getImageDataFromId");
-	const uploadedPhoto = await getUploadedPhotoImage(id);
-	if (uploadedPhoto) {
-		return uploadedPhoto;
-	}
+	console.log(`[getImageDataFromId] Starting fetch for id: ${id}`);
 
-	console.debug("Not found in uploadedPhotos, checking options...");
-	const optionImage = await getOptionImage(id);
-	if (optionImage) {
-		return optionImage;
-	}
+	try {
+		const uploadedPhoto = await getUploadedPhotoImage(id);
+		if (uploadedPhoto) {
+			console.log(`[getImageDataFromId] Found uploaded photo for id: ${id}`);
+			return uploadedPhoto;
+		}
 
-	throw new Error(`Image data not found for id: ${id}`);
+		const optionImage = await getOptionImage(id);
+		if (optionImage) {
+			console.log(`[getImageDataFromId] Found option image for id: ${id}`);
+			return optionImage;
+		}
+
+		console.error(`[getImageDataFromId] Image data not found for id: ${id}`);
+		throw new Error(`Image data not found for id: ${id}`);
+	} catch (error) {
+		console.error(
+			`[getImageDataFromId] Failed to fetch image data for id: ${id}`,
+			error,
+		);
+		throw error;
+	}
 };

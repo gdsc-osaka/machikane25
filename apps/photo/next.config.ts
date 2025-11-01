@@ -37,6 +37,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
       },
+      // Google Cloud Storage (used by Firebase)
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
+      },
     ],
   },
 };

@@ -4,6 +4,7 @@
  * Firestore repository for GenerationOption collection
  */
 
+import { FieldPath } from "firebase-admin/firestore";
 import type { GenerationOption } from "@/domain/generationOption";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
@@ -16,6 +17,34 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 export const fetchAllOptions = async (): Promise<GenerationOption[]> => {
 	const firestore = getAdminFirestore();
 	const snapshot = await firestore.collection("options").get();
+
+	return snapshot.docs.map((doc) => {
+		const data = doc.data();
+		return {
+			id: doc.id,
+			typeId: data.typeId,
+			value: data.value,
+			displayName: data.displayName,
+			imageUrl: data.imageUrl ?? null,
+			imagePath: data.imagePath ?? null,
+			createdAt: data.createdAt.toDate(),
+			updatedAt: data.updatedAt.toDate(),
+		} as GenerationOption;
+	});
+};
+
+export const fetchOptionsByIds = async (
+	optionIds: string[],
+): Promise<GenerationOption[]> => {
+	const firestore = getAdminFirestore();
+	if (optionIds.length === 0) {
+		return [];
+	}
+
+	const snapshot = await firestore
+		.collection("options")
+		.where(FieldPath.documentId(), "in", optionIds)
+		.get();
 
 	return snapshot.docs.map((doc) => {
 		const data = doc.data();

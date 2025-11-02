@@ -105,12 +105,14 @@ const expectMainLayout = (main: HTMLElement | null) => {
 	expect(main).toBeInTheDocument();
 	const className = main?.getAttribute("class") ?? "";
 	// Accept both min-h-screen and h-screen
-	const hasHeightClass = className.includes("min-h-screen") || className.includes("h-screen");
+	const hasHeightClass =
+		className.includes("min-h-screen") || className.includes("h-screen");
 	expect(hasHeightClass).toBe(true);
 	expect(className).toContain("flex");
 
 	// Accept either flex-col or other flex layouts
-	const hasFlexLayout = className.includes("flex-col") || className.includes("flex");
+	const hasFlexLayout =
+		className.includes("flex-col") || className.includes("flex");
 	expect(hasFlexLayout).toBe(true);
 };
 

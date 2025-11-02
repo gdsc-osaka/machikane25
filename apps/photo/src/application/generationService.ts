@@ -58,21 +58,71 @@ const toParts = (
 	optionEntries: Array<{ key: string; inlineData: GeminiInlineData }>,
 ): Part[] => {
 	const optionParts = optionEntries.flatMap<Part>((entry) => [
-		{ text: `This image is for the '${entry.key}':` },
+		{ text: `Reference image for '${entry.key}':` },
 		{
-			inline_data: {
-				mime_type: entry.inlineData.mimeType,
+			inlineData: {
+				mimeType: entry.inlineData.mimeType,
 				data: entry.inlineData.data,
 			},
 		},
 	]);
 
 	return [
-		{ text: "This is the base 'reference_image' person:" },
-		{ inlineData: { mimeType: baseImage.mimeType, data: baseImage.data } },
+		{
+			text: "BASE IMAGE - Main Person:\nThis is the primary subject whose facial features, face shape, eye color, hair color, hair style, skin tone, and overall appearance must be preserved exactly in the generated image. This person is the main focus of the photo."
+		},
+		{
+			inlineData: {
+				mimeType: baseImage.mimeType,
+				data: baseImage.data,
+			},
+		},
 		...optionParts,
 		{
-			text: "Generate an image using the 'reference_image' person. Beside the 'reference_image' person, add the 'person' to create a two-shot scene. The 'reference_image' person should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
+			text: `GENERATION INSTRUCTIONS:
+Create a high-quality, photorealistic image with the following requirements:
+
+MAIN SUBJECT (CRITICAL - HIGHEST PRIORITY):
+- Use the person from the BASE IMAGE as the main subject
+- Preserve their exact facial features: face structure, eyes, nose, mouth, facial proportions
+- Keep their natural skin tone, hair color, and hair style identical to the BASE IMAGE
+- Ensure the main subject's identity is clearly recognizable
+
+COMPOSITION:
+- Create a two-shot photograph featuring TWO people:
+  1. Main subject: the person from the BASE IMAGE
+  2. Secondary person: matching the appearance shown in the 'person' reference image
+- Position both people naturally in the frame with appropriate spacing
+- Ensure both faces are clearly visible and well-lit
+
+OUTFIT:
+- Dress the MAIN SUBJECT in clothing that matches the style, color, and design shown in the 'outfit' reference image
+- Apply the outfit naturally to the main subject's body type
+- Ensure the clothing fits realistically
+
+POSE AND POSITIONING:
+- Arrange both people in the pose/positioning shown in the 'pose' reference image
+- Maintain natural body proportions and realistic anatomy
+- Ensure the pose looks natural and comfortable
+
+LOCATION AND SETTING:
+- Set the scene in the location/environment shown in the 'location' reference image
+- Include appropriate background elements, lighting, and atmosphere from the location reference
+- Ensure the lighting matches the environment naturally
+
+ARTISTIC STYLE:
+- Apply the overall visual style, color grading, mood, and aesthetic shown in the 'style' reference image
+- Maintain photorealistic quality while applying the style
+- Ensure consistent lighting and color harmony throughout the image
+
+QUALITY REQUIREMENTS:
+- Photorealistic rendering with high detail
+- Natural lighting and shadows
+- Proper depth of field and focus
+- Coherent composition with all elements working together harmoniously
+- The main subject from the BASE IMAGE must remain the clear focal point
+
+CRITICAL: The facial identity of the person in the BASE IMAGE must be perfectly preserved. This is the most important requirement.`,
 		},
 	];
 };

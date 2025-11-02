@@ -54,7 +54,7 @@ export const deleteUploadedPhotoByDocumentPath = async (
 
 export const queryUploadedPhotosByPhotoId = (photoId: string) =>
 	firestore()
-		.collectionGroup("uploadedPhotos")
+		.collection("booths/1/uploadedPhotos")
 		.where("photoId", "==", photoId)
 		.limit(1);
 

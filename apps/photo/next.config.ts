@@ -4,6 +4,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     typedRoutes: true,
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
   },
   outputFileTracingRoot: "../../",
   typescript: {
@@ -36,6 +39,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
+      },
+      // Google Cloud Storage (used by Firebase)
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
       },
     ],
   },

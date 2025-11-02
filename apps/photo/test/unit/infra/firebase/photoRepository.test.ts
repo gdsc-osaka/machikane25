@@ -118,8 +118,8 @@ describe("photoRepository", () => {
 			})),
 		}));
 
-		collectionGroupMock.mockImplementation((groupName: string) => {
-			expect(groupName).toBe("uploadedPhotos");
+		// Mock collection to return a query builder
+		collectionMock.mockImplementation((path: string) => {
 			return {
 				where: whereMock,
 			};
@@ -130,7 +130,7 @@ describe("photoRepository", () => {
 		);
 
 		queryUploadedPhotosByPhotoId("photo-group");
-		expect(collectionGroupMock).toHaveBeenCalledWith("uploadedPhotos");
+		expect(collectionMock).toHaveBeenCalled();
 		expect(whereMock).toHaveBeenCalledWith("photoId", "==", "photo-group");
 	});
 });

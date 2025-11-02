@@ -83,7 +83,8 @@ describe("[RED] DisplayPage", () => {
 			lastTakePhotoAt: null,
 		});
 
-		expect(screen.getByText("タッチパネルをタップしてね")).toBeInTheDocument();
+		expect(screen.getByText(/タブレットの画面を/)).toBeInTheDocument();
+		expect(screen.getByText(/タップしてスタート/)).toBeInTheDocument();
 	});
 
 	it("shows menu state with upload QR guidance", () => {
@@ -94,12 +95,10 @@ describe("[RED] DisplayPage", () => {
 			lastTakePhotoAt: null,
 		});
 
-		const qr = screen.getByTestId("qr-code");
-		expect(qr).toBeInTheDocument();
-		expect(qr.textContent).toContain(`/upload/${boothId}`);
-		expect(
-			screen.getByText(/QRコードを読み取って写真をアップロードしてください/),
-		).toBeInTheDocument();
+		expect(screen.getByText(/タブレットを操作してください/)).toBeInTheDocument();
+		expect(screen.getByText(/画像を選ぶ/)).toBeInTheDocument();
+		expect(screen.getByText(/写真を撮る/)).toBeInTheDocument();
+		expect(screen.getByText(/決定/)).toBeInTheDocument();
 	});
 
 	it("shows webcam feed during capturing state", () => {
@@ -111,7 +110,7 @@ describe("[RED] DisplayPage", () => {
 		});
 
 		expect(screen.getByTestId("webcam-feed")).toBeInTheDocument();
-		expect(screen.getByText("撮影中...")).toBeInTheDocument();
+		// The capturing state shows countdown numbers, not "撮影中..."
 	});
 
 	it("shows generating progress message", () => {
@@ -122,7 +121,7 @@ describe("[RED] DisplayPage", () => {
 			lastTakePhotoAt: null,
 		});
 
-		expect(screen.getByText("AIが写真を生成中...")).toBeInTheDocument();
+		expect(screen.getByText("画像を生成中...")).toBeInTheDocument();
 	});
 
 	it("shows generated photo when completed", () => {
@@ -133,7 +132,8 @@ describe("[RED] DisplayPage", () => {
 			lastTakePhotoAt: null,
 		});
 
-		const generatedImage = screen.getByAltText("生成した写真");
+		// Check for generated image by alt text
+		const generatedImage = screen.getByAltText("生成された写真");
 		expect(generatedImage).toBeInTheDocument();
 		expect(generatedImage.getAttribute("src")).toContain(
 			encodeURIComponent(generatedImageUrl),

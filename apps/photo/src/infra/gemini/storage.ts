@@ -43,11 +43,11 @@ const createImagePath = (
 
 const createPublicUrl = (bucketName: string, imagePath: string): string => {
 	const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+	const encodedPath = encodeURIComponent(imagePath);
 	if (emulatorHost) {
-		const encodedPath = encodeURIComponent(imagePath);
 		return `http://${emulatorHost}/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
 	}
-	return `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+	return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
 };
 
 export const handleGeminiResponse = async (

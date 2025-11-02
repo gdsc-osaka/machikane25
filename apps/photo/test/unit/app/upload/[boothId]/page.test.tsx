@@ -133,17 +133,17 @@ describe("[RED] UploadPage", () => {
 		expect(mockUploadUserPhoto).not.toHaveBeenCalled();
 	});
 
-	it("rejects files larger than 20MB", async () => {
+	it("rejects files larger than 10MB", async () => {
 		renderUploadPage();
 		const fileInput = screen.getByLabelText(/写真ファイル/);
 		const uploadButton = screen.getByRole("button", { name: "アップロード" });
 
-		const largeFile = createFile("large.png", "image/png", 21 * 1024 * 1024);
+		const largeFile = createFile("large.png", "image/png", 11 * 1024 * 1024);
 		const user = userEvent.setup();
 		await user.upload(fileInput, largeFile);
 
 		expect(uploadButton).toBeDisabled();
-		expect(screen.getByText(/20MB以下/)).toBeInTheDocument();
+		expect(screen.getByText(/10MB以下/)).toBeInTheDocument();
 		expect(mockUploadUserPhoto).not.toHaveBeenCalled();
 	});
 

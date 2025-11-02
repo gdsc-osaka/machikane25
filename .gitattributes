@@ -2,8 +2,9 @@
 * text=auto eol=lf
 # C# ファイルは明示的に LF とする
 *.cs text eol=lf
-apps/art/Assets/YughuesFreeSandMaterials filter=lfs diff=lfs merge=lfs -text
+apps/art/Assets/YughuesFreeSandMaterials/* filter=lfs diff=lfs merge=lfs -text
 apps/art/Assets/UnderwaterFantasy filter=lfs diff=lfs merge=lfs -text
 apps/art/Assets/IgniteCoders filter=lfs diff=lfs merge=lfs -text
 apps/art/Assets/Idyllic[[:space:]]Fantasy[[:space:]]Nature filter=lfs diff=lfs merge=lfs -text
 apps/art/Assets/Fantasy[[:space:]]Chests[[:space:]]PBR filter=lfs diff=lfs merge=lfs -text
+apps/art/Assets/YughuesFreeSandMaterials filter=lfs diff=lfs merge=lfs -text

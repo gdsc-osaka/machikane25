@@ -5,14 +5,14 @@ const createGeneratedPhotoMock = vi.fn();
 const getImageDataFromIdMock = vi.fn();
 const handleGeminiResponseMock = vi.fn();
 const generateContentMock = vi.fn();
-const fetchAllOptionsMock = vi.fn();
+const fetchOptionsByIdsMock = vi.fn();
 
 vi.mock("@/infra/firebase/photoRepository", () => ({
 	createGeneratedPhoto: createGeneratedPhotoMock,
 }));
 
 vi.mock("@/infra/firebase/generationOptionRepository", () => ({
-	fetchAllOptions: fetchAllOptionsMock,
+	fetchOptionsByIds: fetchOptionsByIdsMock,
 }));
 
 vi.mock("@/infra/gemini/imageData", () => ({
@@ -43,7 +43,7 @@ describe("GenerationService.generateImage", () => {
 		getImageDataFromIdMock.mockReset();
 		handleGeminiResponseMock.mockReset();
 		createGeneratedPhotoMock.mockReset();
-		fetchAllOptionsMock.mockReset();
+		fetchOptionsByIdsMock.mockReset();
 	});
 
 	afterEach(() => {
@@ -53,7 +53,7 @@ describe("GenerationService.generateImage", () => {
 	it("constructs interleaved Gemini request and stores generated photo metadata", async () => {
 		const { generateImage } = await import("@/application/generationService");
 
-		fetchAllOptionsMock.mockResolvedValue([
+		fetchOptionsByIdsMock.mockResolvedValue([
 			{
 				id: "location-id",
 				typeId: "location",
@@ -187,7 +187,7 @@ describe("GenerationService.generateImage", () => {
 	it("throws descriptive error when Gemini API response lacks inline data", async () => {
 		const { generateImage } = await import("@/application/generationService");
 
-		fetchAllOptionsMock.mockResolvedValue([]);
+		fetchOptionsByIdsMock.mockResolvedValue([]);
 
 		getImageDataFromIdMock.mockResolvedValue({
 			mimeType: "image/jpeg",

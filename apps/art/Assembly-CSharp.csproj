@@ -95,13 +95,11 @@
     <Compile Include="Assets/IgniteCoders/Simple Water Shader/Resources/WaterReflection.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ExitGame.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/BushLeafTrigger.cs" />
-    <None Include="Assets/TerrainSampleAssets/ThirdPartyNotices.txt" />
     <None Include="Assets/Resources/PerformanceTestRunInfo.json" />
     <None Include="Assets/Resources/PerformanceTestRunSettings.json" />
     <None Include="Assets/Packages/Microsoft.CodeAnalysis.NetAnalyzers.9.0.0/ThirdPartyNotices.txt" />
     <None Include="Assets/Idyllic Fantasy Nature/Shader/CustomLighting.hlsl" />
     <None Include="Assets/Tests/TestData/Fish/sample-success.json" />
-    <None Include="Assets/TerrainSampleAssets/ShaderGraphs/CustomFunctions/CustomLighting.hlsl" />
     <Reference Include="UnityEngine">
       <HintPath>/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>

@@ -3,9 +3,7 @@ import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
 import type { GeneratedPhoto as GeneratedPhotoRecord } from "@/domain/photo";
-import {
-	fetchAllOptions,
-} from "@/infra/firebase/generationOptionRepository";
+import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 import {
 	createGeneratedPhoto,
 	findGeneratedPhoto,

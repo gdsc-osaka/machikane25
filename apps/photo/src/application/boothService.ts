@@ -79,7 +79,7 @@ export const startGeneration = async (
 
 	// Cleanup uploaded photo in the background
 	// FIXME: cleanerあるからこれ要らん
-	void deleteUsedPhoto(uploadedPhotoId).catch(() => undefined);
+	void deleteUsedPhoto(boothId, uploadedPhotoId).catch(() => undefined);
 };
 
 const SAMPLE_GENERATED_IMAGE_BYTES = [

@@ -3,110 +3,198 @@ using UnityEngine;
 public class FishController : MonoBehaviour
 {
     [SerializeField] private Animator animator;
-    public float speed = 2.0f;
-    public float rotationSpeed = 4.0f;
+    [SerializeField] private float baseSpeed = 2.0f;
+    [SerializeField] private float rotationSpeed = 4.0f;
     [SerializeField] private float obstacleDetectionDistance = 2.0f;
     [SerializeField] private float avoidanceForce = 5.0f;
     [SerializeField] private LayerMask obstacleLayer = -1; // デフォルトは全レイヤー
-    public Vector3 targetPosition;
-    private bool isSwimming = true; // アイドル状態との切り替え用
+    [SerializeField] private float velocityLerpSpeed = 6f;
 
-    void Start()
+    private Vector3 currentVelocity;
+    private Vector3 desiredVelocity;
+    private bool hasDesiredVelocity;
+    private bool allowLegacyWander = true;
+
+    public float speed { get; private set; }
+
+    public Vector3 CurrentVelocity => currentVelocity;
+
+    private void Awake()
     {
-        // 最初はランダムな目標地点を設定
-        // SetNewRandomTarget();
+        currentVelocity = transform.forward * baseSpeed;
+        desiredVelocity = currentVelocity;
+        speed = currentVelocity.magnitude;
     }
 
-    void Update()
+    public void SetBoidVelocity(Vector3 velocity)
     {
-        float currentSpeed = 0f;
-        float direction = 0f;
+        desiredVelocity = velocity;
+        hasDesiredVelocity = true;
+        allowLegacyWander = false;
+    }
 
-        // 障害物検知
-        if (DetectObstacle(out RaycastHit hit))
+    private void Update()
+    {
+        var deltaTime = Time.deltaTime;
+
+        if (hasDesiredVelocity)
         {
-            // 障害物を回避する新しい目標を設定
-            AvoidObstacle(hit);
+            UpdateBoidMotion(deltaTime);
         }
-
-        // 目標地点に向かって移動・回転
-        if (Vector3.Distance(transform.position, targetPosition) > 1.0f)
+        else if (!allowLegacyWander)
         {
-            // 前方に移動
-            transform.position += transform.forward * (speed * Time.deltaTime);
-            currentSpeed = speed;
-
-            // 目標地点の方を向く
-            Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
-            Quaternion previousRotation = transform.rotation;
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-
-            // 回転の変化量を計算（Y軸の角度差）
-            float angleDifference = Quaternion.Angle(previousRotation, transform.rotation);
-            Vector3 cross = Vector3.Cross(previousRotation * Vector3.forward, transform.rotation * Vector3.forward);
-            direction = cross.y > 0 ? angleDifference : -angleDifference;
+            ContinueGlide(deltaTime);
         }
         else
         {
-            // 目標に到達したら新しい目標を設定
-            SetNewRandomTarget();
+            LegacyWander(deltaTime);
         }
+    }
 
-        // Animatorのパラメータを更新
-        if (animator != null)
+    private void UpdateBoidMotion(float deltaTime)
+    {
+        var targetVelocity = EnsureBaselineVelocity(desiredVelocity);
+        hasDesiredVelocity = false;
+
+        targetVelocity = AdjustForObstacles(targetVelocity);
+
+        currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Mathf.Clamp01(deltaTime * velocityLerpSpeed));
+        if (currentVelocity.sqrMagnitude < 0.0001f)
         {
-            animator.SetFloat("Speed", currentSpeed);
-            animator.SetFloat("Direction", direction);
+            currentVelocity = targetVelocity;
         }
+
+        ApplyMovement(currentVelocity, deltaTime);
     }
 
-    // Aquariumの範囲内でランダムな目標地点を設定するメソッド
-    void SetNewRandomTarget()
+    private void ContinueGlide(float deltaTime)
     {
-        // TODO: 後でFlockControllerが管理するAquariumの範囲を取得するように変更
-        float x = Random.Range(-5f, 5f);
-        float y = Random.Range(0f, 5f);
-        float z = Random.Range(-5f, 5f);
-        targetPosition = new Vector3(x, y, z);
+        if (currentVelocity.sqrMagnitude < 0.0001f)
+        {
+            currentVelocity = EnsureBaselineVelocity(currentVelocity);
+        }
+
+        currentVelocity = AdjustForObstacles(currentVelocity);
+
+        ApplyMovement(currentVelocity, deltaTime);
     }
 
-    // 前方の障害物を検知
-    private bool DetectObstacle(out RaycastHit hit)
+    private void LegacyWander(float deltaTime)
     {
-        // 前方にレイキャストして障害物を検知
-        return Physics.Raycast(transform.position, transform.forward, out hit, obstacleDetectionDistance, obstacleLayer);
+        // Maintain backwards compatibility when boid steering is unavailable.
+        if (currentVelocity.sqrMagnitude < 0.001f)
+        {
+            currentVelocity = Random.insideUnitSphere.normalized * baseSpeed;
+        }
+
+        currentVelocity = AdjustForObstacles(currentVelocity);
+
+        ApplyMovement(currentVelocity, deltaTime);
     }
 
-    // 障害物を回避する
-    private void AvoidObstacle(RaycastHit hit)
+    private void ApplyMovement(Vector3 velocity, float deltaTime)
     {
-        // 衝突点の法線方向に回避
-        Vector3 avoidanceDirection = hit.normal;
+        var direction = velocity.normalized;
+        var magnitude = velocity.magnitude;
 
-        // 回避方向にランダム性を追加して自然な動きに
-        avoidanceDirection += new Vector3(
-            Random.Range(-0.5f, 0.5f),
-            Random.Range(-0.5f, 0.5f),
-            Random.Range(-0.5f, 0.5f)
-        );
+        if (magnitude < 0.0001f)
+        {
+            return;
+        }
 
-        // 新しい目標位置を設定（現在位置から回避方向へ）
-        targetPosition = transform.position + avoidanceDirection.normalized * avoidanceForce;
+        var previousRotation = transform.rotation;
+        transform.position += velocity * deltaTime;
+        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), rotationSpeed * deltaTime);
+
+        currentVelocity = direction * magnitude;
+        speed = magnitude;
+
+        UpdateAnimator(previousRotation, transform.rotation, magnitude);
     }
 
-    // 物理衝突が発生した場合の処理
+    private void UpdateAnimator(Quaternion previousRotation, Quaternion newRotation, float currentSpeed)
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetFloat("Speed", currentSpeed);
+
+        var angleDifference = Quaternion.Angle(previousRotation, newRotation);
+        var cross = Vector3.Cross(previousRotation * Vector3.forward, newRotation * Vector3.forward);
+        var direction = cross.y > 0 ? angleDifference : -angleDifference;
+        animator.SetFloat("Direction", direction);
+    }
+
+    private bool DetectObstacle(Vector3 velocity, out RaycastHit hit)
+    {
+        var direction = velocity.sqrMagnitude > 0.001f ? velocity.normalized : transform.forward;
+        return Physics.Raycast(transform.position, direction, out hit, obstacleDetectionDistance, obstacleLayer);
+    }
+
+    private Vector3 AdjustForObstacles(Vector3 desiredVelocity)
+    {
+        if (!DetectObstacle(desiredVelocity, out var hit))
+        {
+            return desiredVelocity;
+        }
+
+        var desiredMagnitude = Mathf.Max(desiredVelocity.magnitude, baseSpeed);
+        var parallel = Vector3.ProjectOnPlane(desiredVelocity, hit.normal);
+        Vector3 adjusted;
+
+        if (parallel.sqrMagnitude > 0.0001f)
+        {
+            adjusted = parallel.normalized * desiredMagnitude;
+        }
+        else
+        {
+            adjusted = hit.normal * desiredMagnitude;
+        }
+
+        adjusted += hit.normal * avoidanceForce;
+        return adjusted;
+    }
+
+    private Vector3 EnsureBaselineVelocity(Vector3 velocity)
+    {
+        if (velocity.sqrMagnitude >= 0.0001f)
+        {
+            return velocity;
+        }
+
+        if (transform.forward.sqrMagnitude > 0.001f)
+        {
+            return transform.forward.normalized * baseSpeed;
+        }
+
+        return Vector3.forward * baseSpeed;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
-        // 衝突した場合、即座に新しい目標を設定
-        Vector3 awayFromCollision = transform.position - collision.contacts[0].point;
-        targetPosition = transform.position + awayFromCollision.normalized * avoidanceForce;
+        var awayFromCollision = transform.position - collision.contacts[0].point;
+        ApplyCollisionImpulse(awayFromCollision);
     }
 
-    // 衝突が継続している場合の処理
     private void OnCollisionStay(Collision collision)
     {
-        // 衝突オブジェクトから離れる方向に移動
-        Vector3 awayFromCollision = transform.position - collision.contacts[0].point;
-        transform.position += awayFromCollision.normalized * (speed * Time.deltaTime);
+        var awayFromCollision = transform.position - collision.contacts[0].point;
+        ApplyCollisionImpulse(awayFromCollision);
+    }
+
+    private void ApplyCollisionImpulse(Vector3 direction)
+    {
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        var escapeSpeed = Mathf.Max(baseSpeed, currentVelocity.magnitude);
+        var escapeVelocity = direction.normalized * escapeSpeed;
+        desiredVelocity = escapeVelocity;
+        hasDesiredVelocity = true;
+        currentVelocity = escapeVelocity;
     }
 }

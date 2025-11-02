@@ -303,7 +303,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 047ad6a2fe42473b8d7176aaa9adf2e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Art::Art.Visitors.VisitorDetectionDebugger
-  overlayEnabled: 1
+  overlayEnabled: 0
   gizmoColor: {r: 0.1, g: 0.8, b: 1, a: 0.6}
   gizmoRadius: 0.25
   gizmoHeight: 0.5
@@ -319,20 +319,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed686797bb17847fda17408ad1aa2b18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Art::Art.Visitors.VisitorDetector
-  yoloModel: {fileID: 5022602860645237092, guid: cd75491b4a7cc4ac996498aca07d89ea, type: 3}
-  calibration: {fileID: 11400000, guid: 18200db8b9f4949e8afde4ecf6dc459a, type: 2}
-  preferredCameraName: USB Camera VID:1133 PID:2085
+  yoloModel: {fileID: 0}
+  calibration: {fileID: 0}
+  preferredCameraName: 
   targetWidth: 640
   targetHeight: 360
   mergeDistance: 0.2
   confidenceThreshold: 0.5
   smoothingSpeed: 6
   absenceDamping: 3
-  useMockVisitors: 0
-  mockVisitors:
-  - position: {x: 0, y: 0}
-    magnitude: 0
-  mockUpdateInterval: 0.1
 --- !u!1001 &111094562
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3052,12 +3047,10 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: d8184c9f59f494e3589a5e506ff6c5b7, type: 2}
   fishPolling: {fileID: 1258678172}
   fishSpawner: {fileID: 972059382}
-  visitorDetector: {fileID: 107719591}
+  visitorDetector: {fileID: 0}
   rareCharacters: {fileID: 1367772249}
   mockFishProvider: {fileID: 11400000, guid: db1fa621feb124c9685d6cb254f7402a, type: 2}
   schoolCoordinator: {fileID: 924969953}
-  timeOfDayController: {fileID: 0}
-  timeOfDayConfig: {fileID: 11400000, guid: aab134e7e1f124aa6afe2fac7b382684, type: 2}
 --- !u!4 &804376026 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6986371466421367663, guid: 124ad46aec1102e47a4cdae502be89aa, type: 3}
@@ -3406,7 +3399,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Art::Art.Presentation.Schools.SchoolCoordinator
   settings: {fileID: 11400000, guid: 1f58bf81093f84673bfd0ad434700483, type: 2}
-  visitorInfluence: {fileID: 11400000, guid: e69637775c1ea455d8caba62a351e53e, type: 2}
+  visitorInfluence: {fileID: 11400000, guid: 4afacf12646f44614818f93a5f23a7a0, type: 2}
   defaultFishAgents:
   - {fileID: 1729269678423856029}
   - {fileID: 1376887365}
@@ -5536,10 +5529,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e0f1a5b6d7e8f9a0b1c2d3e4f5a6b7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Art::Art.Presentation.TimeOfDayController
-  config: {fileID: 0}
-  directionalLight: {fileID: 0}
-  waterMaterials: []
-  waterColorProperty: _Color
 --- !u!4 &1545457750 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6375836955102501089, guid: 0714e774b10e5554f986ebe42387b3c9, type: 3}

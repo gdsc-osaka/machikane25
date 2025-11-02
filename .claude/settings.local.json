@@ -21,7 +21,10 @@
       "Bash(pnpm exec tsc:*)",
       "Bash(gcloud secrets list:*)",
       "Bash(pnpm exec firebase apps:sdkconfig:*)",
-      "Bash(where gcloud:*)"
+      "Bash(where gcloud:*)",
+      "Bash(pnpm --filter photo lint:fix:*)",
+      "Bash(bash lint.sh:*)",
+      "Bash(bash /Users/hari/proj/machikane25/apps/art/lint.sh:*)"
     ],
     "deny": [],
     "ask": []

@@ -7,6 +7,7 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	useTransition,
 } from "react";
@@ -24,7 +25,10 @@ import { Progress } from "@/components/ui/progress";
 import { useBoothState } from "@/hooks/useBoothState";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
+import { playSound, preloadAllSounds } from "@/lib/sound";
 
+// key: type id
+// value: option id
 type SelectedOptions = Record<string, string>;
 
 const ensureBoothId = (value: unknown): string =>
@@ -72,6 +76,35 @@ export default function ControlPage() {
 	const { options } = useGenerationOptions();
 
 	const boothState = getBoothState(booth?.state);
+	const prevBoothStateRef = useRef<string>(boothState);
+
+	// Preload all sounds when component mounts
+	useEffect(() => {
+		preloadAllSounds();
+	}, []);
+
+	// Track state transitions and play appropriate sounds
+	useEffect(() => {
+		const prevState = prevBoothStateRef.current;
+		const currentState = boothState;
+
+		// idle → menu: play "start" sound
+		if (prevState === "idle" && currentState === "menu") {
+			void playSound("start");
+		}
+
+		// menu → generating: play "generating" sound
+		if (prevState === "menu" && currentState === "generating") {
+			void playSound("generating");
+		}
+
+		// generating → completed: play "completed" sound
+		if (prevState === "generating" && currentState === "completed") {
+			void playSound("completed");
+		}
+
+		prevBoothStateRef.current = currentState;
+	}, [boothState]);
 
 	useEffect(() => {
 		if (boothState === "idle") {
@@ -122,6 +155,9 @@ export default function ControlPage() {
 		}
 		console.log("Starting generation with options:", selectedOptions);
 		console.log("Selected photo ID:", selectedPhotoId);
+
+		// Play confirm sound when 決定 button is tapped
+		void playSound("confirm");
 
 		startTransition(async () => {
 			await startGeneration({
@@ -212,7 +248,10 @@ export default function ControlPage() {
 								<button
 									type="button"
 									key={photo.photoId}
-									onClick={() => setSelectedPhotoId(photo.photoId)}
+									onClick={() => {
+										void playSound("menu");
+										setSelectedPhotoId(photo.photoId);
+									}}
 									className={[
 										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all",
 										isSelected
@@ -268,12 +307,13 @@ export default function ControlPage() {
 												variant={isSelected ? "default" : "outline"}
 												type="button"
 												key={option.id}
-												onClick={() =>
+												onClick={() => {
+													void playSound("menu");
 													setSelectedOptions((current) => ({
 														...current,
 														[typeId]: option.id,
-													}))
-												}
+													}));
+												}}
 												size="sm"
 												className={
 													isSelected

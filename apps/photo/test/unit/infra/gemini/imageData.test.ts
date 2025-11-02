@@ -3,16 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
 	queryUploadedPhotosByPhotoIdMock,
+	queryUploadedPhotosByPhotoIdCollectionGroupMock,
 	getAdminFirestoreMock,
 	getAdminStorageMock,
 } = vi.hoisted(() => ({
 	queryUploadedPhotosByPhotoIdMock: vi.fn(),
+	queryUploadedPhotosByPhotoIdCollectionGroupMock: vi.fn(),
 	getAdminFirestoreMock: vi.fn(),
 	getAdminStorageMock: vi.fn(),
 }));
 
 vi.mock("@/infra/firebase/photoRepository", () => ({
 	queryUploadedPhotosByPhotoId: queryUploadedPhotosByPhotoIdMock,
+	queryUploadedPhotosByPhotoIdCollectionGroup:
+		queryUploadedPhotosByPhotoIdCollectionGroupMock,
 }));
 
 vi.mock("@/lib/firebase/admin", () => ({
@@ -28,6 +32,7 @@ describe("infra/gemini/imageData", () => {
 	beforeEach(() => {
 		process.env = { ...originalEnv };
 		queryUploadedPhotosByPhotoIdMock.mockReset();
+		queryUploadedPhotosByPhotoIdCollectionGroupMock.mockReset();
 		getAdminFirestoreMock.mockReset();
 		getAdminStorageMock.mockReset();
 	});
@@ -73,7 +78,7 @@ describe("infra/gemini/imageData", () => {
 			}),
 		});
 
-		const result = await getImageDataFromId("photo-1");
+		const result = await getImageDataFromId("photo-1", "booth-1");
 
 		expect(bucketMock.file).toHaveBeenCalledWith("uploads/photo.png");
 		expect(result.mimeType).toBe("image/png");
@@ -111,7 +116,7 @@ describe("infra/gemini/imageData", () => {
 			}),
 		});
 
-		const result = await getImageDataFromId("photo-2");
+		const result = await getImageDataFromId("photo-2", "booth-2");
 
 		expect(result.mimeType).toBe("image/jpeg");
 		expect(result.data).toBe(Buffer.from("hello").toString("base64"));
@@ -155,7 +160,7 @@ describe("infra/gemini/imageData", () => {
 			}),
 		});
 
-		const result = await getImageDataFromId("option-1");
+		const result = await getImageDataFromId("option-1", "booth-1");
 
 		expect(result.mimeType).toBe("image/png");
 		expect(result.data).toBe(Buffer.from("option").toString("base64"));
@@ -181,7 +186,7 @@ describe("infra/gemini/imageData", () => {
 			})),
 		});
 
-		await expect(getImageDataFromId("missing")).rejects.toThrowError(
+		await expect(getImageDataFromId("missing", "booth-1")).rejects.toThrowError(
 			"Image data not found for id: missing",
 		);
 	});

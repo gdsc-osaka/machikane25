@@ -1,1 +1,1 @@
-dotnet format --verify-no-changes --verbosity diagnostic Assembly-CSharp.csproj
+dotnet format --verify-no-changes --verbosity diagnostic Art.csproj

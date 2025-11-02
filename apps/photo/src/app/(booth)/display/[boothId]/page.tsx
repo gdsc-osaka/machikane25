@@ -9,6 +9,7 @@ import { completeCapture } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import { Progress } from "@/components/ui/progress";
 import { useBoothState } from "@/hooks/useBoothState";
+import { playSound, preloadAllSounds } from "@/lib/sound";
 
 const ensureBoothId = (value: unknown): string =>
 	typeof value === "string" ? value : "";
@@ -27,6 +28,11 @@ export default function DisplayPage() {
 
 	const boothState = useMemo(() => getBoothState(booth?.state), [booth?.state]);
 
+	// Preload all sounds when component mounts
+	useEffect(() => {
+		preloadAllSounds();
+	}, []);
+
 	// カウントダウンロジック
 	useEffect(() => {
 		if (boothState === "capturing" && !isCapturing) {
@@ -44,6 +50,9 @@ export default function DisplayPage() {
 
 		if (countdown === 0) {
 			// カウントダウン完了、写真撮影
+			// Play shutter sound when photo is taken
+			void playSound("shutter");
+
 			const capturePhoto = async () => {
 				try {
 					const screenshot = webcamRef.current?.getScreenshot();
@@ -83,6 +92,9 @@ export default function DisplayPage() {
 			void capturePhoto();
 			return;
 		}
+
+		// Play countdown sound for each second (when countdown > 0)
+		void playSound("countdown");
 
 		const timer = setTimeout(() => {
 			setCountdown(countdown - 1);

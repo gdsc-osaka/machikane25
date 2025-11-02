@@ -1,0 +1,8 @@
+Assets/**/* filter=lfs diff=lfs merge=lfs -text
+# exclude specific directories from LFS
+Assets/Art/**/* !filter !diff !merge -text
+Assets/HDRPDefaultResources/**/* !filter !diff !merge -text
+Assets/NuGet/**/* !filter !diff !merge -text
+Assets/Resources/**/* !filter !diff !merge -text
+Assets/Settings/**/* !filter !diff !merge -text
+Assets/Tests/**/* !filter !diff !merge -text

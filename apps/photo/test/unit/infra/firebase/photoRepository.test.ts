@@ -118,8 +118,17 @@ describe("photoRepository", () => {
 			})),
 		}));
 
-		// Mock collection to return a query builder
+		// Mock collection to return a query builder with nested doc/collection structure
 		collectionMock.mockImplementation((path: string) => {
+			if (path === "booths") {
+				return {
+					doc: vi.fn(() => ({
+						collection: vi.fn(() => ({
+							where: whereMock,
+						})),
+					})),
+				};
+			}
 			return {
 				where: whereMock,
 			};
@@ -129,8 +138,8 @@ describe("photoRepository", () => {
 			"@/infra/firebase/photoRepository"
 		);
 
-		queryUploadedPhotosByPhotoId("photo-group");
-		expect(collectionMock).toHaveBeenCalled();
+		queryUploadedPhotosByPhotoId("booth-1", "photo-group");
+		expect(collectionMock).toHaveBeenCalledWith("booths");
 		expect(whereMock).toHaveBeenCalledWith("photoId", "==", "photo-group");
 	});
 });

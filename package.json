@@ -28,6 +28,8 @@
 		"coverage": "pnpm --recursive coverage",
 		"prebuild": "pnpm run build:photo-cleaner && pnpm run build:fish-cleaner",
 		"emulator": "pnpm run prebuild && firebase emulators:start",
+		"emulator:photo": "pnpm run prebuild && pnpm --filter photo emulator",
+		"emulator:stamp": "pnpm run prebuild && pnpm --filter stamp emulator",
 		"emulator:bg": "pnpm run prebuild && firebase emulators:start &",
 		"deploy:fire": "pnpm exec firebase deploy && pnpm --recursive deploy:fire",
 		"deploy:fire:check": "pnpm run prebuild && pnpm exec firebase deploy --dry-run"

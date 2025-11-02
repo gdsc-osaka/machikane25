@@ -186,6 +186,6 @@ describe("BoothService", () => {
 		});
 
 		// Verify cleanup
-		expect(deleteUsedPhotoMock).toHaveBeenCalledWith("uploaded-2");
+		expect(deleteUsedPhotoMock).toHaveBeenCalledWith("booth-5", "uploaded-2");
 	});
 });

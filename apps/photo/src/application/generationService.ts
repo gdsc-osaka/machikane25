@@ -216,13 +216,13 @@ export const generateImage = async (
 	console.debug("generateImage");
 	const apiKey = ensureApiKey();
 	console.debug("API key ensured");
-	const baseImage = await getImageDataFromId(uploadedPhotoId);
+	const baseImage = await getImageDataFromId(uploadedPhotoId, boothId);
 	console.debug("Base image data retrieved");
 
 	const optionEntries = Object.entries(options);
 	const optionData = await Promise.all(
 		optionEntries.map(async ([key, imageId]) => {
-			const inlineData = await getImageDataFromId(imageId);
+			const inlineData = await getImageDataFromId(imageId, boothId);
 			return { key, inlineData };
 		}),
 	);

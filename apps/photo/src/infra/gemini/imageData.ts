@@ -99,10 +99,11 @@ const fetchFromUrl = async (url: string): Promise<ImageData> => {
 
 const getUploadedPhotoImage = async (
 	photoId: string,
+	boothId: string,
 ): Promise<ImageData | null> => {
 	try {
 		console.log(`[getUploadedPhotoImage] Fetching photo with id: ${photoId}`);
-		const snapshot = await queryUploadedPhotosByPhotoId(photoId).get();
+		const snapshot = await queryUploadedPhotosByPhotoId(boothId, photoId).get();
 		console.log(
 			`[getUploadedPhotoImage] Query returned ${snapshot.docs.length} documents`,
 		);
@@ -209,11 +210,14 @@ const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 	}
 };
 
-export const getImageDataFromId = async (id: string): Promise<ImageData> => {
+export const getImageDataFromId = async (
+	id: string,
+	boothId: string,
+): Promise<ImageData> => {
 	console.log(`[getImageDataFromId] Starting fetch for id: ${id}`);
 
 	try {
-		const uploadedPhoto = await getUploadedPhotoImage(id);
+		const uploadedPhoto = await getUploadedPhotoImage(id, boothId);
 		if (uploadedPhoto) {
 			console.log(`[getImageDataFromId] Found uploaded photo for id: ${id}`);
 			return uploadedPhoto;

@@ -14,22 +14,11 @@ namespace Art.Presentation.Schools
         [SerializeField] private float avoidanceRadius = 1f;
         [SerializeField] private float animationSpeed = 1f;
 
-        [Header("Boid Force Weights")]
-        [SerializeField] [Range(0f, 5f)] private float separationWeight = 1.5f;
-        [SerializeField] [Range(0f, 5f)] private float alignmentWeight = 1.0f;
-        [SerializeField] [Range(0f, 5f)] private float cohesionWeight = 1.0f;
-        [SerializeField] [Range(0f, 5f)] private float visitorAttractionWeight = 2.0f;
-
         public float MinSpeed => minSpeed;
         public float MaxSpeed => maxSpeed;
         public float NeighbourRadius => neighbourRadius;
         public float AvoidanceRadius => avoidanceRadius;
         public float AnimationSpeed => animationSpeed;
-
-        public float SeparationWeight => separationWeight;
-        public float AlignmentWeight => alignmentWeight;
-        public float CohesionWeight => cohesionWeight;
-        public float VisitorAttractionWeight => visitorAttractionWeight;
 
         private void OnValidate()
         {

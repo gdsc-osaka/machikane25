@@ -9,19 +9,6 @@ using Unity.Barracuda;
 namespace Art.Visitors
 {
     /// <summary>
-    /// Represents a mock visitor position for debugging purposes.
-    /// </summary>
-    [Serializable]
-    public struct MockVisitor
-    {
-        [Tooltip("Normalized position (0-1 range) in screen space")]
-        public Vector2 position;
-        [Tooltip("Magnitude/intensity of this visitor (typically 0-1)")]
-        [Range(0f, 1f)]
-        public float magnitude;
-    }
-
-    /// <summary>
     /// Captures webcam frames, detects visitor clusters using YoloV3Tiny, and raises attractor updates for the boid system.
     /// </summary>
     public sealed class VisitorDetector : MonoBehaviour
@@ -40,14 +27,6 @@ namespace Art.Visitors
         [SerializeField] private float confidenceThreshold = 0.5f;
         [SerializeField] private float smoothingSpeed = 6f;
         [SerializeField] private float absenceDamping = 3f;
-
-        [Header("Debug Mode")]
-        [SerializeField] [Tooltip("Enable to use mock visitor positions instead of camera detection")]
-        private bool useMockVisitors;
-        [SerializeField] [Tooltip("Mock visitor positions (0-1 range) for debugging fish behavior")]
-        private MockVisitor[] mockVisitors = Array.Empty<MockVisitor>();
-        [SerializeField] [Tooltip("Update interval for mock visitors in seconds")]
-        private float mockUpdateInterval = 0.1f;
 
         private readonly List<VisitorGroup> cachedVisitors = new List<VisitorGroup>();
 
@@ -72,14 +51,6 @@ namespace Art.Visitors
         {
             if (!initialized || detectionRoutine != null || !isActiveAndEnabled)
             {
-                return;
-            }
-
-            // Use mock visitor mode if enabled
-            if (useMockVisitors)
-            {
-                telemetry?.LogInfo("VisitorDetector starting in MOCK mode with fake visitor positions");
-                detectionRoutine = StartCoroutine(MockVisitorLoop());
                 return;
             }
 
@@ -126,45 +97,6 @@ namespace Art.Visitors
             cachedVisitors.Clear();
         }
 
-        /// <summary>
-        /// Set mock visitors at runtime for debugging. Only works when useMockVisitors is true.
-        /// </summary>
-        public void SetMockVisitors(MockVisitor[] visitors)
-        {
-            if (visitors == null)
-            {
-                mockVisitors = Array.Empty<MockVisitor>();
-            }
-            else
-            {
-                mockVisitors = visitors;
-            }
-        }
-
-        /// <summary>
-        /// Enable or disable mock visitor mode at runtime. Will restart detection if currently running.
-        /// </summary>
-        public void SetMockMode(bool enabled)
-        {
-            if (useMockVisitors == enabled)
-            {
-                return;
-            }
-
-            bool wasRunning = detectionRoutine != null;
-            if (wasRunning)
-            {
-                StopDetection();
-            }
-
-            useMockVisitors = enabled;
-
-            if (wasRunning && initialized)
-            {
-                StartDetection();
-            }
-        }
-
         private void OnDisable()
         {
             StopDetection();
@@ -205,26 +137,6 @@ namespace Art.Visitors
             detectionRoutine = null;
         }
 
-        private IEnumerator MockVisitorLoop()
-        {
-            while (enabled && useMockVisitors)
-            {
-                try
-                {
-                    EmitMockVisitors();
-                }
-                catch (Exception ex)
-                {
-                    telemetry?.LogException("Mock visitor loop failed.", ex);
-                }
-
-                var waitSeconds = Mathf.Max(0.05f, mockUpdateInterval);
-                yield return new WaitForSeconds(waitSeconds);
-            }
-
-            detectionRoutine = null;
-        }
-
         private void EmitVisitors()
         {
             EnsureProcessor();
@@ -246,34 +158,6 @@ namespace Art.Visitors
                 {
                     cachedVisitors.Add(detections[i]);
                 }
-            }
-
-            OnVisitorsChanged?.Invoke(cachedVisitors);
-        }
-
-        private void EmitMockVisitors()
-        {
-            cachedVisitors.Clear();
-
-            if (mockVisitors != null && mockVisitors.Length > 0)
-            {
-                for (var i = 0; i < mockVisitors.Length; i++)
-                {
-                    var mock = mockVisitors[i];
-                    // Clamp position to 0-1 range
-                    var clampedPosition = new Vector2(
-                        Mathf.Clamp01(mock.position.x),
-                        Mathf.Clamp01(mock.position.y)
-                    );
-                    var clampedMagnitude = Mathf.Clamp01(mock.magnitude);
-
-                    // Apply calibration if available
-                    var calibratedPosition = ApplyCalibration(clampedPosition);
-
-                    cachedVisitors.Add(new VisitorGroup(calibratedPosition, clampedMagnitude));
-                }
-
-                Debug.Log($"[MOCK MODE] Emitting {cachedVisitors.Count} mock visitors");
             }
 
             OnVisitorsChanged?.Invoke(cachedVisitors);

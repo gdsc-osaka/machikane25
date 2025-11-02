@@ -95,7 +95,9 @@ describe("[RED] DisplayPage", () => {
 			lastTakePhotoAt: null,
 		});
 
-		expect(screen.getByText(/タブレットを操作してください/)).toBeInTheDocument();
+		expect(
+			screen.getByText(/タブレットを操作してください/),
+		).toBeInTheDocument();
 		expect(screen.getByText(/画像を選ぶ/)).toBeInTheDocument();
 		expect(screen.getByText(/写真を撮る/)).toBeInTheDocument();
 		expect(screen.getByText(/決定/)).toBeInTheDocument();

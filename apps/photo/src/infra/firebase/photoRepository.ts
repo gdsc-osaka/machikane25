@@ -52,11 +52,10 @@ export const deleteUploadedPhotoByDocumentPath = async (
 	await firestore().doc(documentPath).delete();
 };
 
-export const queryUploadedPhotosByPhotoId = (photoId: string) =>
-	firestore()
-		.collection("booths/1/uploadedPhotos")
-		.where("photoId", "==", photoId)
-		.limit(1);
+export const queryUploadedPhotosByPhotoId = (
+	boothId: string,
+	photoId: string,
+) => uploadedPhotosCollection(boothId).where("photoId", "==", photoId).limit(1);
 
 export type CreateGeneratedPhotoInput = {
 	boothId: string;

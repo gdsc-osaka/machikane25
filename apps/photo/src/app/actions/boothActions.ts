@@ -3,7 +3,6 @@
 import { z } from "zod";
 import {
 	completeCapture as completeCaptureService,
-	completeGeneration as completeGenerationService,
 	discardSession as discardSessionService,
 	startCapture as startCaptureService,
 	startGeneration as startGenerationService,
@@ -18,12 +17,6 @@ const startGenerationSchema = z.object({
 	boothId: z.string().min(1, "boothId is required"),
 	uploadedPhotoId: z.string().min(1, "uploadedPhotoId is required"),
 	options: z.record(z.string(), z.string()),
-});
-
-const completeGenerationSchema = z.object({
-	boothId: z.string().min(1, "boothId is required"),
-	generatedPhotoId: z.string().min(1, "generatedPhotoId is required"),
-	usedUploadedPhotoId: z.string().min(1, "usedUploadedPhotoId is required"),
 });
 
 export const startSession = async (input: { boothId: string }) => {
@@ -62,18 +55,4 @@ export const startGeneration = async (input: {
 	const { boothId, uploadedPhotoId, options } =
 		startGenerationSchema.parse(input);
 	await startGenerationService(boothId, uploadedPhotoId, options);
-};
-
-export const completeGeneration = async (input: {
-	boothId: string;
-	generatedPhotoId: string;
-	usedUploadedPhotoId: string;
-}) => {
-	const { boothId, generatedPhotoId, usedUploadedPhotoId } =
-		completeGenerationSchema.parse(input);
-	await completeGenerationService(
-		boothId,
-		generatedPhotoId,
-		usedUploadedPhotoId,
-	);
 };

@@ -67,7 +67,6 @@ export const initializeFirebaseClient = (): void => {
 	if (!storage) {
 		storage = getStorage(firebaseApp);
 	}
-
 };
 
 /**

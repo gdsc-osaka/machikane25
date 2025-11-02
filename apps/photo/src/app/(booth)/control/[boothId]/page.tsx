@@ -66,7 +66,7 @@ export default function ControlPage() {
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [isCapturing, setIsCapturing] = useState(false);
 
-	const { booth, latestGeneratedPhotoUrl, isLoading, error } =
+	const { booth, generatedPhotoUrls, isLoading, error } =
 		useBoothState(boothId);
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
@@ -371,19 +371,15 @@ export default function ControlPage() {
 	);
 
 	const renderCompleted = () => {
-		const latestPhotoId = booth?.latestPhotoId;
-		const canBuildDownloadPath =
-			typeof latestPhotoId === "string" &&
-			latestPhotoId.length > 0 &&
-			boothId.length > 0;
-		const downloadPath = canBuildDownloadPath
-			? buildDownloadPath(boothId, latestPhotoId)
-			: null;
 		const baseUrl = resolveBaseUrl();
-		const qrValue =
-			downloadPath && baseUrl.length > 0
-				? `${baseUrl}${downloadPath}`
-				: downloadPath;
+
+		if (!booth?.generatedPhotoIds || booth.generatedPhotoIds.length === 0) {
+			return (
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
+				</div>
+			);
+		}
 
 		return (
 			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
@@ -400,23 +396,41 @@ export default function ControlPage() {
 				<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
 					画像のダウンロードはこちらから
 				</p>
-				{qrValue ? (
-					<div className="rounded-2xl border-2 border-[#444746] bg-[#444746] p-8 shadow-2xl">
-						<QRCode value={qrValue} size={256} />
-					</div>
-				) : null}
-				{latestGeneratedPhotoUrl ? (
-					<div className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30">
-						<Image
-							src={latestGeneratedPhotoUrl}
-							alt="生成された写真のプレビュー"
-							width={240}
-							height={240}
-							sizes="240px"
-							className="h-60 w-60 rounded object-cover"
-						/>
-					</div>
-				) : null}
+				<div className="grid grid-cols-3 gap-4">
+					{booth.generatedPhotoIds.map((photoId, index) => {
+						const downloadPath = buildDownloadPath(boothId, photoId);
+						const qrValue =
+							downloadPath && baseUrl.length > 0
+								? `${baseUrl}${downloadPath}`
+								: downloadPath;
+						const imageUrl = generatedPhotoUrls[index];
+
+						return (
+							<div
+								key={photoId}
+								className="flex flex-col items-center justify-center gap-4"
+							>
+								{qrValue ? (
+									<div className="rounded-2xl border-2 border-[#444746] bg-[#444746] p-4 shadow-2xl">
+										<QRCode value={qrValue} size={128} />
+									</div>
+								) : null}
+								{imageUrl ? (
+									<div className="rounded-lg border-2 border-[#4796E3] p-2 shadow-lg shadow-[#4796E3]/30">
+										<Image
+											src={imageUrl}
+											alt={`生成された写真 ${index + 1} のプレビュー`}
+											width={120}
+											height={120}
+											sizes="120px"
+											className="h-30 w-30 rounded object-cover"
+										/>
+									</div>
+								) : null}
+							</div>
+						);
+					})}
+				</div>
 			</div>
 		);
 	};

@@ -98,13 +98,16 @@ const fetchFromUrl = async (url: string): Promise<ImageData> => {
 };
 
 const getUploadedPhotoImage = async (
+	boothId: string,
 	photoId: string,
 ): Promise<ImageData | null> => {
 	try {
-		console.log(`[getUploadedPhotoImage] Fetching photo with id: ${photoId}`);
-		const snapshot = await queryUploadedPhotosByPhotoId(photoId).get();
 		console.log(
-			`[getUploadedPhotoImage] Query returned ${snapshot.docs.length} documents`,
+			`[getUploadedPhotoImage] Fetching photo with id: ${photoId} for boothId: ${boothId}`,
+		);
+		const snapshot = await queryUploadedPhotosByPhotoId(boothId, photoId).get();
+		console.log(
+			`[getUploadedPhotoImage] Query returned ${snapshot.docs.length} documents for boothId: ${boothId}, photoId: ${photoId}`,
 		);
 
 		const firstDoc = snapshot.docs[0];
@@ -209,13 +212,20 @@ const getOptionImage = async (optionId: string): Promise<ImageData | null> => {
 	}
 };
 
-export const getImageDataFromId = async (id: string): Promise<ImageData> => {
-	console.log(`[getImageDataFromId] Starting fetch for id: ${id}`);
+export const getImageDataFromId = async (
+	boothId: string,
+	id: string,
+): Promise<ImageData> => {
+	console.log(
+		`[getImageDataFromId] Starting fetch for id: ${id} with boothId: ${boothId}`,
+	);
 
 	try {
-		const uploadedPhoto = await getUploadedPhotoImage(id);
+		const uploadedPhoto = await getUploadedPhotoImage(boothId, id);
 		if (uploadedPhoto) {
-			console.log(`[getImageDataFromId] Found uploaded photo for id: ${id}`);
+			console.log(
+				`[getImageDataFromId] Found uploaded photo for id: ${id} in booth: ${boothId}`,
+			);
 			return uploadedPhoto;
 		}
 
@@ -226,7 +236,9 @@ export const getImageDataFromId = async (id: string): Promise<ImageData> => {
 		}
 
 		console.error(`[getImageDataFromId] Image data not found for id: ${id}`);
-		throw new Error(`Image data not found for id: ${id}`);
+		throw new Error(
+			`Uploaded photo or option image data not found for id: ${id}`,
+		);
 	} catch (error) {
 		console.error(
 			`[getImageDataFromId] Failed to fetch image data for id: ${id}`,

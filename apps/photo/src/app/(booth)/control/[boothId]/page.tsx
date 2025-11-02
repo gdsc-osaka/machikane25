@@ -27,6 +27,8 @@ import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
 import { playSound, preloadAllSounds } from "@/lib/sound";
 
+// key: type id
+// value: option id
 type SelectedOptions = Record<string, string>;
 
 const ensureBoothId = (value: unknown): string =>

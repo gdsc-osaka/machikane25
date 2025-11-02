@@ -162,8 +162,14 @@ export const getUploadedPhotos = async (
 	}));
 };
 
-export const deleteUsedPhoto = async (photoId: string): Promise<void> => {
-	const querySnapshot = await queryUploadedPhotosByPhotoId(photoId).get();
+export const deleteUsedPhoto = async (
+	boothId: string,
+	photoId: string,
+): Promise<void> => {
+	const querySnapshot = await queryUploadedPhotosByPhotoId(
+		boothId,
+		photoId,
+	).get();
 
 	if (querySnapshot.empty) {
 		return;

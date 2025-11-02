@@ -151,9 +151,12 @@ describe("PhotoService", () => {
 
 		const { deleteUsedPhoto } = await import("@/application/photoService");
 
-		await deleteUsedPhoto("photo-99");
+		await deleteUsedPhoto("booth-3", "photo-99");
 
-		expect(queryUploadedPhotosByPhotoIdMock).toHaveBeenCalledWith("photo-99");
+		expect(queryUploadedPhotosByPhotoIdMock).toHaveBeenCalledWith(
+			"booth-3",
+			"photo-99",
+		);
 		expect(deleteUploadedPhotoByDocumentPathMock).toHaveBeenCalledWith(
 			"booths/booth-3/uploadedPhotos/photo-99",
 		);

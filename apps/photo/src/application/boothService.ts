@@ -80,7 +80,7 @@ export const startGeneration = async (
 
 	// Cleanup uploaded photo in the background
 	// FIXME: cleanerあるからこれ要らん
-	void deleteUsedPhoto(uploadedPhotoId).catch(() => undefined);
+	void deleteUsedPhoto(boothId, uploadedPhotoId).catch(() => undefined);
 };
 
 export const completeGeneration = async (
@@ -136,7 +136,7 @@ export const completeGeneration = async (
 	});
 
 	// Cleanup uploaded photo in the background
-	void deleteUsedPhoto(usedUploadedPhotoId).catch(() => undefined);
+	void deleteUsedPhoto(boothId, usedUploadedPhotoId).catch(() => undefined);
 };
 
 const SAMPLE_GENERATED_IMAGE_BYTES = [

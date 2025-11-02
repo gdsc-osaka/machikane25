@@ -69,7 +69,7 @@ const toParts = (
 
 	return [
 		{
-			text: "BASE IMAGE - Main Person:\nThis is the primary subject whose facial features, face shape, eye color, hair color, hair style, skin tone, and overall appearance must be preserved exactly in the generated image. This person is the main focus of the photo."
+			text: "BASE IMAGE - Main Person:\nThis is the primary subject whose facial features, face shape, eye color, hair color, hair style, skin tone, and overall appearance must be preserved exactly in the generated image. This person is the main focus of the photo.",
 		},
 		{
 			inlineData: {

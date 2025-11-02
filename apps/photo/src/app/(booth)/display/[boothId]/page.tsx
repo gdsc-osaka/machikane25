@@ -171,7 +171,7 @@ export default function DisplayPage() {
 		}
 
 		return (
-			<div className="grid h-full w-full grid-cols-1 grid-rows-3 gap-4 bg-[#303030] p-4 md:grid-cols-3 md:grid-rows-1">
+			<div className="grid h-full w-full grid-cols-1 grid-rows-3 gap-4 bg-[#303030] p-4 portrait:grid-cols-3 md:grid-rows-1">
 				{generatedPhotoUrls.map((url, index) => (
 					<div key={index} className="relative h-full w-full">
 						<Image

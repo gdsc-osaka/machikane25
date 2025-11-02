@@ -328,6 +328,11 @@ MonoBehaviour:
   confidenceThreshold: 0.5
   smoothingSpeed: 6
   absenceDamping: 3
+  useMockVisitors: 0
+  mockVisitors:
+  - position: {x: 0, y: 0}
+    magnitude: 0
+  mockUpdateInterval: 0.1
 --- !u!1001 &111094562
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1538,7 +1543,7 @@ Transform:
   m_GameObject: {fileID: 416291190}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -59.9, y: 9.9, z: 7.8}
+  m_LocalPosition: {x: -44.5, y: 9.9, z: 7.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1617,6 +1622,7 @@ Transform:
   - {fileID: 1367772248}
   - {fileID: 924969952}
   - {fileID: 107719589}
+  - {fileID: 1523723355}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &475555751
@@ -3050,6 +3056,8 @@ MonoBehaviour:
   rareCharacters: {fileID: 1367772249}
   mockFishProvider: {fileID: 11400000, guid: db1fa621feb124c9685d6cb254f7402a, type: 2}
   schoolCoordinator: {fileID: 924969953}
+  timeOfDayController: {fileID: 0}
+  timeOfDayConfig: {fileID: 11400000, guid: aab134e7e1f124aa6afe2fac7b382684, type: 2}
 --- !u!4 &804376026 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6986371466421367663, guid: 124ad46aec1102e47a4cdae502be89aa, type: 3}
@@ -3212,7 +3220,7 @@ Transform:
   m_GameObject: {fileID: 912077983}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 43.6, y: 9.9, z: 7.8}
+  m_LocalPosition: {x: 38.4, y: 9.9, z: 7.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5484,6 +5492,54 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a8db8fe63794e4e22a991c2724d31ccf, type: 3}
+--- !u!1 &1523723354
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1523723355}
+  - component: {fileID: 1523723356}
+  m_Layer: 0
+  m_Name: TimeOfDayController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1523723355
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1523723354}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 3.87726, y: 15.3694, z: -14.9102}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 460143942}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1523723356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1523723354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e0f1a5b6d7e8f9a0b1c2d3e4f5a6b7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Art::Art.Presentation.TimeOfDayController
+  config: {fileID: 0}
+  directionalLight: {fileID: 0}
+  waterMaterials: []
+  waterColorProperty: _Color
 --- !u!4 &1545457750 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6375836955102501089, guid: 0714e774b10e5554f986ebe42387b3c9, type: 3}
@@ -5953,7 +6009,7 @@ Transform:
   m_GameObject: {fileID: 1738467528}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 9.9, z: -32.2}
+  m_LocalPosition: {x: 0, y: 9.9, z: -20.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10904,7 +10960,7 @@ Transform:
   m_GameObject: {fileID: 1834069297}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 9.9, z: 119.2}
+  m_LocalPosition: {x: 0, y: 9.9, z: 111.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -1,4 +1,5 @@
 using Art.Fish;
+using Art.Presentation;
 using Art.Presentation.Schools;
 using Art.Rare;
 using Art.Telemetry;
@@ -26,6 +27,10 @@ namespace Art.App
         [SerializeField] private RareCharacterController rareCharacters;
         [SerializeField] private MockFishDataProvider mockFishProvider;
         [SerializeField] private SchoolCoordinator schoolCoordinator;
+        [SerializeField] private TimeOfDayController timeOfDayController;
+
+        [Header("Presentation Configuration")]
+        [SerializeField] private TimeOfDayConfig timeOfDayConfig;
 
         [Header("Services")]
         // FIXME: SerializeReference currently causes issues with Unity serialization
@@ -61,6 +66,12 @@ namespace Art.App
             if (schoolCoordinator != null && visitorDetector != null)
             {
                 visitorDetector.OnVisitorsChanged += schoolCoordinator.ApplyVisitorInfluence;
+            }
+
+            // Initialize time-of-day system (optional)
+            if (timeOfDayController != null && timeOfDayConfig != null)
+            {
+                timeOfDayController.Initialize(timeOfDayConfig);
             }
 
             pollingRoutine = StartCoroutine(RunWithGuard(fishPolling.Run(), "FishPolling"));

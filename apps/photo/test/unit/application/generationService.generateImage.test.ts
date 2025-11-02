@@ -108,7 +108,7 @@ describe("GenerationService.generateImage", () => {
 			},
 		});
 		expect(callArgs.contents?.[0]?.parts).toEqual([
-			{ text: "This is the base 'reference_image' person:" },
+			{ text: " It is 'main_person' in this base image. Please include this person in the generated image as well.:" },
 			{
 				inlineData: {
 					mimeType: "image/jpeg",
@@ -117,20 +117,20 @@ describe("GenerationService.generateImage", () => {
 			},
 			{ text: "This image is for the 'location':" },
 			{
-				inline_data: {
-					mime_type: "image/png",
+				inlineData: {
+					mimeType: "image/png",
 					data: "location-image-base64",
 				},
 			},
 			{ text: "This image is for the 'outfit':" },
 			{
-				inline_data: {
-					mime_type: "image/png",
+				inlineData: {
+					mimeType: "image/png",
 					data: "outfit-image-base64",
 				},
 			},
 			{
-				text: "Generate an image using the 'reference_image' person. Beside the 'reference_image' person, add the 'person' to create a two-shot scene. The 'reference_image' person should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
+				text: "Generate an image using the 'main_person' person. Beside the 'main_person' person, add the 'person' to create a two-shot scene. The 'main_person' should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
 			},
 		]);
 

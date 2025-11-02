@@ -4,10 +4,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import QRCode from "react-qr-code";
 import Webcam from "react-webcam";
 import { completeCapture } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
+import { Progress } from "@/components/ui/progress";
 import { useBoothState } from "@/hooks/useBoothState";
 
 const ensureBoothId = (value: unknown): string =>
@@ -92,42 +92,45 @@ export default function DisplayPage() {
 	}, [countdown, boothId]);
 
 	const renderIdle = () => (
-		<div className="flex flex-col items-center gap-4">
-			<p className="text-2xl font-semibold">タッチパネルをタップしてね</p>
-			<p className="text-sm text-muted-foreground">
-				スタッフが準備中です。少しお待ちください。
+		<div className="flex h-full w-full flex-col items-center justify-center gap-12 bg-[#303030] px-8">
+			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-center text-6xl font-bold leading-tight text-transparent drop-shadow-lg md:text-7xl">
+				Gemini AI
+				<br />
+				フォトブース
+			</h1>
+			<p className="animate-pulse text-center text-3xl font-semibold text-[#e3e3e3] drop-shadow-md md:text-4xl">
+				タブレットの画面を
+				<br />
+				タップしてスタート
 			</p>
 		</div>
 	);
 
-	const renderMenu = () => {
-		const baseurl = process.env.NEXT_PUBLIC_BASE_URL;
-		const uploadUrl = `${baseurl}/upload/${boothId}`;
-		return (
-			<div className="flex flex-col items-center gap-6">
-				<p className="text-xl font-semibold">
-					スマホでQRコードを読み取って写真をアップロードしてください
-				</p>
-				<div className="rounded-lg border bg-white p-4 shadow">
-					<QRCode value={uploadUrl} />
-				</div>
-				<p className="text-sm text-muted-foreground">{uploadUrl}</p>
-			</div>
-		);
-	};
+	const renderMenu = () => (
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] px-8">
+			<p className="whitespace-pre-line text-center text-4xl font-semibold leading-relaxed text-[#e3e3e3] md:text-5xl">
+				{`タブレットを操作してください
+
+1. 画像を選ぶ
+2. 写真を撮る
+3. 決定`}
+			</p>
+		</div>
+	);
 
 	const renderCapturing = () => (
-		<div className="relative flex flex-col items-center gap-4">
-			<div className="relative overflow-hidden rounded-lg border shadow-lg">
+		<div className="relative flex h-full w-full items-center justify-center bg-[#303030]">
+			<div className="relative h-full w-full">
 				<Webcam
 					ref={webcamRef}
 					audio={false}
 					screenshotFormat="image/png"
 					videoConstraints={{
-						width: 1280,
-						height: 720,
+						width: 1080,
+						height: 1920,
 						facingMode: "user",
 					}}
+					className="h-full w-full object-cover"
 				/>
 				<AnimatePresence>
 					{countdown !== null && countdown > 0 && (
@@ -137,94 +140,77 @@ export default function DisplayPage() {
 							animate={{ opacity: 1, scale: 1 }}
 							exit={{ opacity: 0, scale: 1.5 }}
 							transition={{ duration: 0.3 }}
-							className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
+							className="absolute inset-0 flex items-center justify-center bg-[#303030]/30"
 						>
-							<span className="text-[200px] font-bold text-white drop-shadow-lg">
+							<span className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-[200px] font-bold text-transparent drop-shadow-2xl md:text-[300px]">
 								{countdown}
 							</span>
 						</motion.div>
 					)}
 				</AnimatePresence>
 			</div>
-			<p className="text-2xl font-semibold">撮影中...</p>
-			<p className="text-sm text-muted-foreground">
-				カウントダウンに合わせてポーズ！
-			</p>
 		</div>
 	);
 
 	const renderGenerating = () => (
-		<div className="flex flex-col items-center gap-4">
-			<p className="text-2xl font-semibold">AIが写真を生成中...</p>
-			<p className="text-sm text-muted-foreground">
-				少しお時間をいただいています。完了すると生成結果が表示されます。
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] px-8">
+			<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-center text-5xl font-semibold text-transparent drop-shadow-lg md:text-6xl">
+				画像を生成中...
 			</p>
+			<Progress value={undefined} className="w-3/4 max-w-2xl bg-[#444746]" />
 		</div>
 	);
 
 	const renderCompleted = () => {
 		if (!latestGeneratedPhotoUrl) {
 			return (
-				<p className="text-sm text-muted-foreground">
-					最新の写真を読み込んでいます…
-				</p>
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
+				</div>
 			);
 		}
 
 		return (
-			<div className="flex flex-col items-center gap-6">
+			<div className="flex h-full w-full items-center justify-center bg-[#303030]">
 				<Image
 					src={latestGeneratedPhotoUrl}
-					alt="生成した写真"
-					width={960}
-					height={1280}
-					sizes="(max-width: 768px) 90vw, 480px"
-					className="max-h-[480px] w-auto max-w-full rounded-lg shadow-lg"
+					alt="生成された写真"
+					fill
+					className="object-contain"
+					priority
 				/>
-				<p className="text-sm text-muted-foreground">
-					スタッフがQRコードを表示するまでお待ちください。
-				</p>
 			</div>
 		);
 	};
 
 	const renderContent = () => {
 		if (isLoading) {
-			return <p className="text-sm text-muted-foreground">読み込み中...</p>;
+			return (
+				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+					<p className="text-xl text-[#e3e3e3]">読み込み中...</p>
+				</div>
+			);
 		}
 
-		if (boothState === "idle") {
-			return renderIdle();
+		switch (boothState) {
+			case "idle":
+				return renderIdle();
+			case "menu":
+				return renderMenu();
+			case "capturing":
+				return renderCapturing();
+			case "generating":
+				return renderGenerating();
+			case "completed":
+				return renderCompleted();
+			default:
+				return renderIdle();
 		}
-
-		if (boothState === "menu") {
-			return renderMenu();
-		}
-
-		if (boothState === "capturing") {
-			return renderCapturing();
-		}
-
-		if (boothState === "generating") {
-			return renderGenerating();
-		}
-
-		if (boothState === "completed") {
-			return renderCompleted();
-		}
-
-		return renderIdle();
 	};
 
 	return (
-		<main className="flex min-h-screen flex-col items-center justify-center gap-8 p-6 md:p-10">
-			<header className="text-center">
-				<h1 className="text-3xl font-bold">Display</h1>
-				<p className="text-sm text-muted-foreground">
-					ブースID: {boothId || "未設定"}
-				</p>
-			</header>
-			<section className="w-full max-w-3xl">{renderContent()}</section>
+		<main className="flex h-screen w-full items-center justify-center overflow-hidden">
+			{renderContent()}
 		</main>
 	);
 }

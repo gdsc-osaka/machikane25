@@ -16,13 +16,13 @@ import {
 type BoothSnapshot = {
 	id: string;
 	state: BoothState;
-	latestPhotoId: string | null;
+	generatedPhotoIds: string[] | null;
 	lastTakePhotoAt: Date | null;
 };
 
 type BoothStateResult = {
 	booth: BoothSnapshot | null;
-	latestGeneratedPhotoUrl: string | null;
+	generatedPhotoUrls: string[];
 	isLoading: boolean;
 	error: Error | null;
 };
@@ -48,37 +48,37 @@ const parseState = (value: unknown): BoothState => {
 	return parsed.success ? parsed.data : "idle";
 };
 
-const fetchGeneratedPhotoUrl = async (
+const fetchGeneratedPhotoUrls = async (
 	firestore: Firestore,
 	boothId: string,
-	photoId: string,
-): Promise<string | null> => {
-	const generatedRef = doc(
-		firestore,
-		"booths",
-		boothId,
-		"generatedPhotos",
-		photoId,
-	);
-	const snapshot = await getDoc(generatedRef);
+	photoIds: string[],
+): Promise<string[]> => {
+	const urls: string[] = [];
+	for (const photoId of photoIds) {
+		const generatedRef = doc(
+			firestore,
+			"booths",
+			boothId,
+			"generatedPhotos",
+			photoId,
+		);
+		const snapshot = await getDoc(generatedRef);
 
-	if (!snapshot.exists()) {
-		return null;
+		if (snapshot.exists()) {
+			const data = snapshot.data();
+			const imageUrl = Reflect.get(data, "imageUrl");
+
+			if (typeof imageUrl === "string") {
+				urls.push(imageUrl);
+			}
+		}
 	}
-
-	const data = snapshot.data();
-	const imageUrl = Reflect.get(data, "imageUrl");
-
-	if (typeof imageUrl !== "string") {
-		return null;
-	}
-
-	return imageUrl;
+	return urls;
 };
 
 export const useBoothState = (boothId: string): BoothStateResult => {
 	const [booth, setBooth] = useState<BoothSnapshot | null>(null);
-	const [latestUrl, setLatestUrl] = useState<string | null>(null);
+	const [generatedUrls, setGeneratedUrls] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	const isMountedRef = useRef(true);
@@ -115,21 +115,25 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 						if (!snapshot.exists()) {
 							setBooth(null);
-							setLatestUrl(null);
+							setGeneratedUrls([]);
 							return;
 						}
 
 						const data = snapshot.data();
 						const stateValue = parseState(Reflect.get(data, "state"));
-						const latestPhotoIdValue = Reflect.get(data, "latestPhotoId");
+						const generatedPhotoIdsValue = Reflect.get(
+							data,
+							"generatedPhotoIds",
+						);
 						const lastTakePhotoAtValue = Reflect.get(data, "lastTakePhotoAt");
 
 						const boothSnapshot: BoothSnapshot = {
 							id: typeof snapshot.id === "string" ? snapshot.id : boothId,
 							state: stateValue,
-							latestPhotoId:
-								typeof latestPhotoIdValue === "string"
-									? latestPhotoIdValue
+							generatedPhotoIds:
+								Array.isArray(generatedPhotoIdsValue) &&
+								generatedPhotoIdsValue.every((id) => typeof id === "string")
+									? generatedPhotoIdsValue
 									: null,
 							lastTakePhotoAt: toDate(lastTakePhotoAtValue),
 						};
@@ -137,15 +141,18 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 						setBooth(boothSnapshot);
 						setError(null);
 
-						if (boothSnapshot.latestPhotoId) {
-							void fetchGeneratedPhotoUrl(
+						if (
+							boothSnapshot.generatedPhotoIds &&
+							boothSnapshot.generatedPhotoIds.length > 0
+						) {
+							void fetchGeneratedPhotoUrls(
 								firestore,
 								boothSnapshot.id,
-								boothSnapshot.latestPhotoId,
+								boothSnapshot.generatedPhotoIds,
 							)
-								.then((url) => {
+								.then((urls) => {
 									if (isMountedRef.current) {
-										setLatestUrl(url);
+										setGeneratedUrls(urls);
 									}
 								})
 								.catch((fetchError) => {
@@ -153,12 +160,12 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 										setError(
 											fetchError instanceof Error
 												? fetchError
-												: new Error("Failed to load generated photo"),
+												: new Error("Failed to load generated photos"),
 										);
 									}
 								});
 						} else {
-							setLatestUrl(null);
+							setGeneratedUrls([]);
 						}
 					},
 					(snapshotError) => {
@@ -195,7 +202,7 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 	return {
 		booth,
-		latestGeneratedPhotoUrl: latestUrl,
+		generatedPhotoUrls: generatedUrls,
 		isLoading,
 		error,
 	};

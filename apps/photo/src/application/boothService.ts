@@ -14,7 +14,7 @@ import { deleteUsedPhoto } from "./photoService";
 
 type BoothStateUpdate = {
 	state?: BoothState;
-	latestPhotoId?: string | null;
+	generatedPhotoIds?: string[] | null;
 	lastTakePhotoAt?: unknown;
 };
 
@@ -63,80 +63,23 @@ export const startGeneration = async (
 	await updateBoothState(boothId, { state: "generating" });
 	console.debug("Booth state updated to 'generating'");
 
-	// Generate image and wait for completion
-	const generatedPhotoId = await generateImage(
-		boothId,
-		uploadedPhotoId,
-		options,
+	// Generate 3 images in parallel
+	const generationPromises = Array.from({ length: 3 }).map(() =>
+		generateImage(boothId, uploadedPhotoId, options),
 	);
-	console.debug("Generated photo ID:", generatedPhotoId);
+	const generatedPhotoIds = await Promise.all(generationPromises);
+	console.debug("Generated photo IDs:", generatedPhotoIds);
 
 	// Automatically transition to completed state
 	await updateBoothState(boothId, {
 		state: "completed",
-		latestPhotoId: generatedPhotoId,
+		generatedPhotoIds: generatedPhotoIds,
 	});
 	console.debug("Booth state updated to 'completed'");
 
 	// Cleanup uploaded photo in the background
 	// FIXME: cleanerあるからこれ要らん
 	void deleteUsedPhoto(uploadedPhotoId).catch(() => undefined);
-};
-
-export const completeGeneration = async (
-	boothId: string,
-	generatedPhotoId: string,
-	usedUploadedPhotoId: string,
-): Promise<void> => {
-	await updateBoothState(boothId, {
-		state: "completed",
-		latestPhotoId: generatedPhotoId,
-	});
-
-	const bucket = storageBucket();
-	const imagePath = ["generated_photos", generatedPhotoId, "photo.png"].join(
-		"/",
-	);
-
-	await bucket.file(imagePath).save(Buffer.from(SAMPLE_GENERATED_IMAGE_BYTES), {
-		resumable: false,
-		contentType: "image/png",
-		metadata: {
-			cacheControl: "public,max-age=3600",
-		},
-		validation: false,
-	});
-
-	// Generate URL based on environment (emulator or production)
-	const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
-	let imageUrl: string;
-
-	if (storageEmulatorHost) {
-		// Emulator URL format
-		const encodedPath = encodeURIComponent(imagePath);
-		imageUrl = `http://${storageEmulatorHost}/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
-	} else {
-		// Production URL format
-		imageUrl = `https://storage.googleapis.com/${bucket.name}/${imagePath}`;
-	}
-
-	await createGeneratedPhoto({
-		boothId,
-		photoId: generatedPhotoId,
-		imagePath,
-		imageUrl,
-	});
-
-	await sendToAquarium({
-		boothId,
-		photoId: generatedPhotoId,
-		imagePath,
-		imageUrl,
-		createdAt: new Date(),
-	});
-
-	// Cleanup uploaded photo in the background
-	void deleteUsedPhoto(usedUploadedPhotoId).catch(() => undefined);
 };
 
 const SAMPLE_GENERATED_IMAGE_BYTES = [

@@ -108,7 +108,9 @@ describe("GenerationService.generateImage", () => {
 			},
 		});
 		expect(callArgs.contents?.[0]?.parts).toEqual([
-			{ text: " It is 'main_person' in this base image. Please include this person in the generated image as well.:" },
+			{
+				text: " It is 'main_person' in this base image. Please include this person in the generated image as well.:",
+			},
 			{
 				inlineData: {
 					mimeType: "image/jpeg",

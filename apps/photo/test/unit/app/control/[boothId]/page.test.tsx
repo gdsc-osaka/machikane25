@@ -232,7 +232,9 @@ describe("[RED] ControlPage", () => {
 		render(<ControlPage />);
 
 		// Check for completion message
-		expect(screen.getByText("画像のダウンロードはこちらから")).toBeInTheDocument();
+		expect(
+			screen.getByText("画像のダウンロードはこちらから"),
+		).toBeInTheDocument();
 	});
 
 	describe("selectedOptions and selectedPhotoId reset behavior", () => {
@@ -304,7 +306,9 @@ describe("[RED] ControlPage", () => {
 
 			// idle状態の画面が表示されることを確認
 			expect(
-				screen.getByRole("button", { name: /gemini ai フォトブース.*画面をタップしてスタート/i }),
+				screen.getByRole("button", {
+					name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+				}),
 			).toBeInTheDocument();
 
 			// menuに戻る
@@ -353,7 +357,9 @@ describe("[RED] ControlPage", () => {
 			const { rerender } = render(<ControlPage />);
 
 			// completed状態の確認
-			expect(screen.getByText("画像のダウンロードはこちらから")).toBeInTheDocument();
+			expect(
+				screen.getByText("画像のダウンロードはこちらから"),
+			).toBeInTheDocument();
 
 			// boothStateをidleに変更
 			const idleBooth = createBooth("idle");
@@ -368,7 +374,9 @@ describe("[RED] ControlPage", () => {
 
 			// idle状態の画面が表示されることを確認
 			expect(
-				screen.getByRole("button", { name: /gemini ai フォトブース.*画面をタップしてスタート/i }),
+				screen.getByRole("button", {
+					name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+				}),
 			).toBeInTheDocument();
 			expect(
 				screen.queryByText("画像のダウンロードはこちらから"),
@@ -461,7 +469,9 @@ describe("[RED] ControlPage", () => {
 
 			// idle状態の画面が表示されることを確認
 			expect(
-				screen.getByRole("button", { name: /gemini ai フォトブース.*画面をタップしてスタート/i }),
+				screen.getByRole("button", {
+					name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+				}),
 			).toBeInTheDocument();
 		});
 

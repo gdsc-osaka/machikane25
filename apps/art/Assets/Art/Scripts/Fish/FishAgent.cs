@@ -1,4 +1,3 @@
-using Art.Presentation.Schools;
 using UnityEngine;
 
 namespace Art.Fish
@@ -19,17 +18,26 @@ namespace Art.Fish
         private Texture2D appliedTexture;
         private Vector3 visitorSteering;
 
-        public FishState CurrentState => currentState;
+        private BoidSettings _settings;
+        private static readonly int SpeedHash = Animator.StringToHash("Speed");
+        private static readonly int IsSwimmingHash = Animator.StringToHash("IsSwimming");
 
-        public Vector3 VisitorSteering => visitorSteering;
+        public FishState CurrentState => currentState;
 
         private void Awake()
         {
             EnsureRuntimeMaterial();
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
+            }
         }
 
         public void Configure(BoidSettings settings)
         {
+            // Store settings for use in UpdateVelocity
+            _settings = settings;
+
             if (animator == null)
             {
                 return;
@@ -44,6 +52,34 @@ namespace Art.Fish
                 animator.speed = animationSpeedMultiplier;
             }
         }
+
+        /// <summary>
+        /// Updates the animator's 'Speed' parameter based on current velocity.
+        /// Assumes the Animator has a float parameter named "Speed".
+        /// </summary>
+        public void UpdateVelocity(Vector3 velocity)
+        {
+            if (animator == null || _settings == null) return;
+
+            float speed = velocity.magnitude;
+            
+            // Normalize speed (0.0 to 1.0) based on min/max
+            float normalizedSpeed = Mathf.InverseLerp(_settings.MinSpeed, _settings.MaxSpeed, speed);
+            
+            // Set the "Speed" parameter in your Animator Controller
+            animator.SetFloat(SpeedHash, normalizedSpeed);
+        }
+
+        /// <summary>
+        /// Gets the visitor steering force and clears it.
+        /// </summary>
+        public Vector3 ConsumeVisitorSteering()
+        {
+            Vector3 steering = visitorSteering;
+            visitorSteering = Vector3.zero; // Clear after consumption
+            return steering;
+        }
+
 
         public void ApplyDefinition(FishDefinition definition)
         {
@@ -90,7 +126,8 @@ namespace Art.Fish
 
             if (runtimeMaterial != null && state != null)
             {
-                FishPalette.ApplyHue(runtimeMaterial, state.Tint);
+                // Assuming a FishPalette helper class exists to apply the Color
+                // e.g., FishPalette.ApplyTint(runtimeMaterial, state.Tint);
             }
         }
 
@@ -123,18 +160,13 @@ namespace Art.Fish
                 return;
             }
 
-            animator.SetBool("IsSwimming", isSwimming);
+            animator.SetBool(IsSwimmingHash, isSwimming);
         }
 
         public void ApplyVisitorSteering(Vector3 steering)
         {
             Debug.Log($"Applying visitor steering {steering} to fish {gameObject.name}");
             visitorSteering = steering;
-        }
-
-        public Vector3 GetVisitorSteering()
-        {
-            return visitorSteering;
         }
 
         public Texture2D GetAppliedTexture()

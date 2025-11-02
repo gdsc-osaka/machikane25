@@ -86,10 +86,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Art/Scripts/Fish/FishPollingController.cs" />
-    <Compile Include="Assets/Art/Scripts/Visitors/CameraCalibration.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishSpawner.cs" />
     <Compile Include="Assets/Art/Scripts/Presentation/Schools/BoidSettings.cs" />
-    <Compile Include="Assets/Art/Scripts/Visitors/VisitorDetectionDebugger.cs" />
     <Compile Include="Assets/Art/Scripts/App/AsymmetricProjection.cs" />
     <Compile Include="Assets/Art/Scripts/Rare/RareCharacterController.cs" />
     <Compile Include="Assets/Art/Scripts/Infrastructure/JsonUtilityExtensions.cs" />
@@ -97,14 +95,11 @@
     <Compile Include="Assets/Art/Scripts/AssemblyInfo.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/MockFishDataset.cs" />
     <Compile Include="Assets/Art/Scripts/Telemetry/TelemetryLogger.cs" />
-    <Compile Include="Assets/Art/Scripts/Visitors/VisitorDetectionProcessor.cs" />
     <Compile Include="Assets/Art/Scripts/App/ActivateAllDisplays.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishDto.cs" />
     <Compile Include="Assets/Art/Scripts/App/AppRoot.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishPalette.cs" />
-    <Compile Include="Assets/Art/Scripts/Visitors/VisitorGroup.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/HttpFishDataProvider.cs" />
-    <Compile Include="Assets/Art/Scripts/Visitors/VisitorDetector.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/IFishDataProvider.cs" />
     <Compile Include="Assets/Art/Scripts/Telemetry/TelemetryEvents.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishController.cs" />
@@ -117,7 +112,6 @@
     <Compile Include="Assets/Art/Scripts/Fish/MockFishDataProvider.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishState.cs" />
     <Compile Include="Assets/Art/Scripts/Infrastructure/HttpClientFactory.cs" />
-    <Compile Include="Assets/Art/Scripts/Presentation/Schools/VisitorInfluenceSettings.cs" />
     <Compile Include="Assets/Art/Scripts/App/AppConfig.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishDefinition.cs" />
     <None Include="Assets/Art/Scripts/Art.asmdef" />
@@ -526,6 +520,9 @@
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/PackageCache/com.unity.visualscripting@6279e2b7c485/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="Google.Protobuf">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/PackageCache/com.unity.barracuda@eefb8cb01e6c/Barracuda/Runtime/Plugins/ProtoBuffer/Google.Protobuf.dll</HintPath>
+    </Reference>
     <Reference Include="NuGetForUnity.PluginAPI">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Assets/NuGet/Editor/NuGetForUnity.PluginAPI.dll</HintPath>
     </Reference>
@@ -543,9 +540,6 @@
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/PackageCache/com.unity.collections@d49facba0036/Unity.Collections.Tests/System.Runtime.CompilerServices.Unsafe/System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Protobuf">
-      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/PackageCache/com.unity.barracuda@eefb8cb01e6c/Barracuda/Runtime/Plugins/ProtoBuffer/Google.Protobuf.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.iOS.Extensions.Xcode">
       <HintPath>/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.iOS.Extensions.Xcode.dll</HintPath>
@@ -918,6 +912,9 @@
     </Reference>
     <Reference Include="Unity.Barracuda">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.Barracuda.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/Unity.InputSystem.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>/Users/hari/proj/machikane25/apps/art/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>

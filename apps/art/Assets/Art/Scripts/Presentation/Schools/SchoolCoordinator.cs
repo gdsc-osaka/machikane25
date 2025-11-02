@@ -15,9 +15,11 @@ namespace Art.Presentation.Schools
     {
         [SerializeField] private BoidSettings settings;
         [SerializeField] private VisitorInfluenceSettings visitorInfluence;
-        [SerializeField] [Tooltip("Fish agents placed in the hierarchy to be automatically registered on startup.")]
+        [SerializeField]
+        [Tooltip("Fish agents placed in the hierarchy to be automatically registered on startup.")]
         private FishAgent[] defaultFishAgents = Array.Empty<FishAgent>();
-        [SerializeField] [Tooltip("Random noise range added to boid steering.")]
+        [SerializeField]
+        [Tooltip("Random noise range added to boid steering.")]
         private float noiseRange = 2.0f;
 
         private static readonly float[] KeyboardPositions =

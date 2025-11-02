@@ -11,7 +11,8 @@ namespace Art.Fish
     {
         [SerializeField] private Renderer bodyRenderer;
         [SerializeField] private Animator animator;
-        [SerializeField] [Tooltip("Optional multiplier applied on top of boid animation speed.")]
+        [SerializeField]
+        [Tooltip("Optional multiplier applied on top of boid animation speed.")]
         private float animationSpeedMultiplier = 1f;
 
         private Material runtimeMaterial;

@@ -11,7 +11,7 @@ namespace Art.Fish
         [SerializeField] private FishAgent prefab;
         [SerializeField] private Material baseMaterial;
         [SerializeField] private Texture2D placeholderTexture;
-        [SerializeField] [Range(0.1f, 5f)] private float spawnScale = 1f;
+        [SerializeField][Range(0.1f, 5f)] private float spawnScale = 1f;
 
         public FishAgent Prefab => prefab;
 

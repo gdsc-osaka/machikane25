@@ -1,9 +1,12 @@
-import { type Content, GoogleGenAI, type Part } from "@google/genai";
+import { type Content, GoogleGenAI } from "@google/genai";
 import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
 import type { GeneratedPhoto as GeneratedPhotoRecord } from "@/domain/photo";
-import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
+import {
+	fetchAllOptions,
+	fetchOptionsByIds,
+} from "@/infra/firebase/generationOptionRepository";
 import {
 	createGeneratedPhoto,
 	findGeneratedPhoto,
@@ -55,7 +58,11 @@ const ensureApiKey = (): string => {
 
 export const toContents = (
 	baseImage: GeminiInlineData,
-	optionEntries: Array<{ key: string; inlineData: GeminiInlineData }>,
+	optionEntries: Array<{
+		key: string;
+		value: string;
+		inlineData: GeminiInlineData;
+	}>,
 ): Content[] => {
 	const partnerOption = optionEntries.find((entry) => entry.key === "partner");
 	const styleOption = optionEntries.find((entry) => entry.key === "style");
@@ -88,7 +95,7 @@ export const toContents = (
 		},
 	];
 
-	if (partnerOption && partnerOption.inlineData) {
+	if (partnerOption?.inlineData) {
 		contents.push({
 			parts: [
 				{
@@ -108,14 +115,14 @@ export const toContents = (
 		parts: [
 			{
 				text:
-					`${styleOption?.key}. ` +
-					`The people from the [Original photo] are ${poseOption?.key}, ` +
-					`wearing ${outfitOption?.key}, ` +
-					`in ${locationOption?.key}. ` +
+					`${styleOption?.value}. ` +
+					`The people from the [Original photo] are ${poseOption?.value}, ` +
+					`wearing ${outfitOption?.value}, ` +
+					`in ${locationOption?.value}. ` +
 					`${
 						partnerOption?.inlineData
 							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-							: `${partnerOption?.key} is next to them, also wearing the same outfit`
+							: `${partnerOption?.value} is next to them, also wearing the same outfit`
 					}.`,
 			},
 		],
@@ -216,11 +223,18 @@ export const generateImage = async (
 	const baseImage = await getImageDataFromId(uploadedPhotoId, boothId);
 	console.debug("Base image data retrieved");
 
+	// Fetch all options to get the value data
+	const allOptions = await fetchOptionsByIds(Object.values(options));
+	console.debug("All options fetched");
+
 	const optionEntries = Object.entries(options);
 	const optionData = await Promise.all(
-		optionEntries.map(async ([key, imageId]) => {
-			const inlineData = await getImageDataFromId(imageId, boothId);
-			return { key, inlineData };
+		optionEntries.map(async ([key, optionId]) => {
+			const inlineData = await getImageDataFromId(optionId, boothId);
+			// Find the matching option to get its value
+			const matchedOption = allOptions.find((opt) => opt.id === optionId);
+			const value = matchedOption?.value ?? "";
+			return { key, value, inlineData };
 		}),
 	);
 	console.debug("Option image data retrieved");

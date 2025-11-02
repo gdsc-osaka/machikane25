@@ -1,9 +1,9 @@
+using Art.Presentation.Schools;
+using Art.Telemetry;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Art.Presentation.Schools;
-using Art.Telemetry;
 using UnityEngine;
 
 namespace Art.Fish

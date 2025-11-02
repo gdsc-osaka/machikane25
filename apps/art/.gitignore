@@ -99,12 +99,3 @@ InitTestScene*.unity*
 /[Aa]ssets/Packages/
 
 Builds/
-
-# External Assets
-/[Aa]ssets/Idyllic Fantasy Nature/
-/[Aa]ssets/IgniteCoders/
-/[Aa]ssets/YughuesFreeSandMaterials/
-/[Aa]ssets/TerrainSampleAssets/
-/[Aa]ssets/Fantasy Chests PBR/
-/[Aa]ssets/Nokobot/
-/[Aa]ssets/UnderwaterFantasy/

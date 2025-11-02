@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d9e0a4f5c6d7e8f9a0b1c2d3e4f5a6c, type: 3}
+  m_Name: TimeOfDayConfig
+  m_EditorClassIdentifier: Art::Art.Presentation.TimeOfDayConfig
+  timeMode: 0
+  cycleDurationSeconds: 600
+  dayPeriod:
+    periodName: Day
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    lightIntensity: 1
+    lightRotation: {x: 50, y: -30, z: 0}
+    fogColor: {r: 0.5, g: 0.7, b: 0.9, a: 1}
+    fogDensity: 0.015
+    ambientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+    ambientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+    ambientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+    applyWaterTint: 0
+    waterTint: {r: 0.2, g: 0.4, b: 0.6, a: 1}
+  sunsetPeriod:
+    periodName: Day
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    lightIntensity: 1
+    lightRotation: {x: 50, y: -30, z: 0}
+    fogColor: {r: 0.5, g: 0.7, b: 0.9, a: 1}
+    fogDensity: 0.015
+    ambientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+    ambientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+    ambientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+    applyWaterTint: 0
+    waterTint: {r: 0.2, g: 0.4, b: 0.6, a: 1}
+  nightPeriod:
+    periodName: Day
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    lightIntensity: 1
+    lightRotation: {x: 50, y: -30, z: 0}
+    fogColor: {r: 0.5, g: 0.7, b: 0.9, a: 1}
+    fogDensity: 0.015
+    ambientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+    ambientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+    ambientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+    applyWaterTint: 0
+    waterTint: {r: 0.2, g: 0.4, b: 0.6, a: 1}
+  dayStartHour: 6
+  sunsetStartHour: 17
+  nightStartHour: 20
+  transitionDurationSeconds: 10

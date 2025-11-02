@@ -1,10 +1,10 @@
+using Art.App;
+using Art.Telemetry;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Art.App;
-using Art.Telemetry;
-using UnityEngine;
 using Unity.Barracuda;
+using UnityEngine;
 
 namespace Art.Visitors
 {
@@ -175,7 +175,7 @@ namespace Art.Visitors
             {
                 telemetry?.LogInfo($"VisitorDetector found webcam device: {devices[i].name} (FrontFacing={devices[i].isFrontFacing})");
             }
-                
+
             WebCamDevice selectedDevice = devices[0];
             var hasSelection = false;
 
@@ -209,7 +209,7 @@ namespace Art.Visitors
             {
                 selectedDevice = devices[0];
             }
-            
+
             telemetry?.LogInfo($"VisitorDetector selected webcam device: {selectedDevice.name} (FrontFacing={selectedDevice.isFrontFacing})");
 
             return new WebCamTexture(selectedDevice.name, targetWidth, targetHeight, 15);

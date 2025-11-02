@@ -17,6 +17,12 @@ namespace Art.Telemetry
         public const string FishTextureLoaded = "fish_texture_loaded";
         public const string FishTextureLoadFailed = "fish_texture_load_failed";
 
+        // Visitor detection events
+        public const string VisitorDetectorUpdate = "visitor_detector_update";
+        public const string VisitorDetectorStarted = "visitor_detector_started";
+        public const string VisitorDetectorStopped = "visitor_detector_stopped";
+        public const string VisitorDetectorError = "visitor_detector_error";
+
         // Rare character events
         public const string RareSpawned = "rare_spawned";
         public const string RareEvaluated = "rare_evaluated";

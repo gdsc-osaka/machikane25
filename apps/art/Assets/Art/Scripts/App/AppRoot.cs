@@ -2,6 +2,7 @@ using Art.Fish;
 using Art.Presentation.Schools;
 using Art.Rare;
 using Art.Telemetry;
+using Art.Visitors;
 using System.Collections;
 using System.IO;
 using UnityEngine;
@@ -21,6 +22,7 @@ namespace Art.App
         [Header("Controllers")]
         [SerializeField] private FishPollingController fishPolling;
         [SerializeField] private FishSpawner fishSpawner;
+        [SerializeField] private VisitorDetector visitorDetector;
         [SerializeField] private RareCharacterController rareCharacters;
         [SerializeField] private MockFishDataProvider mockFishProvider;
         [SerializeField] private SchoolCoordinator schoolCoordinator;
@@ -53,10 +55,17 @@ namespace Art.App
             fishSpawner.Initialize(fishRepository, textureCache, telemetry);
             var provider = SelectProvider();
             fishPolling.Initialize(config, fishRepository, telemetry, provider);
+            visitorDetector.Initialize(config, telemetry);
             rareCharacters.Initialize(config, fishSpawner, telemetry);
+
+            if (schoolCoordinator != null && visitorDetector != null)
+            {
+                visitorDetector.OnVisitorsChanged += schoolCoordinator.ApplyVisitorInfluence;
+            }
 
             pollingRoutine = StartCoroutine(RunWithGuard(fishPolling.Run(), "FishPolling"));
             rareRoutine = StartCoroutine(RunWithGuard(rareCharacters.Run(), "RareCharacters"));
+            visitorDetector.StartDetection();
         }
 
         private void OnDestroy()
@@ -71,6 +80,16 @@ namespace Art.App
             {
                 StopCoroutine(rareRoutine);
                 rareRoutine = null;
+            }
+
+            if (visitorDetector != null)
+            {
+                if (schoolCoordinator != null)
+                {
+                    visitorDetector.OnVisitorsChanged -= schoolCoordinator.ApplyVisitorInfluence;
+                }
+
+                visitorDetector.StopDetection();
             }
 
             telemetry.Flush();
@@ -99,6 +118,7 @@ namespace Art.App
 
             valid &= EnsureControllerAssigned(fishPolling, nameof(fishPolling));
             valid &= EnsureControllerAssigned(fishSpawner, nameof(fishSpawner));
+            valid &= EnsureControllerAssigned(visitorDetector, nameof(visitorDetector));
             valid &= EnsureControllerAssigned(rareCharacters, nameof(rareCharacters));
             valid &= EnsureControllerAssigned(schoolCoordinator, nameof(schoolCoordinator));
 

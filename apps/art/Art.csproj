@@ -114,6 +114,7 @@
     <Compile Include="Assets/Art/Scripts/Infrastructure/HttpClientFactory.cs" />
     <Compile Include="Assets/Art/Scripts/App/AppConfig.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishDefinition.cs" />
+    <Compile Include="Assets\Art\Scripts\Presentation\Schools\VisitorInfluenceSettings.cs" />
     <None Include="Assets/Art/Scripts/Art.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>/Applications/Unity/Hub/Editor/6000.2.6f2/Unity.app/Contents/Managed/UnityEngine/UnityEngine.dll</HintPath>
@@ -924,6 +925,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\Art\Scripts\Presentation\Schools\VisitorInfluenceSettings.cs.meta" />
+    <Content Include="Assets\Art\Scripts\Visitors.meta" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

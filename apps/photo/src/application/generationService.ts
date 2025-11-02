@@ -5,141 +5,184 @@ import type { GroupedGenerationOptions } from "@/domain/generationOption";
 import type { GeneratedPhoto as GeneratedPhotoRecord } from "@/domain/photo";
 import { fetchAllOptions } from "@/infra/firebase/generationOptionRepository";
 import {
-	createGeneratedPhoto,
-	findGeneratedPhoto,
+  createGeneratedPhoto,
+  findGeneratedPhoto,
 } from "@/infra/firebase/photoRepository";
 import { getImageDataFromId } from "@/infra/gemini/imageData";
 import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 const GEMINI_ENDPOINT =
-	"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
 
 type GeminiInlineData = {
-	mimeType: string;
-	data: string;
+  mimeType: string;
+  data: string;
 };
 
 type GeneratedPhotoInfo = {
-	id: string;
-	imageUrl: string;
+  id: string;
+  imageUrl: string;
 };
 
 const createNamedError = (name: string, message: string): Error => {
-	const error = new Error(message);
-	error.name = name;
-	return error;
+  const error = new Error(message);
+  error.name = name;
+  return error;
 };
 
 const isNamedError = (value: unknown, expectedName: string): boolean => {
-	if (typeof value !== "object" || value === null) {
-		return false;
-	}
-	const name = Reflect.get(value, "name");
-	return name === expectedName;
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const name = Reflect.get(value, "name");
+  return name === expectedName;
 };
 
 export const isPhotoNotFoundError = (value: unknown): boolean =>
-	isNamedError(value, "PhotoNotFoundError");
+  isNamedError(value, "PhotoNotFoundError");
 
 export const isPhotoExpiredError = (value: unknown): boolean =>
-	isNamedError(value, "PhotoExpiredError");
+  isNamedError(value, "PhotoExpiredError");
 
 const ensureApiKey = (): string => {
-	const apiKey = process.env.GEMINI_API_KEY;
-	if (!apiKey || apiKey.length === 0) {
-		throw new Error("GEMINI_API_KEY is not defined");
-	}
-	return apiKey;
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey.length === 0) {
+    throw new Error("GEMINI_API_KEY is not defined");
+  }
+  return apiKey;
 };
 
 const toParts = (
-	baseImage: GeminiInlineData,
-	optionEntries: Array<{ key: string; inlineData: GeminiInlineData }>,
+  baseImage: GeminiInlineData,
+  optionEntries: Array<{ key: string; inlineData: GeminiInlineData }>
 ): Part[] => {
-	const optionParts = optionEntries.flatMap<Part>((entry) => [
-		{ text: `This image is for the '${entry.key}':` },
-		{
-			inlineData: {
-				mimeType: entry.inlineData.mimeType,
-				data: entry.inlineData.data,
-			},
-		},
-	]);
+  const optionParts = optionEntries.flatMap<Part>((entry) => [
+    { text: `Reference image for '${entry.key}':` },
+    {
+      inlineData: {
+        mimeType: entry.inlineData.mimeType,
+        data: entry.inlineData.data,
+      },
+    },
+  ]);
 
-	return [
-		{
-			text: " It is 'main_person' in this base image. Please include this person in the generated image as well.:",
-		},
-		{
-			inlineData: {
-				mimeType: baseImage.mimeType,
-				data: baseImage.data,
-			},
-		},
-		...optionParts,
-		{
-			text: "Generate an image using the 'main_person' person. Beside the 'main_person' person, add the 'person' to create a two-shot scene. The 'main_person' should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
-		},
-	];
+  return [
+    {
+      text: "BASE IMAGE - Main Person:\nThis is the primary subject whose facial features, face shape, eye color, hair color, hair style, skin tone, and overall appearance must be preserved exactly in the generated image. This person is the main focus of the photo.",
+    },
+    {
+      inlineData: {
+        mimeType: baseImage.mimeType,
+        data: baseImage.data,
+      },
+    },
+    ...optionParts,
+    {
+      text: `GENERATION INSTRUCTIONS:
+Create a high-quality, photorealistic image with the following requirements:
+
+MAIN SUBJECT (CRITICAL - HIGHEST PRIORITY):
+- Use the person from the BASE IMAGE as the main subject
+- Preserve their exact facial features: face structure, eyes, nose, mouth, facial proportions
+- Keep their natural skin tone, hair color, and hair style identical to the BASE IMAGE
+- Ensure the main subject's identity is clearly recognizable
+
+COMPOSITION:
+- Create a two-shot photograph featuring TWO people:
+  1. Main subject: the person from the BASE IMAGE
+  2. Secondary person: matching the appearance shown in the 'person' reference image
+- Position both people naturally in the frame with appropriate spacing
+- Ensure both faces are clearly visible and well-lit
+
+OUTFIT:
+- Dress the MAIN SUBJECT in clothing that matches the style, color, and design shown in the 'outfit' reference image
+- Apply the outfit naturally to the main subject's body type
+- Ensure the clothing fits realistically
+
+POSE AND POSITIONING:
+- Arrange both people in the pose/positioning shown in the 'pose' reference image
+- Maintain natural body proportions and realistic anatomy
+- Ensure the pose looks natural and comfortable
+
+LOCATION AND SETTING:
+- Set the scene in the location/environment shown in the 'location' reference image
+- Include appropriate background elements, lighting, and atmosphere from the location reference
+- Ensure the lighting matches the environment naturally
+
+ARTISTIC STYLE:
+- Apply the overall visual style, color grading, mood, and aesthetic shown in the 'style' reference image
+- Maintain photorealistic quality while applying the style
+- Ensure consistent lighting and color harmony throughout the image
+
+QUALITY REQUIREMENTS:
+- Photorealistic rendering with high detail
+- Natural lighting and shadows
+- Proper depth of field and focus
+- Coherent composition with all elements working together harmoniously
+- The main subject from the BASE IMAGE must remain the clear focal point
+
+CRITICAL: The facial identity of the person in the BASE IMAGE must be perfectly preserved. This is the most important requirement.`,
+    },
+  ];
 };
 
 const extractInlineData = (payload: unknown): GeminiInlineData | null => {
-	if (typeof payload !== "object" || payload === null) {
-		return null;
-	}
-	const candidates = Reflect.get(payload, "candidates");
-	if (!Array.isArray(candidates)) {
-		return null;
-	}
-	const firstCandidate = candidates[0];
-	if (typeof firstCandidate !== "object" || firstCandidate === null) {
-		return null;
-	}
-	const content = Reflect.get(firstCandidate, "content");
-	if (typeof content !== "object" || content === null) {
-		return null;
-	}
-	const parts = Reflect.get(content, "parts");
-	if (!Array.isArray(parts)) {
-		return null;
-	}
-	const targetPart = parts.find((part) => {
-		if (typeof part !== "object" || part === null) {
-			return false;
-		}
-		// Try both camelCase and snake_case for compatibility
-		const inlineCandidate =
-			Reflect.get(part, "inline_data") ?? Reflect.get(part, "inlineData");
-		return typeof inlineCandidate === "object" && inlineCandidate !== null;
-	});
-	if (typeof targetPart !== "object" || targetPart === null) {
-		return null;
-	}
-	// Try both camelCase and snake_case for compatibility
-	const inlineData =
-		Reflect.get(targetPart, "inline_data") ??
-		Reflect.get(targetPart, "inlineData");
-	if (typeof inlineData !== "object" || inlineData === null) {
-		return null;
-	}
-	// Try both camelCase and snake_case for compatibility
-	const data = Reflect.get(inlineData, "data");
-	const mimeType =
-		Reflect.get(inlineData, "mime_type") ?? Reflect.get(inlineData, "mimeType");
-	if (typeof data !== "string" || typeof mimeType !== "string") {
-		return null;
-	}
-	return { data, mimeType };
+  if (typeof payload !== "object" || payload === null) {
+    return null;
+  }
+  const candidates = Reflect.get(payload, "candidates");
+  if (!Array.isArray(candidates)) {
+    return null;
+  }
+  const firstCandidate = candidates[0];
+  if (typeof firstCandidate !== "object" || firstCandidate === null) {
+    return null;
+  }
+  const content = Reflect.get(firstCandidate, "content");
+  if (typeof content !== "object" || content === null) {
+    return null;
+  }
+  const parts = Reflect.get(content, "parts");
+  if (!Array.isArray(parts)) {
+    return null;
+  }
+  const targetPart = parts.find((part) => {
+    if (typeof part !== "object" || part === null) {
+      return false;
+    }
+    // Try both camelCase and snake_case for compatibility
+    const inlineCandidate =
+      Reflect.get(part, "inline_data") ?? Reflect.get(part, "inlineData");
+    return typeof inlineCandidate === "object" && inlineCandidate !== null;
+  });
+  if (typeof targetPart !== "object" || targetPart === null) {
+    return null;
+  }
+  // Try both camelCase and snake_case for compatibility
+  const inlineData =
+    Reflect.get(targetPart, "inline_data") ??
+    Reflect.get(targetPart, "inlineData");
+  if (typeof inlineData !== "object" || inlineData === null) {
+    return null;
+  }
+  // Try both camelCase and snake_case for compatibility
+  const data = Reflect.get(inlineData, "data");
+  const mimeType =
+    Reflect.get(inlineData, "mime_type") ?? Reflect.get(inlineData, "mimeType");
+  if (typeof data !== "string" || typeof mimeType !== "string") {
+    return null;
+  }
+  return { data, mimeType };
 };
 
 const derivePhotoId = (imagePath: string): string => {
-	const segments = imagePath.split("/");
-	const candidate = segments.length >= 2 ? segments[segments.length - 2] : "";
-	if (candidate && candidate.length > 0) {
-		return candidate;
-	}
-	return ulid().toLowerCase();
+  const segments = imagePath.split("/");
+  const candidate = segments.length >= 2 ? segments[segments.length - 2] : "";
+  if (candidate && candidate.length > 0) {
+    return candidate;
+  }
+  return ulid().toLowerCase();
 };
 
 /**
@@ -150,229 +193,229 @@ const derivePhotoId = (imagePath: string): string => {
  *          Example: { location: [...], outfit: [...], style: [...] }
  */
 export const getOptions = async (): Promise<GroupedGenerationOptions> => {
-	const options = await fetchAllOptions();
+  const options = await fetchAllOptions();
 
-	const grouped = options.reduce<GroupedGenerationOptions>(
-		(accumulator, option) => {
-			const typeId = option.typeId;
-			const existingGroup = accumulator[typeId] ?? [];
-			accumulator[typeId] = [...existingGroup, option];
-			return accumulator;
-		},
-		{},
-	);
+  const grouped = options.reduce<GroupedGenerationOptions>(
+    (accumulator, option) => {
+      const typeId = option.typeId;
+      const existingGroup = accumulator[typeId] ?? [];
+      accumulator[typeId] = [...existingGroup, option];
+      return accumulator;
+    },
+    {}
+  );
 
-	return grouped;
+  return grouped;
 };
 
 export const generateImage = async (
-	boothId: string,
-	uploadedPhotoId: string,
-	options: Record<string, string>,
+  boothId: string,
+  uploadedPhotoId: string,
+  options: Record<string, string>
 ): Promise<string> => {
-	console.debug("generateImage called with:", {
-		boothId,
-		uploadedPhotoId,
-		options,
-	});
-	const apiKey = ensureApiKey();
-	console.debug("API key ensured");
+  console.debug("generateImage called with:", {
+    boothId,
+    uploadedPhotoId,
+    options,
+  });
+  const apiKey = ensureApiKey();
+  console.debug("API key ensured");
 
-	console.debug(
-		`Fetching base image data for uploadedPhotoId: ${uploadedPhotoId}`,
-	);
-	const baseImage = await getImageDataFromId(boothId, uploadedPhotoId);
-	console.debug("Base image data retrieved");
+  console.debug(
+    `Fetching base image data for uploadedPhotoId: ${uploadedPhotoId}`
+  );
+  const baseImage = await getImageDataFromId(boothId, uploadedPhotoId);
+  console.debug("Base image data retrieved");
 
-	const optionEntries = Object.entries(options);
-	const optionData = await Promise.all(
-		optionEntries.map(async ([key, imageId]) => {
-			console.debug(
-				`Fetching option image data for key: ${key}, imageId: ${imageId}`,
-			);
-			const inlineData = await getImageDataFromId(boothId, imageId);
-			return { key, inlineData };
-		}),
-	);
-	console.debug("Option image data retrieved");
+  const optionEntries = Object.entries(options);
+  const optionData = await Promise.all(
+    optionEntries.map(async ([key, imageId]) => {
+      console.debug(
+        `Fetching option image data for key: ${key}, imageId: ${imageId}`
+      );
+      const inlineData = await getImageDataFromId(boothId, imageId);
+      return { key, inlineData };
+    })
+  );
+  console.debug("Option image data retrieved");
 
-	const parts = toParts(
-		{
-			mimeType: baseImage.mimeType,
-			data: baseImage.data,
-		},
-		optionData,
-	);
+  const parts = toParts(
+    {
+      mimeType: baseImage.mimeType,
+      data: baseImage.data,
+    },
+    optionData
+  );
 
-	const ai = new GoogleGenAI({ apiKey: apiKey });
-	try {
-		const response = await ai.models.generateContent({
-			model: "gemini-2.5-flash-image",
-			contents: [
-				{
-					parts,
-				},
-			],
-			config: {
-				imageConfig: {
-					aspectRatio: "3:4",
-				},
-			},
-		});
-		console.debug("Gemini response received: ", response);
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-image",
+      contents: [
+        {
+          parts,
+        },
+      ],
+      config: {
+        imageConfig: {
+          aspectRatio: "3:4",
+        },
+      },
+    });
+    console.debug("Gemini response received: ", response);
 
-		const inlineData = extractInlineData(response);
-		if (!inlineData) {
-			throw new Error("Gemini response missing image data");
-		}
+    const inlineData = extractInlineData(response);
+    if (!inlineData) {
+      throw new Error("Gemini response missing image data");
+    }
 
-		const imageBuffer = Buffer.from(inlineData.data, "base64");
-		const { imagePath, imageUrl } = await handleGeminiResponse(
-			imageBuffer,
-			boothId,
-			inlineData.mimeType,
-		);
-		console.log("Generated image stored at: ", imagePath);
+    const imageBuffer = Buffer.from(inlineData.data, "base64");
+    const { imagePath, imageUrl } = await handleGeminiResponse(
+      imageBuffer,
+      boothId,
+      inlineData.mimeType
+    );
+    console.log("Generated image stored at: ", imagePath);
 
-		const photoId = derivePhotoId(imagePath);
+    const photoId = derivePhotoId(imagePath);
 
-		await createGeneratedPhoto({
-			boothId,
-			photoId,
-			imagePath,
-			imageUrl,
-		});
-		console.log("Generated photo metadata created with ID: ", photoId);
+    await createGeneratedPhoto({
+      boothId,
+      photoId,
+      imagePath,
+      imageUrl,
+    });
+    console.log("Generated photo metadata created with ID: ", photoId);
 
-		return photoId;
-	} catch (error) {
-		console.error("Image generation failed: ", error);
-		if (error instanceof Error) {
-			throw error;
-		}
-		const unknownError = new Error(
-			"Image generation failed due to unknown error",
-		);
-		captureException(unknownError, {
-			tags: { feature: "image-generation" },
-			extra: {
-				boothId,
-				uploadedPhotoId,
-				options,
-				error,
-			},
-		});
-		throw unknownError;
-	}
+    return photoId;
+  } catch (error) {
+    console.error("Image generation failed: ", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    const unknownError = new Error(
+      "Image generation failed due to unknown error"
+    );
+    captureException(unknownError, {
+      tags: { feature: "image-generation" },
+      extra: {
+        boothId,
+        uploadedPhotoId,
+        options,
+        error,
+      },
+    });
+    throw unknownError;
+  }
 };
 
 type AquariumConfig = {
-	endpoint: string;
-	token: string;
+  endpoint: string;
+  token: string;
 };
 
 const AQUARIUM_FEATURE_TAG = "aquarium-sync";
 
 const ensureAquariumConfig = (): AquariumConfig => {
-	const baseUrl = process.env.AQUARIUM_API_BASE_URL ?? "";
-	const apiKey = process.env.AQUARIUM_API_KEY ?? "";
+  const baseUrl = process.env.AQUARIUM_API_BASE_URL ?? "";
+  const apiKey = process.env.AQUARIUM_API_KEY ?? "";
 
-	if (!baseUrl) {
-		throw new Error("AQUARIUM_API_BASE_URL is not defined");
-	}
+  if (!baseUrl) {
+    throw new Error("AQUARIUM_API_BASE_URL is not defined");
+  }
 
-	const endpoint = `${baseUrl}/upload-photo`;
-	return { endpoint, token: apiKey };
+  const endpoint = `${baseUrl}/upload-photo`;
+  return { endpoint, token: apiKey };
 };
 
 const buildAquariumHeaders = (apiKey: string): Record<string, string> => {
-	if (!apiKey) {
-		return {};
-	}
+  if (!apiKey) {
+    return {};
+  }
 
-	return {
-		"X-API-KEY": apiKey,
-	};
+  return {
+    "X-API-KEY": apiKey,
+  };
 };
 
 const downloadImageFromStorage = async (imagePath: string): Promise<Buffer> => {
-	const bucket = storageBucket();
-	const file = bucket.file(imagePath);
-	const [buffer] = await file.download();
-	return buffer;
+  const bucket = storageBucket();
+  const file = bucket.file(imagePath);
+  const [buffer] = await file.download();
+  return buffer;
 };
 
 const createMultipartFormData = async (
-	photo: GeneratedPhotoRecord,
+  photo: GeneratedPhotoRecord
 ): Promise<FormData> => {
-	const imageBuffer = await downloadImageFromStorage(photo.imagePath);
-	const uint8Array = new Uint8Array(imageBuffer);
-	const file = new File([uint8Array], "photo.png", { type: "image/png" });
-	const formData = new FormData();
-	formData.append("photo", file);
-	return formData;
+  const imageBuffer = await downloadImageFromStorage(photo.imagePath);
+  const uint8Array = new Uint8Array(imageBuffer);
+  const file = new File([uint8Array], "photo.png", { type: "image/png" });
+  const formData = new FormData();
+  formData.append("photo", file);
+  return formData;
 };
 
 const createAquariumError = (message: string): Error => {
-	const error = new Error(message);
-	error.name = "AquariumSyncError";
-	return error;
+  const error = new Error(message);
+  error.name = "AquariumSyncError";
+  return error;
 };
 
 const reportAquariumFailure = (
-	error: Error,
-	photo: GeneratedPhotoRecord,
-	additional: Record<string, unknown> = {},
+  error: Error,
+  photo: GeneratedPhotoRecord,
+  additional: Record<string, unknown> = {}
 ) => {
-	captureException(error, {
-		tags: { feature: AQUARIUM_FEATURE_TAG },
-		extra: {
-			boothId: photo.boothId,
-			photoId: photo.photoId,
-			...additional,
-		},
-	});
+  captureException(error, {
+    tags: { feature: AQUARIUM_FEATURE_TAG },
+    extra: {
+      boothId: photo.boothId,
+      photoId: photo.photoId,
+      ...additional,
+    },
+  });
 };
 
 export const sendToAquarium = async (
-	photo: GeneratedPhotoRecord,
+  photo: GeneratedPhotoRecord
 ): Promise<void> => {
-	const { endpoint, token } = ensureAquariumConfig();
+  const { endpoint, token } = ensureAquariumConfig();
 
-	try {
-		const formData = await createMultipartFormData(photo);
-		const response = await fetch(endpoint, {
-			method: "POST",
-			headers: buildAquariumHeaders(token),
-			body: formData,
-		});
+  try {
+    const formData = await createMultipartFormData(photo);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: buildAquariumHeaders(token),
+      body: formData,
+    });
 
-		if (!response.ok) {
-			const responseText = await response.text().catch(() => "");
-			const error = createAquariumError(
-				`Aquarium sync failed with status ${response.status}`,
-			);
-			reportAquariumFailure(error, photo, {
-				responseText,
-				statusText: response.statusText,
-			});
-			throw error;
-		}
-	} catch (caughtError) {
-		if (caughtError instanceof Error) {
-			if (caughtError.name === "AquariumSyncError") {
-				throw caughtError;
-			}
-			reportAquariumFailure(caughtError, photo);
-			throw caughtError;
-		}
+    if (!response.ok) {
+      const responseText = await response.text().catch(() => "");
+      const error = createAquariumError(
+        `Aquarium sync failed with status ${response.status}`
+      );
+      reportAquariumFailure(error, photo, {
+        responseText,
+        statusText: response.statusText,
+      });
+      throw error;
+    }
+  } catch (caughtError) {
+    if (caughtError instanceof Error) {
+      if (caughtError.name === "AquariumSyncError") {
+        throw caughtError;
+      }
+      reportAquariumFailure(caughtError, photo);
+      throw caughtError;
+    }
 
-		const unknownError = createAquariumError(
-			"Aquarium sync failed due to unknown error",
-		);
-		reportAquariumFailure(unknownError, photo, { error: caughtError });
-		throw unknownError;
-	}
+    const unknownError = createAquariumError(
+      "Aquarium sync failed due to unknown error"
+    );
+    reportAquariumFailure(unknownError, photo, { error: caughtError });
+    throw unknownError;
+  }
 };
 
 /**
@@ -380,26 +423,26 @@ export const sendToAquarium = async (
  * Throws PhotoNotFoundError when document is missing and PhotoExpiredError when older than 24 hours.
  */
 export const getGeneratedPhoto = async (
-	boothId: string,
-	photoId: string,
+  boothId: string,
+  photoId: string
 ): Promise<GeneratedPhotoInfo> => {
-	const photo = await findGeneratedPhoto(boothId, photoId);
+  const photo = await findGeneratedPhoto(boothId, photoId);
 
-	if (!photo) {
-		throw createNamedError("PhotoNotFoundError", "Generated photo not found");
-	}
+  if (!photo) {
+    throw createNamedError("PhotoNotFoundError", "Generated photo not found");
+  }
 
-	const ageInMs = Date.now() - photo.createdAt.getTime();
+  const ageInMs = Date.now() - photo.createdAt.getTime();
 
-	if (ageInMs > ONE_DAY_IN_MS) {
-		throw createNamedError(
-			"PhotoExpiredError",
-			"Generated photo download expired",
-		);
-	}
+  if (ageInMs > ONE_DAY_IN_MS) {
+    throw createNamedError(
+      "PhotoExpiredError",
+      "Generated photo download expired"
+    );
+  }
 
-	return {
-		id: photo.photoId,
-		imageUrl: photo.imageUrl,
-	};
+  return {
+    id: photo.photoId,
+    imageUrl: photo.imageUrl,
+  };
 };

@@ -9,7 +9,6 @@
 		"lint": "pnpm exec biome check src test *.{json,ts,mjs,yaml}",
 		"lint:fix": "pnpm exec biome check --write src test *.{json,ts,mjs,yaml}",
 		"test": "vitest --config ./vitest.config.ts",
-		"test:tap": "vitest --config ../../vitest.config.ts --reporter tap --silent 'passed-only'",
 		"coverage": "vitest --config ./vitest.config.ts --coverage",
 		"test:e2e": "playwright test --config ./playwright.config.ts",
 		"emulator": "firebase emulators:start",

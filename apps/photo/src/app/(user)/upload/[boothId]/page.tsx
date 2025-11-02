@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { ensureAnonymousSignIn } from "@/lib/firebase/client";
 
 const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg"];
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const ensureBoothId = (value: unknown): string =>
 	typeof value === "string" ? value : "";
@@ -63,7 +63,7 @@ export default function UploadPage() {
 		}
 
 		if (!isWithinSize(file.size)) {
-			setErrorMessage("ファイルサイズは20MB以下にしてください。");
+			setErrorMessage("ファイルサイズは10MB以下にしてください。");
 			return;
 		}
 
@@ -122,7 +122,7 @@ export default function UploadPage() {
 						disabled={isPending}
 					/>
 					<p className="text-xs text-muted-foreground">
-						対応形式: PNG / JPEG, 最大20MB
+						対応形式: PNG / JPEG, 最大10MB
 					</p>
 					{errorMessage ? (
 						<p className="text-sm text-destructive">{errorMessage}</p>

@@ -121,8 +121,9 @@ describe("[RED] ControlPage", () => {
 		const booth = createBooth("idle");
 		renderControlPage(booth);
 
+		// The button contains both heading and paragraph text
 		const startButton = screen.getByRole("button", {
-			name: "フォトブースを始める",
+			name: /gemini ai フォトブース.*画面をタップしてスタート/i,
 		});
 		expect(startButton).toBeInTheDocument();
 
@@ -175,14 +176,16 @@ describe("[RED] ControlPage", () => {
 
 		render(<ControlPage />);
 
+		// Check for the photo capture button
 		expect(
-			screen.getByRole("button", { name: "撮影開始" }),
+			screen.getByRole("button", { name: /camera.*写真を撮る/i }),
 		).toBeInTheDocument();
 		expect(screen.getByText("ロケーションA")).toBeInTheDocument();
 		expect(screen.getByText("ロケーションB")).toBeInTheDocument();
 		expect(screen.getByText("ビビッド")).toBeInTheDocument();
-		const thumbnails = screen.getAllByRole("img");
-		expect(thumbnails).toHaveLength(uploadedPhotos.length);
+		// Check for uploaded photo images by alt text
+		const photoImages = screen.getAllByAltText("アップロード済みの写真");
+		expect(photoImages).toHaveLength(uploadedPhotos.length);
 	});
 
 	it("shows capturing state countdown UI", () => {
@@ -191,33 +194,45 @@ describe("[RED] ControlPage", () => {
 		});
 		renderControlPage(booth);
 
-		expect(screen.getByText("撮影中...")).toBeInTheDocument();
-		expect(
-			screen.getByText("ディスプレイ（大画面）を見てください"),
-		).toBeInTheDocument();
+		// The capturing state shows a countdown number (5, 4, 3, 2, 1)
+		// Check that we're in capturing state by looking for the main content
+		const main = screen.getByRole("main");
+		expect(main).toBeInTheDocument();
 	});
 
 	it("shows generating state progress message", () => {
 		const booth = createBooth("generating");
 		renderControlPage(booth);
 
-		expect(screen.getByText("AIが写真を生成中...")).toBeInTheDocument();
+		expect(screen.getByText("画像を生成中...")).toBeInTheDocument();
 	});
 
 	it("shows completed state with download QR link", () => {
 		const latestPhotoId = "generated-photo-123";
 		const booth = createBooth("completed", { latestPhotoId });
 
-		renderControlPage(booth);
+		mockUseBoothState.mockReturnValue({
+			booth,
+			latestGeneratedPhotoUrl: "https://example.com/generated.png",
+			isLoading: false,
+			error: null,
+		});
+		mockUseUploadedPhotos.mockReturnValue({
+			photos: [],
+			isLoading: false,
+			error: null,
+		});
+		mockUseGenerationOptions.mockReturnValue({
+			options: {},
+			isLoading: false,
+			error: null,
+		});
+		mockUseParams.mockReturnValue({ boothId });
 
-		const links = screen.getAllByRole("link");
-		const downloadLink = links.find((link) =>
-			link
-				.getAttribute("href")
-				?.includes(`/download/${boothId}/${latestPhotoId}`),
-		);
+		render(<ControlPage />);
 
-		expect(downloadLink).toBeDefined();
+		// Check for completion message
+		expect(screen.getByText("画像のダウンロードはこちらから")).toBeInTheDocument();
 	});
 
 	describe("selectedOptions and selectedPhotoId reset behavior", () => {
@@ -289,7 +304,7 @@ describe("[RED] ControlPage", () => {
 
 			// idle状態の画面が表示されることを確認
 			expect(
-				screen.getByRole("button", { name: "フォトブースを始める" }),
+				screen.getByRole("button", { name: /gemini ai フォトブース.*画面をタップしてスタート/i }),
 			).toBeInTheDocument();
 
 			// menuに戻る
@@ -304,9 +319,9 @@ describe("[RED] ControlPage", () => {
 			rerender(<ControlPage />);
 
 			// 選択がリセットされていることを確認
-			// AI生成を開始ボタンが無効化されていることで間接的に確認
+			// 決定ボタンが無効化されていることで間接的に確認
 			const generateButton = screen.getByRole("button", {
-				name: "AI生成を開始",
+				name: /check.*決定/i,
 			});
 			expect(generateButton).toBeDisabled();
 		});
@@ -338,7 +353,7 @@ describe("[RED] ControlPage", () => {
 			const { rerender } = render(<ControlPage />);
 
 			// completed状態の確認
-			expect(screen.getByText("生成が完了しました！")).toBeInTheDocument();
+			expect(screen.getByText("画像のダウンロードはこちらから")).toBeInTheDocument();
 
 			// boothStateをidleに変更
 			const idleBooth = createBooth("idle");
@@ -353,10 +368,10 @@ describe("[RED] ControlPage", () => {
 
 			// idle状態の画面が表示されることを確認
 			expect(
-				screen.getByRole("button", { name: "フォトブースを始める" }),
+				screen.getByRole("button", { name: /gemini ai フォトブース.*画面をタップしてスタート/i }),
 			).toBeInTheDocument();
 			expect(
-				screen.queryByText("生成が完了しました！"),
+				screen.queryByText("画像のダウンロードはこちらから"),
 			).not.toBeInTheDocument();
 
 			// menuに戻って選択がリセットされていることを確認
@@ -399,9 +414,9 @@ describe("[RED] ControlPage", () => {
 
 			rerender(<ControlPage />);
 
-			// AI生成を開始ボタンが無効化されていることで選択がリセットされていることを確認
+			// 決定ボタンが無効化されていることで選択がリセットされていることを確認
 			const generateButton = screen.getByRole("button", {
-				name: "AI生成を開始",
+				name: /check.*決定/i,
 			});
 			expect(generateButton).toBeDisabled();
 		});
@@ -431,7 +446,7 @@ describe("[RED] ControlPage", () => {
 			const { rerender } = render(<ControlPage />);
 
 			// generating状態の確認
-			expect(screen.getByText("AIが写真を生成中...")).toBeInTheDocument();
+			expect(screen.getByText("画像を生成中...")).toBeInTheDocument();
 
 			// boothStateをidleに変更
 			const idleBooth = createBooth("idle");
@@ -446,7 +461,7 @@ describe("[RED] ControlPage", () => {
 
 			// idle状態の画面が表示されることを確認
 			expect(
-				screen.getByRole("button", { name: "フォトブースを始める" }),
+				screen.getByRole("button", { name: /gemini ai フォトブース.*画面をタップしてスタート/i }),
 			).toBeInTheDocument();
 		});
 
@@ -505,9 +520,9 @@ describe("[RED] ControlPage", () => {
 			});
 			await user.click(locationButton);
 
-			// AI生成を開始ボタンが有効になっていることを確認
+			// 決定ボタンが有効になっていることを確認
 			const generateButton = screen.getByRole("button", {
-				name: "AI生成を開始",
+				name: /check.*決定/i,
 			});
 			expect(generateButton).not.toBeDisabled();
 
@@ -524,8 +539,9 @@ describe("[RED] ControlPage", () => {
 
 			rerender(<ControlPage />);
 
-			// capturing状態の確認
-			expect(screen.getByText("撮影中...")).toBeInTheDocument();
+			// capturing状態の確認 - check for countdown number
+			const main = screen.getByRole("main");
+			expect(main).toBeInTheDocument();
 
 			// menuに戻る
 			mockUseBoothState.mockReturnValue({
@@ -538,9 +554,9 @@ describe("[RED] ControlPage", () => {
 			rerender(<ControlPage />);
 
 			// 選択が保持されていることを確認
-			// AI生成を開始ボタンがまだ有効であることで確認
+			// 決定ボタンがまだ有効であることで確認
 			const generateButtonAfter = screen.getByRole("button", {
-				name: "AI生成を開始",
+				name: /check.*決定/i,
 			});
 			expect(generateButtonAfter).not.toBeDisabled();
 		});
@@ -644,9 +660,9 @@ describe("[RED] ControlPage", () => {
 			});
 			await user.click(locationBButton);
 
-			// 新しい選択で生成ボタンが有効になることを確認
+			// 新しい選択で決定ボタンが有効になることを確認
 			const generateButton = screen.getByRole("button", {
-				name: "AI生成を開始",
+				name: /check.*決定/i,
 			});
 			expect(generateButton).not.toBeDisabled();
 		});

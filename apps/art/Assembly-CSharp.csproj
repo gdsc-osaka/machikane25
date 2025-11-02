@@ -90,7 +90,6 @@
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/WindControl.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/CameraMovement.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ButterflySpawn.cs" />
-    <Compile Include="Assets/TutorialInfo/Scripts/Readme.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ButterflySpawnArea.cs" />
     <Compile Include="Assets/IgniteCoders/Simple Water Shader/Resources/WaterReflection.cs" />
     <Compile Include="Assets/Idyllic Fantasy Nature/Scripts/ExitGame.cs" />

@@ -185,7 +185,7 @@ namespace Art.Presentation.Schools
                 Vector3 targetPosition = agent.transform.position + velocity;
                 fishController.targetPosition = targetPosition;
 
-                // Debug.Log($"Fish {agent.name} boid forces - Sep:{separation.magnitude:F2} Align:{alignment.magnitude:F2} Coh:{cohesion.magnitude:F2} Visitor:{visitorAttraction.magnitude:F2}");
+                Debug.Log($"Fish {agent.name} boid forces - Sep:{separation.magnitude:F2} Align:{alignment.magnitude:F2} Coh:{cohesion.magnitude:F2} Visitor:{visitorAttraction.magnitude:F2}");
             }
 
             // Remove null agents

@@ -106,7 +106,6 @@
     <Compile Include="Assets/Art/Scripts/Fish/HttpFishDataProvider.cs" />
     <Compile Include="Assets/Art/Scripts/Visitors/VisitorDetector.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/IFishDataProvider.cs" />
-    <Compile Include="Assets/Art/Scripts/Presentation/TimeOfDayController.cs" />
     <Compile Include="Assets/Art/Scripts/Telemetry/TelemetryEvents.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishController.cs" />
     <Compile Include="Assets/Art/Scripts/Rare/RareCharacterDefinition.cs" />
@@ -114,11 +113,9 @@
     <Compile Include="Assets/Art/Scripts/Presentation/Schools/SchoolCoordinator.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishAgent.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishRepository.cs" />
-    <Compile Include="Assets/Art/Scripts/Presentation/TimeOfDayPeriod.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishDiffResult.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/MockFishDataProvider.cs" />
     <Compile Include="Assets/Art/Scripts/Fish/FishState.cs" />
-    <Compile Include="Assets/Art/Scripts/Presentation/TimeOfDayConfig.cs" />
     <Compile Include="Assets/Art/Scripts/Infrastructure/HttpClientFactory.cs" />
     <Compile Include="Assets/Art/Scripts/Presentation/Schools/VisitorInfluenceSettings.cs" />
     <Compile Include="Assets/Art/Scripts/App/AppConfig.cs" />

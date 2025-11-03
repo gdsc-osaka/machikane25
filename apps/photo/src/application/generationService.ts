@@ -111,6 +111,22 @@ export const toContents = (
 		});
 	}
 
+	if (locationOption?.inlineData) {
+		contents.push({
+			parts: [
+				{
+					text: "[Location photo]",
+				},
+				{
+					inlineData: {
+						mimeType: locationOption.inlineData.mimeType,
+						data: locationOption.inlineData.data,
+					},
+				},
+			],
+		});
+	}
+
 	contents.push({
 		parts: [
 			{
@@ -118,7 +134,7 @@ export const toContents = (
 					`${styleOption?.value}. ` +
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
-					`in ${locationOption?.value}. ` +
+					`in ${locationOption ? locationOption.value : "the location of [Location photo]"}. ` +
 					`${
 						personOption?.inlineData
 							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"

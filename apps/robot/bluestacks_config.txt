@@ -1,0 +1,7 @@
+# Bluestacks キャプチャ設定
+# 生成日時: 2025-10-25 20:02:23.630152
+
+REGION_X = 655
+REGION_Y = 1
+REGION_WIDTH = 606
+REGION_HEIGHT = 945

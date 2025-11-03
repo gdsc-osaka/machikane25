@@ -1,0 +1,86 @@
+{
+  "bluestacks": {
+    "device_id": "localhost:5555",
+    "control_points": {
+      "forward_backward": [
+        {
+          "type": "swipe",
+          "start": [
+            720,
+            1720
+          ],
+          "end": [
+            720,
+            1720
+          ],
+          "duration": 200
+        },
+        {
+          "type": "swipe",
+          "start": [
+            720,
+            2100
+          ],
+          "end": [
+            720,
+            2100
+          ],
+          "duration": 200
+        }
+      ],
+      "right_turn": [
+        {
+          "type": "swipe",
+          "start": [
+            900,
+            1920
+          ],
+          "end": [
+            900,
+            1920
+          ],
+          "duration": 400
+        },
+        {
+          "type": "swipe",
+          "start": [
+            900,
+            1920
+          ],
+          "end": [
+            900,
+            1920
+          ],
+          "duration": 400
+        },
+        {
+          "type": "swipe",
+          "start": [
+            900,
+            1920
+          ],
+          "end": [
+            900,
+            1920
+          ],
+          "duration": 400
+        },
+        {
+          "type": "swipe",
+          "start": [
+            900,
+            1920
+          ],
+          "end": [
+            900,
+            1920
+          ],
+          "duration": 400
+        }
+      ]
+    }
+  },
+  "voicevox": {
+    "volume_scale": 0.50
+  }
+}

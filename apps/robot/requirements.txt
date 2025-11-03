@@ -1,0 +1,28 @@
+# Rola Mini Robot Control System - 必要なライブラリ
+
+# コアライブラリ
+numpy>=1.24.0
+scipy>=1.10.0
+requests>=2.31.0
+
+# RAG・ベクトルDB
+chromadb>=1.2.0
+
+# 音声処理
+faster-whisper>=1.0.0
+sounddevice>=0.4.6
+pyttsx3>=2.90
+pyaudio>=0.2.14
+
+# 画像処理
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# GUI・画面操作
+pyautogui>=0.9.54
+
+# 開発・テストツール（オプション）
+# pytest>=7.0.0
+# mypy>=1.5.0
+# black>=23.0.0
+# flake8>=6.0.0

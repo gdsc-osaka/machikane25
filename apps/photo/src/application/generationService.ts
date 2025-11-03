@@ -64,7 +64,7 @@ export const toContents = (
 		inlineData: GeminiInlineData;
 	}>,
 ): Content[] => {
-	const partnerOption = optionEntries.find((entry) => entry.key === "partner");
+	const personOption = optionEntries.find((entry) => entry.key === "person");
 	const styleOption = optionEntries.find((entry) => entry.key === "style");
 	const poseOption = optionEntries.find((entry) => entry.key === "pose");
 	const locationOption = optionEntries.find(
@@ -95,7 +95,7 @@ export const toContents = (
 		},
 	];
 
-	if (partnerOption?.inlineData) {
+	if (personOption?.inlineData) {
 		contents.push({
 			parts: [
 				{
@@ -103,8 +103,8 @@ export const toContents = (
 				},
 				{
 					inlineData: {
-						mimeType: partnerOption.inlineData.mimeType,
-						data: partnerOption.inlineData.data,
+						mimeType: personOption.inlineData.mimeType,
+						data: personOption.inlineData.data,
 					},
 				},
 			],
@@ -120,9 +120,9 @@ export const toContents = (
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
 					`${
-						partnerOption?.inlineData
+						personOption?.inlineData
 							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-							: `${partnerOption?.value} is next to them, also wearing the same outfit`
+							: `${personOption?.value} is next to them, also wearing the same outfit`
 					}.`,
 			},
 		],

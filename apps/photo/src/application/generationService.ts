@@ -127,13 +127,29 @@ export const toContents = (
 		});
 	}
 
+	if (outfitOption?.inlineData) {
+		contents.push({
+			parts: [
+				{
+					text: "[Outfit photo]",
+				},
+				{
+					inlineData: {
+						mimeType: outfitOption.inlineData.mimeType,
+						data: outfitOption.inlineData.data,
+					},
+				},
+			],
+		});
+	}
+
 	contents.push({
 		parts: [
 			{
 				text:
 					`${styleOption?.value}. ` +
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
-					`wearing ${outfitOption?.value}, ` +
+					`wearing ${outfitOption ? outfitOption.value : "the outfit from [Outfit photo]"}, ` +
 					`in ${locationOption ? locationOption.value : "the location of [Location photo]"}. ` +
 					`${
 						personOption?.inlineData

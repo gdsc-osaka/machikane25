@@ -111,37 +111,37 @@ export const toContents = (
 		});
 	}
 
-	if (locationOption?.inlineData) {
-		contents.push({
-			parts: [
-				{
-					text: "[Location photo]",
-				},
-				{
-					inlineData: {
-						mimeType: locationOption.inlineData.mimeType,
-						data: locationOption.inlineData.data,
-					},
-				},
-			],
-		});
-	}
+	// if (locationOption?.inlineData) {
+	// 	contents.push({
+	// 		parts: [
+	// 			{
+	// 				text: "[Location photo]",
+	// 			},
+	// 			{
+	// 				inlineData: {
+	// 					mimeType: locationOption.inlineData.mimeType,
+	// 					data: locationOption.inlineData.data,
+	// 				},
+	// 			},
+	// 		],
+	// 	});
+	// }
 
-	if (outfitOption?.inlineData) {
-		contents.push({
-			parts: [
-				{
-					text: "[Outfit photo]",
-				},
-				{
-					inlineData: {
-						mimeType: outfitOption.inlineData.mimeType,
-						data: outfitOption.inlineData.data,
-					},
-				},
-			],
-		});
-	}
+	// if (outfitOption?.inlineData) {
+	// 	contents.push({
+	// 		parts: [
+	// 			{
+	// 				text: "[Outfit photo]",
+	// 			},
+	// 			{
+	// 				inlineData: {
+	// 					mimeType: outfitOption.inlineData.mimeType,
+	// 					data: outfitOption.inlineData.data,
+	// 				},
+	// 			},
+	// 		],
+	// 	});
+	// }
 
 	contents.push({
 		parts: [
@@ -149,8 +149,8 @@ export const toContents = (
 				text:
 					`${styleOption?.value}. ` +
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
-					`wearing ${outfitOption ? outfitOption.value : "the outfit from [Outfit photo]"}, ` +
-					`in ${locationOption ? locationOption.value : "the location of [Location photo]"}. ` +
+					`wearing ${outfitOption?.value}, ` +
+					`in ${locationOption?.value}. ` +
 					`${
 						personOption?.inlineData
 							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"

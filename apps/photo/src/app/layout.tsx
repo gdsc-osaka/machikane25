@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { Google_Sans_Code, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
-import { googleSans } from "@/lib/font";
-
-const googleSansCode = Google_Sans_Code({
-	variable: "--font-google-sans-code",
-	subsets: ["latin"],
-});
-
-const notoSansJP = Noto_Sans_JP({
-	variable: "--font-noto-sans-jp",
-	subsets: ["latin"],
-});
+import { googleSans, googleSansCode, notoSansJP } from "@/lib/font";
 
 export const metadata: Metadata = {
 	title: "まちかね祭 GDGoC Osaka",

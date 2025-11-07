@@ -1,3 +1,4 @@
+import { Google_Sans_Code, Noto_Sans_JP } from "next/font/google";
 import localFont from "next/font/local";
 
 export const googleSans = localFont({
@@ -69,4 +70,14 @@ export const googleSansText = localFont({
 			style: "italic",
 		},
 	],
+});
+
+export const googleSansCode = Google_Sans_Code({
+	variable: "--font-google-sans-code",
+	subsets: ["latin"],
+});
+
+export const notoSansJP = Noto_Sans_JP({
+	variable: "--font-noto-sans-jp",
+	subsets: ["latin"],
 });

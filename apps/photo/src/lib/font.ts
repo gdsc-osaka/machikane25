@@ -33,6 +33,7 @@ export const googleSans = localFont({
 			style: "italic",
 		},
 	],
+	variable: "--font-google-sans",
 });
 
 export const googleSansText = localFont({

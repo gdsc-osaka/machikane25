@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Google_Sans_Code } from "next/font/google";
+import { Google_Sans_Code, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
+import { googleSans } from "@/lib/font";
 
 const googleSansCode = Google_Sans_Code({
 	variable: "--font-google-sans-code",
+	subsets: ["latin"],
+});
+
+const notoSansJP = Noto_Sans_JP({
+	variable: "--font-noto-sans-jp",
 	subsets: ["latin"],
 });
 
@@ -23,12 +24,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="ja">
-			<body
-				className={`${geistSans.variable} ${googleSansCode.variable} antialiased`}
-			>
-				{children}
-			</body>
+		<html
+			lang="ja"
+			className={`${googleSans.variable} ${notoSansJP.variable} ${googleSansCode.variable} antialiased`}
+		>
+			<body>{children}</body>
 		</html>
 	);
 }

@@ -75,6 +75,7 @@ export const googleSansText = localFont({
 export const googleSansCode = Google_Sans_Code({
 	variable: "--font-google-sans-code",
 	subsets: ["latin"],
+	fallback: ["monospace"],
 });
 
 export const notoSansJP = Noto_Sans_JP({

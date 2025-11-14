@@ -177,32 +177,32 @@ export default function ControlPage() {
 			([typeId]) => typeof selectedOptions[typeId] !== "string",
 		);
 
-	const renderSelectedOptionsThumbnails = () => {
-		const selectedOptionsList = Object.entries(selectedOptions)
-			.map(([typeId, optionId]) => {
-				const option = options[typeId]?.find((opt) => opt.id === optionId);
-				return option?.imageUrl ? option : null;
-			})
-			.filter((opt): opt is NonNullable<typeof opt> => opt !== null);
+	// const renderSelectedOptionsThumbnails = () => {
+	// 	const selectedOptionsList = Object.entries(selectedOptions)
+	// 		.map(([typeId, optionId]) => {
+	// 			const option = options[typeId]?.find((opt) => opt.id === optionId);
+	// 			return option?.imageUrl ? option : null;
+	// 		})
+	// 		.filter((opt): opt is NonNullable<typeof opt> => opt !== null);
 
-		if (selectedOptionsList.length === 0) return null;
+	// 	if (selectedOptionsList.length === 0) return null;
 
-		return (
-			<div className="flex gap-2 overflow-x-auto">
-				{selectedOptionsList.map((option) => (
-					<div key={option.id} className="h-16 w-16 flex-shrink-0">
-						<Image
-							src={option.imageUrl ?? ""}
-							alt={option.displayName}
-							width={64}
-							height={64}
-							className="h-full w-full rounded object-cover"
-						/>
-					</div>
-				))}
-			</div>
-		);
-	};
+	// 	return (
+	// 		<div className="flex gap-2 overflow-x-auto">
+	// 			{selectedOptionsList.map((option) => (
+	// 				<div key={option.id} className="h-16 w-16 flex-shrink-0">
+	// 					<Image
+	// 						src={option.imageUrl ?? ""}
+	// 						alt={option.displayName}
+	// 						width={64}
+	// 						height={64}
+	// 						className="h-full w-full rounded object-cover"
+	// 					/>
+	// 				</div>
+	// 			))}
+	// 		</div>
+	// 	);
+	// };
 
 	const renderIdle = () => (
 		<button

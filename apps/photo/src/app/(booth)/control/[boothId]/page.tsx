@@ -12,6 +12,7 @@ import {
 	useTransition,
 } from "react";
 import QRCode from "react-qr-code";
+import crystalStar from "@/../public/images/crystalStar.gif";
 import {
 	discardSession,
 	startCapture,
@@ -216,7 +217,7 @@ export default function ControlPage() {
 			type="button"
 			onClick={handleStartSession}
 			disabled={isPending}
-			className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] transition-all active:scale-[0.99]"
+			className="flex h-full w-full flex-col items-center justify-center gap-8 transition-all active:scale-[0.99]"
 		>
 			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-6xl font-bold text-transparent drop-shadow-lg md:text-7xl">
 				Gemini AI フォトブース
@@ -228,7 +229,7 @@ export default function ControlPage() {
 	);
 
 	const renderMenu = () => (
-		<div className="flex h-full w-full bg-[#303030]">
+		<div className="flex h-full w-full">
 			{/* Back Button */}
 			<button
 				type="button"
@@ -240,7 +241,7 @@ export default function ControlPage() {
 			</button>
 
 			{/* Left Side - Uploaded Images */}
-			<div className="flex flex-1 flex-col gap-4 overflow-y-auto border-r border-[#444746] bg-[#303030] p-6">
+			<div className="flex flex-1 flex-col gap-4 overflow-y-auto border-r border-[#444746] p-6">
 				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
 					画像を選ぶ
 				</h2>
@@ -304,7 +305,7 @@ export default function ControlPage() {
 			</div>
 
 			{/* Right Side - Options and Actions */}
-			<div className="flex flex-2 flex-col gap-4 overflow-y-auto bg-[#303030] p-6">
+			<div className="flex flex-2 flex-col gap-4 overflow-y-auto p-6">
 				{/* Generation Options */}
 				<div className="flex-1 space-y-4">
 					<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
@@ -312,7 +313,7 @@ export default function ControlPage() {
 					</h2>
 					{generationSections.length > 0 ? (
 						generationSections.map(([typeId, items]) => (
-							<Card key={typeId} className="border-[#444746] bg-[#303030]">
+							<Card key={typeId} className="border-[#444746] bg-[#303030]/80">
 								<CardHeader>
 									<CardTitle className="text-base font-semibold text-[#e3e3e3]">
 										{typeId.toUpperCase()}
@@ -337,7 +338,7 @@ export default function ControlPage() {
 												className={
 													isSelected
 														? "bg-[#4796E3] text-white hover:bg-[#9177C7]"
-														: "border-[#444746] bg-[#303030] text-[#e3e3e3] hover:border-[#4796E3] hover:bg-[#444746]"
+														: "border-[#444746] bg-[#303030]/80 text-[#e3e3e3] hover:border-[#4796E3] hover:bg-[#444746]"
 												}
 											>
 												{option.displayName}
@@ -372,7 +373,7 @@ export default function ControlPage() {
 	);
 
 	const renderCapturing = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center bg-[#303030]">
+		<div className="flex h-full w-full flex-col items-center justify-center">
 			{/* Back Button */}
 			<button
 				type="button"
@@ -402,7 +403,7 @@ export default function ControlPage() {
 	);
 
 	const renderGenerating = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8">
 			{/* Back Button */}
 			<button
 				type="button"
@@ -436,7 +437,7 @@ export default function ControlPage() {
 				: downloadPath;
 
 		return (
-			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+			<div className="flex h-full w-full flex-col items-center justify-center gap-8">
 				{/* Back Button */}
 				<button
 					type="button"
@@ -474,7 +475,7 @@ export default function ControlPage() {
 	const renderContent = () => {
 		if (isLoading) {
 			return (
-				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+				<div className="flex h-full w-full items-center justify-center">
 					<p className="text-xl text-[#e3e3e3]">読み込み中...</p>
 				</div>
 			);
@@ -485,7 +486,7 @@ export default function ControlPage() {
 		if (detectedError) {
 			console.error(detectedError);
 			return (
-				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+				<div className="flex h-full w-full items-center justify-center">
 					<div className="flex flex-col gap-4">
 						<p className="text-sm text-[#CA6673]">
 							エラーが発生しました: {detectedError.message}
@@ -525,8 +526,18 @@ export default function ControlPage() {
 	};
 
 	return (
-		<main className="relative flex h-screen w-full overflow-hidden">
-			{renderContent()}
+		<main className="relative flex h-screen w-full overflow-hidden bg-[#303030]">
+			<div className="z-1 w-full h-full">{renderContent()}</div>
+			<Image
+				src={crystalStar}
+				className="absolute bottom-1/12 left-1/12 pointer-events-none animate-float w-1/5"
+				alt=""
+			/>
+			<Image
+				src={crystalStar}
+				className="absolute top-1/12 right-1/12 pointer-events-none animate-float-delayed w-1/6 -scale-x-100"
+				alt=""
+			/>
 		</main>
 	);
 }

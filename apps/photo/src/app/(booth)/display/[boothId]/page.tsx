@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Webcam from "react-webcam";
+import crystalStar from "@/../public/images/crystalStar.gif";
 import { completeCapture } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import { Progress } from "@/components/ui/progress";
@@ -104,7 +105,7 @@ export default function DisplayPage() {
 	}, [countdown, boothId]);
 
 	const renderIdle = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-12 bg-[#303030] px-8">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-12 px-8">
 			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-center text-6xl font-bold leading-tight text-transparent drop-shadow-lg md:text-7xl">
 				Gemini AI
 				<br />
@@ -119,7 +120,7 @@ export default function DisplayPage() {
 	);
 
 	const renderMenu = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] px-8">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 px-8">
 			<p className="whitespace-pre-line text-center text-4xl font-semibold leading-relaxed text-[#e3e3e3] md:text-5xl">
 				{`タブレットを操作してください
 
@@ -131,7 +132,7 @@ export default function DisplayPage() {
 	);
 
 	const renderCapturing = () => (
-		<div className="relative flex h-full w-full items-center justify-center bg-[#303030]">
+		<div className="relative flex h-full w-full items-center justify-center">
 			<div className="relative h-full w-full">
 				<Webcam
 					ref={webcamRef}
@@ -165,7 +166,7 @@ export default function DisplayPage() {
 	);
 
 	const renderGenerating = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] px-8">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8 px-8">
 			<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-center text-5xl font-semibold text-transparent drop-shadow-lg md:text-6xl">
 				画像を生成中...
 			</p>
@@ -176,14 +177,14 @@ export default function DisplayPage() {
 	const renderCompleted = () => {
 		if (!latestGeneratedPhotoUrl) {
 			return (
-				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+				<div className="flex h-full w-full items-center justify-center">
 					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
 				</div>
 			);
 		}
 
 		return (
-			<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+			<div className="flex h-full w-full items-center justify-center">
 				<Image
 					src={latestGeneratedPhotoUrl}
 					alt="生成された写真"
@@ -198,7 +199,7 @@ export default function DisplayPage() {
 	const renderContent = () => {
 		if (isLoading) {
 			return (
-				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+				<div className="flex h-full w-full items-center justify-center">
 					<p className="text-xl text-[#e3e3e3]">読み込み中...</p>
 				</div>
 			);
@@ -221,8 +222,18 @@ export default function DisplayPage() {
 	};
 
 	return (
-		<main className="flex h-screen w-full items-center justify-center overflow-hidden">
-			{renderContent()}
+		<main className="flex h-screen w-full items-center justify-center overflow-hidden bg-[#303030]">
+			<div className="z-1 w-full h-full">{renderContent()}</div>
+			<Image
+				src={crystalStar}
+				className="absolute bottom-1/12 left-1/12 pointer-events-none animate-float w-1/3"
+				alt=""
+			/>
+			<Image
+				src={crystalStar}
+				className="absolute top-1/12 right-1/12 pointer-events-none animate-float-delayed w-1/4 -scale-x-100"
+				alt=""
+			/>
 		</main>
 	);
 }

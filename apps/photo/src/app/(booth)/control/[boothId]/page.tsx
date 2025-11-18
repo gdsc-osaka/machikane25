@@ -13,6 +13,7 @@ import {
 } from "react";
 import QRCode from "react-qr-code";
 import crystalStar from "@/../public/images/crystalStar.gif";
+import paint from "@/../public/images/paint.gif";
 import {
 	discardSession,
 	startCapture,
@@ -248,12 +249,17 @@ export default function ControlPage() {
 				{photos.length > 0 ? (
 					<div className="flex flex-col gap-3">
 						{/* Action Buttons */}
-						<div className="flex gap-3">
+						<div className="relative flex h-60 items-center justify-center">
+							<Image
+								src={paint}
+								alt=""
+								className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-96"
+							/>
 							<Button
 								onClick={handleStartCapture}
 								disabled={isPending}
 								size="lg"
-								className="flex-1 h-16 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
+								className="relative z-10 flex h-16 w-60 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
 							>
 								<CameraIcon size="md" />
 								写真を撮る

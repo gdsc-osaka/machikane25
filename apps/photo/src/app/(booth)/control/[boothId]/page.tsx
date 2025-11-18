@@ -233,7 +233,7 @@ export default function ControlPage() {
 			</button>
 
 			{/* Left Side - Uploaded Images */}
-			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto border-r border-[#444746] bg-[#303030] p-6">
+			<div className="flex flex-1 flex-col gap-4 overflow-y-auto border-r border-[#444746] bg-[#303030] p-6">
 				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
 					画像を選ぶ
 				</h2>
@@ -285,7 +285,7 @@ export default function ControlPage() {
 			</div>
 
 			{/* Right Side - Options and Actions */}
-			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto bg-[#303030] p-6">
+			<div className="flex flex-2 flex-col gap-4 overflow-y-auto bg-[#303030] p-6">
 				{/* Generation Options */}
 				<div className="flex-1 space-y-4">
 					<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">

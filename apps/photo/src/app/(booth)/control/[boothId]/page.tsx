@@ -273,7 +273,7 @@ export default function ControlPage() {
 										setSelectedPhotoId(photo.photoId);
 									}}
 									className={[
-										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all",
+										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all relative",
 										isSelected
 											? "border-[#4796E3] shadow-lg shadow-[#4796E3]/50"
 											: "border-[#444746] hover:border-[#9177C7]",
@@ -283,9 +283,7 @@ export default function ControlPage() {
 										<Image
 											src={photo.imageUrl}
 											alt="アップロード済みの写真"
-											width={400}
-											height={500}
-											sizes="(max-width: 768px) 50vw, 300px"
+											fill={true}
 											className="h-full w-full object-cover"
 										/>
 									) : (

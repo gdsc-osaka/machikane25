@@ -137,7 +137,10 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 						setBooth(boothSnapshot);
 						setError(null);
 
-						if (boothSnapshot.latestPhotoId) {
+						// Clear the photo URL when generating to prevent flickering
+						if (boothSnapshot.state === "generating") {
+							setLatestUrl(null);
+						} else if (boothSnapshot.latestPhotoId) {
 							void fetchGeneratedPhotoUrl(
 								firestore,
 								boothSnapshot.id,

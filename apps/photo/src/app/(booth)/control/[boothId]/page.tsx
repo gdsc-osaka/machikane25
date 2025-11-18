@@ -334,7 +334,7 @@ export default function ControlPage() {
 				</div>
 
 				{/* Selected Options Thumbnails */}
-				{renderSelectedOptionsThumbnails()}
+				{/* {renderSelectedOptionsThumbnails()} */}
 
 				{/* Action Buttons */}
 				<div className="flex gap-3">

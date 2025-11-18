@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
+import { DownloadButton } from "./download-button";
 
 type DownloadPageProps = {
 	params: Promise<{
@@ -47,13 +48,7 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 				sizes="(max-width: 1024px) 90vw, 512px"
 				className="max-h-[60vh] w-auto rounded-lg shadow-lg"
 			/>
-			<a
-				href={imageUrl}
-				download="ai_photo.png"
-				className="rounded-md bg-primary px-6 py-3 text-lg font-medium text-primary-foreground shadow transition hover:bg-primary/90"
-			>
-				Download Photo
-			</a>
+			<DownloadButton imageUrl={imageUrl} />
 		</main>
 	);
 };

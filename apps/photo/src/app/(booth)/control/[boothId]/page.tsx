@@ -243,7 +243,7 @@ export default function ControlPage() {
 
 			{/* Left Side - Uploaded Images */}
 			<div className="flex flex-1 flex-col gap-4 overflow-y-auto border-r border-[#444746] p-6">
-				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
+				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent pl-26">
 					画像を選ぶ
 				</h2>
 				{photos.length > 0 ? (

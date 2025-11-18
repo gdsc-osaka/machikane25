@@ -75,6 +75,13 @@ export default function ControlPage() {
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
 
+	// Select the first photo by default
+	useEffect(() => {
+		if (photos.length > 0 && !selectedPhotoId) {
+			setSelectedPhotoId(photos[0].photoId);
+		}
+	}, [photos, selectedPhotoId]);
+
 	const boothState = getBoothState(booth?.state);
 	const prevBoothStateRef = useRef<string>(boothState);
 

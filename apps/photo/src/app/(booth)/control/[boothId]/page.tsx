@@ -246,6 +246,18 @@ export default function ControlPage() {
 				</h2>
 				{photos.length > 0 ? (
 					<div className="flex flex-col gap-3">
+						{/* Action Buttons */}
+						<div className="flex gap-3">
+							<Button
+								onClick={handleStartCapture}
+								disabled={isPending}
+								size="lg"
+								className="flex-1 h-16 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
+							>
+								<CameraIcon size="md" />
+								写真を撮る
+							</Button>
+						</div>
 						{photos.map((photo) => {
 							const isSelected = selectedPhotoId === photo.photoId;
 							const hasValidImageUrl =
@@ -345,15 +357,6 @@ export default function ControlPage() {
 
 				{/* Action Buttons */}
 				<div className="flex gap-3">
-					<Button
-						onClick={handleStartCapture}
-						disabled={isPending}
-						size="lg"
-						className="flex-1 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
-					>
-						<CameraIcon size="md" />
-						写真を撮る
-					</Button>
 					<Button
 						onClick={handleStartGeneration}
 						disabled={isGenerateDisabled}

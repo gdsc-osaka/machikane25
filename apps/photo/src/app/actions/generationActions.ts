@@ -15,13 +15,13 @@ type GeneratedPhotoActionError = "EXPIRED" | "NOT_FOUND";
 
 export type GeneratedPhotoActionResult =
 	| {
-		data: GeneratedPhotoData;
-		error: null;
-	}
+			data: GeneratedPhotoData;
+			error: null;
+	  }
 	| {
-		data: null;
-		error: GeneratedPhotoActionError;
-	};
+			data: null;
+			error: GeneratedPhotoActionError;
+	  };
 
 export const getGeneratedPhotoAction = async (
 	boothId: string,

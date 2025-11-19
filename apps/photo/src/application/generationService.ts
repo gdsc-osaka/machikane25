@@ -12,9 +12,9 @@ import {
 	findGeneratedPhoto,
 	findGeneratedPhotos,
 } from "@/infra/firebase/photoRepository";
-import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getImageDataFromId } from "@/infra/gemini/imageData";
 import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 const GEMINI_ENDPOINT =

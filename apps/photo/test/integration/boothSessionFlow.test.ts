@@ -215,19 +215,16 @@ const geminiServer = setupServer(
 			});
 		},
 	),
-	http.put(
-		"http://localhost:11004/:bucket/:object*",
-		async ({ params }) => {
-			const objectName = String(params.object ?? "");
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
-			storageObjects.add(objectName);
-			return HttpResponse.json({
-				name: objectName,
-				bucket,
-				contentType: "image/png",
-			});
-		},
-	),
+	http.put("http://localhost:11004/:bucket/:object*", async ({ params }) => {
+		const objectName = String(params.object ?? "");
+		const bucket = String(params.bucket ?? "photo-test.appspot.com");
+		storageObjects.add(objectName);
+		return HttpResponse.json({
+			name: objectName,
+			bucket,
+			contentType: "image/png",
+		});
+	}),
 	http.get(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
 		async ({ params, request }) => {

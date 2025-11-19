@@ -153,7 +153,8 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 							);
 							if (isMountedRef.current) {
 								const validUrls = urls.filter(
-									(url): url is string => typeof url === "string" && url.length > 0,
+									(url): url is string =>
+										typeof url === "string" && url.length > 0,
 								);
 								setLatestUrls(validUrls);
 							}

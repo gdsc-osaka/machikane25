@@ -30,14 +30,14 @@ describe("booth domain", () => {
 		const booth = boothSchema.parse({
 			id: "booth-001",
 			state: "menu",
-			latestPhotoId: "photo-123",
+			latestPhotoIds: ["photo-123"],
 			lastTakePhotoAt: new Date("2025-01-02T03:04:05Z"),
 			createdAt: new Date("2025-01-01T00:00:00Z"),
 			updatedAt: new Date("2025-01-02T00:00:00Z"),
 		});
 
 		expect(booth.state).toBe("menu");
-		expect(booth.latestPhotoId).toBe("photo-123");
+		expect(booth.latestPhotoIds).toEqual(["photo-123"]);
 	});
 
 	it("rejects booth snapshot with invalid timestamps", () => {
@@ -45,7 +45,7 @@ describe("booth domain", () => {
 			boothSchema.parse({
 				id: "booth-002",
 				state: "idle",
-				latestPhotoId: null,
+				latestPhotoIds: null,
 				lastTakePhotoAt: null,
 				createdAt: "2025-01-01T00:00:00Z",
 				updatedAt: new Date("2025-01-01T00:00:00Z"),

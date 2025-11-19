@@ -14,7 +14,6 @@ import { deleteUsedPhoto } from "./photoService";
 
 type BoothStateUpdate = {
 	state?: BoothState;
-	latestPhotoId?: string | null;
 	latestPhotoIds?: string[] | null;
 	lastTakePhotoAt?: unknown;
 };
@@ -73,10 +72,8 @@ export const startGeneration = async (
 	console.debug("Generated photo IDs:", generatedPhotoIds);
 
 	// Automatically transition to completed state
-	// We keep latestPhotoId for backward compatibility (using the first one)
 	await updateBoothState(boothId, {
 		state: "completed",
-		latestPhotoId: generatedPhotoIds[0],
 		latestPhotoIds: generatedPhotoIds,
 	});
 	console.debug("Booth state updated to 'completed'");
@@ -93,7 +90,7 @@ export const completeGeneration = async (
 ): Promise<void> => {
 	await updateBoothState(boothId, {
 		state: "completed",
-		latestPhotoId: generatedPhotoId,
+		latestPhotoIds: [generatedPhotoId],
 	});
 
 	const bucket = storageBucket();

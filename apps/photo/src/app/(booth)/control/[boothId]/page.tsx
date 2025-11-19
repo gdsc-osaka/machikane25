@@ -70,8 +70,13 @@ export default function ControlPage() {
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [isCapturing, setIsCapturing] = useState(false);
 
-	const { booth, latestGeneratedPhotoUrl, isLoading, error } =
-		useBoothState(boothId);
+	const {
+		booth,
+		latestGeneratedPhotoUrl,
+		latestGeneratedPhotoUrls,
+		isLoading,
+		error,
+	} = useBoothState(boothId);
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
 
@@ -445,7 +450,25 @@ export default function ControlPage() {
 						<QRCode value={qrValue} size={256} />
 					</div>
 				) : null}
-				{latestGeneratedPhotoUrl ? (
+				{latestGeneratedPhotoUrls.length > 0 ? (
+					<div className="flex flex-wrap justify-center gap-4">
+						{latestGeneratedPhotoUrls.map((url, index) => (
+							<div
+								key={url}
+								className="rounded-lg border-2 border-[#4796E3] p-2 shadow-lg shadow-[#4796E3]/30"
+							>
+								<Image
+									src={url}
+									alt={`生成された写真 ${index + 1}`}
+									width={160}
+									height={160}
+									sizes="160px"
+									className="h-40 w-40 rounded object-cover"
+								/>
+							</div>
+						))}
+					</div>
+				) : latestGeneratedPhotoUrl ? (
 					<div className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30">
 						<Image
 							src={latestGeneratedPhotoUrl}

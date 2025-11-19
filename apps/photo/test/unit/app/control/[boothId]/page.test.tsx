@@ -93,6 +93,7 @@ const renderControlPage = (booth: MockBooth): void => {
 	mockUseBoothState.mockReturnValue({
 		booth,
 		latestGeneratedPhotoUrl: null,
+		latestGeneratedPhotoUrls: [],
 		isLoading: false,
 		error: null,
 	});
@@ -159,6 +160,7 @@ describe("[RED] ControlPage", () => {
 		mockUseBoothState.mockReturnValue({
 			booth,
 			latestGeneratedPhotoUrl: null,
+			latestGeneratedPhotoUrls: [],
 			isLoading: false,
 			error: null,
 		});
@@ -214,6 +216,7 @@ describe("[RED] ControlPage", () => {
 		mockUseBoothState.mockReturnValue({
 			booth,
 			latestGeneratedPhotoUrl: "https://example.com/generated.png",
+			latestGeneratedPhotoUrls: ["https://example.com/generated.png"],
 			isLoading: false,
 			error: null,
 		});
@@ -263,6 +266,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -298,6 +302,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -316,6 +321,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -339,6 +345,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: completedBooth,
 				latestGeneratedPhotoUrl: "https://example.com/generated.png",
+				latestGeneratedPhotoUrls: ["https://example.com/generated.png"],
 				isLoading: false,
 				error: null,
 			});
@@ -366,6 +373,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -406,6 +414,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -436,6 +445,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: generatingBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -461,6 +471,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -500,6 +511,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -543,6 +555,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: capturingBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -557,6 +570,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -608,6 +622,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -643,6 +658,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});
@@ -653,6 +669,7 @@ describe("[RED] ControlPage", () => {
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
 				latestGeneratedPhotoUrl: null,
+				latestGeneratedPhotoUrls: [],
 				isLoading: false,
 				error: null,
 			});

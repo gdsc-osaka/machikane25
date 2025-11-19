@@ -20,7 +20,12 @@ const getBoothState = (state: string | undefined): string =>
 export default function DisplayPage() {
 	const params = useParams();
 	const boothId = ensureBoothId((params as Record<string, unknown>)?.boothId);
-	const { booth, latestGeneratedPhotoUrl, isLoading } = useBoothState(boothId);
+	const {
+		booth,
+		latestGeneratedPhotoUrl,
+		latestGeneratedPhotoUrls,
+		isLoading,
+	} = useBoothState(boothId);
 
 	const webcamRef = useRef<Webcam>(null);
 	const [countdown, setCountdown] = useState<number | null>(null);
@@ -178,6 +183,24 @@ export default function DisplayPage() {
 			return (
 				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
 					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
+				</div>
+			);
+		}
+
+		if (latestGeneratedPhotoUrls.length > 0) {
+			return (
+				<div className="flex h-full w-full items-center justify-center gap-8 bg-[#303030] px-8">
+					{latestGeneratedPhotoUrls.map((url, index) => (
+						<div key={url} className="relative h-[60vh] w-1/3">
+							<Image
+								src={url}
+								alt={`生成された写真 ${index + 1}`}
+								fill
+								className="object-contain"
+								priority
+							/>
+						</div>
+					))}
 				</div>
 			);
 		}

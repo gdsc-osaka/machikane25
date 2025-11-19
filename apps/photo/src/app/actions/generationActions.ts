@@ -8,19 +8,20 @@ import {
 
 type GeneratedPhotoData = {
 	imageUrl: string;
+	relatedPhotos?: { id: string; imageUrl: string }[];
 };
 
 type GeneratedPhotoActionError = "EXPIRED" | "NOT_FOUND";
 
 export type GeneratedPhotoActionResult =
 	| {
-			data: GeneratedPhotoData;
-			error: null;
-	  }
+		data: GeneratedPhotoData;
+		error: null;
+	}
 	| {
-			data: null;
-			error: GeneratedPhotoActionError;
-	  };
+		data: null;
+		error: GeneratedPhotoActionError;
+	};
 
 export const getGeneratedPhotoAction = async (
 	boothId: string,
@@ -31,6 +32,7 @@ export const getGeneratedPhotoAction = async (
 		return {
 			data: {
 				imageUrl: photo.imageUrl,
+				relatedPhotos: photo.relatedPhotos,
 			},
 			error: null,
 		};

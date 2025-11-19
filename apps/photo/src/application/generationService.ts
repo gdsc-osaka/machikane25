@@ -10,7 +10,9 @@ import {
 import {
 	createGeneratedPhoto,
 	findGeneratedPhoto,
+	findGeneratedPhotos,
 } from "@/infra/firebase/photoRepository";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getImageDataFromId } from "@/infra/gemini/imageData";
 import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
 
@@ -26,6 +28,7 @@ type GeminiInlineData = {
 type GeneratedPhotoInfo = {
 	id: string;
 	imageUrl: string;
+	relatedPhotos?: { id: string; imageUrl: string }[];
 };
 
 const createNamedError = (name: string, message: string): Error => {
@@ -467,8 +470,29 @@ export const getGeneratedPhoto = async (
 		);
 	}
 
+	const boothRef = getAdminFirestore().collection("booths").doc(boothId);
+	const boothSnapshot = await boothRef.get();
+	let relatedPhotos: { id: string; imageUrl: string }[] = [];
+
+	if (boothSnapshot.exists) {
+		const boothData = boothSnapshot.data();
+		const latestPhotoIds = Reflect.get(boothData || {}, "latestPhotoIds");
+
+		if (
+			Array.isArray(latestPhotoIds) &&
+			latestPhotoIds.includes(photo.photoId)
+		) {
+			const photos = await findGeneratedPhotos(boothId, latestPhotoIds);
+			relatedPhotos = photos.map((p) => ({
+				id: p.photoId,
+				imageUrl: p.imageUrl,
+			}));
+		}
+	}
+
 	return {
 		id: photo.photoId,
 		imageUrl: photo.imageUrl,
+		relatedPhotos,
 	};
 };

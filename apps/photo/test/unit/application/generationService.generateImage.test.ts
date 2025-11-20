@@ -179,6 +179,7 @@ describe("GenerationService.generateImage", () => {
 			photoId: "photo-abc",
 			imagePath: "generated_photos/photo-abc/photo.png",
 			imageUrl: "https://example.com/generated/photo-abc.png",
+			modelId: "gemini-2.5-flash-image",
 		});
 
 		expect(result).toBe("photo-abc");

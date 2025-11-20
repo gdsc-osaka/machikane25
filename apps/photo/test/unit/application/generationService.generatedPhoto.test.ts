@@ -38,6 +38,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 			imagePath: "generated_photos/photo-1/photo.png",
 			imageUrl: "https://example.com/generated/photo-1.png",
 			createdAt: new Date(now - 60 * 60 * 1000),
+			modelId: "gemini-3-pro-image-preview",
 		});
 
 		const { getGeneratedPhoto } = await import(
@@ -48,6 +49,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 		expect(result).toEqual({
 			id: "photo-1",
 			imageUrl: "https://example.com/generated/photo-1.png",
+			modelId: "gemini-3-pro-image-preview",
 			relatedPhotos: [],
 		});
 		expect(findGeneratedPhotoMock).toHaveBeenCalledWith("booth-1", "photo-1");

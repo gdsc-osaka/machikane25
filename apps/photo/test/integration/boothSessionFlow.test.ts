@@ -679,5 +679,25 @@ describe("boothSessionFlow integration", () => {
 			collection(firestore, `booths/${boothId}/uploadedPhotos`),
 		);
 		expect(remainingUploadsSnapshot.empty).toBe(true);
-	}, 15000); // 15 second timeout for integration test
+
+		// Verify generated photos count and models using Admin SDK (to rule out Client SDK issues)
+		const generatedPhotosRef = adminFirestore.collection(
+			`booths/${boothId}/generatedPhotos`,
+		);
+		const generatedPhotosSnapshotAdmin = await generatedPhotosRef.get();
+		expect(generatedPhotosSnapshotAdmin.size).toBe(3);
+
+		const generatedPhotos = generatedPhotosSnapshotAdmin.docs.map((doc) =>
+			doc.data(),
+		);
+		const proPhotos = generatedPhotos.filter(
+			(p) => p.modelId === "gemini-3-pro-image-preview",
+		);
+		const standardPhotos = generatedPhotos.filter(
+			(p) => p.modelId === "gemini-2.5-flash-image",
+		);
+
+		expect(proPhotos.length).toBe(1);
+		expect(standardPhotos.length).toBe(2);
+	}, 60000); // 60 second timeout for integration test
 });

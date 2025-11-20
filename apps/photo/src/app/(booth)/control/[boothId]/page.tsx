@@ -70,7 +70,7 @@ export default function ControlPage() {
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [isCapturing, setIsCapturing] = useState(false);
 
-	const { booth, latestGeneratedPhotoUrls, isLoading, error } =
+	const { booth, latestGeneratedPhotos, isLoading, error } =
 		useBoothState(boothId);
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
@@ -447,23 +447,38 @@ export default function ControlPage() {
 						<QRCode value={qrValue} size={256} />
 					</div>
 				) : null}
-				{latestGeneratedPhotoUrls.length > 0 ? (
+				{latestGeneratedPhotos.length > 0 ? (
 					<div className="flex flex-wrap justify-center gap-4">
-						{latestGeneratedPhotoUrls.map((url, index) => (
-							<div
-								key={url}
-								className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30"
-							>
-								<Image
-									src={url}
-									alt={`生成された写真のプレビュー ${index + 1}`}
-									width={240}
-									height={240}
-									sizes="240px"
-									className="h-60 w-60 rounded object-cover"
-								/>
-							</div>
-						))}
+						{latestGeneratedPhotos.map((photo, index) => {
+							const isPro = photo.modelId === "gemini-3-pro-image-preview";
+							return (
+								<div
+									key={photo.url}
+									className={[
+										"rounded-lg border-2 p-4 shadow-lg",
+										isPro
+											? "border-[#FFD700] bg-[#FFD700]/10 shadow-[#FFD700]/50 ring-4 ring-[#FFD700]/30"
+											: "border-[#4796E3] shadow-[#4796E3]/30",
+									].join(" ")}
+								>
+									<div className="relative">
+										{isPro && (
+											<div className="absolute -right-2 -top-2 z-10 rounded-full bg-[#FFD700] px-2 py-0.5 text-xs font-bold text-black shadow-md">
+												PRO
+											</div>
+										)}
+										<Image
+											src={photo.url}
+											alt={`生成された写真のプレビュー ${index + 1}`}
+											width={240}
+											height={240}
+											sizes="240px"
+											className="h-60 w-60 rounded object-cover"
+										/>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				) : null}
 			</div>

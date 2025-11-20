@@ -20,7 +20,7 @@ const getBoothState = (state: string | undefined): string =>
 export default function DisplayPage() {
 	const params = useParams();
 	const boothId = ensureBoothId((params as Record<string, unknown>)?.boothId);
-	const { booth, latestGeneratedPhotoUrls, isLoading } = useBoothState(boothId);
+	const { booth, latestGeneratedPhotos, isLoading } = useBoothState(boothId);
 
 	const webcamRef = useRef<Webcam>(null);
 	const [countdown, setCountdown] = useState<number | null>(null);
@@ -174,7 +174,7 @@ export default function DisplayPage() {
 	);
 
 	const renderCompleted = () => {
-		if (latestGeneratedPhotoUrls.length === 0) {
+		if (latestGeneratedPhotos.length === 0) {
 			return (
 				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
 					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
@@ -184,23 +184,38 @@ export default function DisplayPage() {
 
 		return (
 			<div className="flex h-full w-full items-center justify-center bg-[#303030] px-8">
-				{latestGeneratedPhotoUrls.length > 0 ? (
+				{latestGeneratedPhotos.length > 0 ? (
 					<div className="flex flex-wrap justify-center gap-8">
-						{latestGeneratedPhotoUrls.map((url, index) => (
-							<div
-								key={url}
-								className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30"
-							>
-								<Image
-									src={url}
-									alt={`生成された写真 ${index + 1}`}
-									width={320}
-									height={320}
-									sizes="320px"
-									className="h-80 w-80 rounded object-cover"
-								/>
-							</div>
-						))}
+						{latestGeneratedPhotos.map((photo, index) => {
+							const isPro = photo.modelId === "gemini-3-pro-image-preview";
+							return (
+								<div
+									key={photo.url}
+									className={[
+										"rounded-lg border-2 p-4 shadow-lg",
+										isPro
+											? "border-[#FFD700] bg-[#FFD700]/10 shadow-[#FFD700]/50 ring-4 ring-[#FFD700]/30"
+											: "border-[#4796E3] shadow-[#4796E3]/30",
+									].join(" ")}
+								>
+									<div className="relative">
+										{isPro && (
+											<div className="absolute -right-4 -top-4 z-10 rounded-full bg-[#FFD700] px-3 py-1 text-sm font-bold text-black shadow-md">
+												PRO
+											</div>
+										)}
+										<Image
+											src={photo.url}
+											alt={`生成された写真 ${index + 1}`}
+											width={320}
+											height={320}
+											sizes="320px"
+											className="h-80 w-80 rounded object-cover"
+										/>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				) : null}
 			</div>

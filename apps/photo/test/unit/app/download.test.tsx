@@ -53,6 +53,7 @@ describe("[RED] DownloadPage", () => {
 					{
 						id: "photo-456",
 						imageUrl: "https://example.com/generated/photo.png",
+						modelId: "gemini-2.5-flash-image",
 					},
 				],
 			},
@@ -99,6 +100,7 @@ describe("[RED] DownloadPage", () => {
 					{
 						id: "photo-3",
 						imageUrl: "https://example.com/generated/photo-3.png",
+						modelId: "gemini-3-pro-image-preview",
 					},
 				],
 			},
@@ -118,6 +120,9 @@ describe("[RED] DownloadPage", () => {
 		expect(links[0]).toHaveAccessibleName("Download Photo 1");
 		expect(links[1]).toHaveAccessibleName("Download Photo 2");
 		expect(links[2]).toHaveAccessibleName("Download Photo 3");
+
+		// Verify Pro badge is displayed for the 3rd photo
+		expect(screen.getByText("PRO")).toBeInTheDocument();
 	});
 
 	it("shows expiry message when getGeneratedPhotoAction returns EXPIRED", async () => {

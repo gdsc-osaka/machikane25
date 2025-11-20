@@ -253,6 +253,8 @@ export default function ControlPage() {
 							<Image
 								src={paint}
 								alt=""
+								width={1287}
+								height={667}
 								className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-96"
 							/>
 							<Button
@@ -534,11 +536,15 @@ export default function ControlPage() {
 			<div className="z-1 w-full h-full">{renderContent()}</div>
 			<Image
 				src={crystalStar}
+				width={963}
+				height={1069}
 				className="absolute bottom-1/12 left-1/12 pointer-events-none animate-float w-1/5"
 				alt=""
 			/>
 			<Image
 				src={crystalStar}
+				width={963}
+				height={1069}
 				className="absolute top-1/12 right-1/12 pointer-events-none animate-float-delayed w-1/6 -scale-x-100"
 				alt=""
 			/>

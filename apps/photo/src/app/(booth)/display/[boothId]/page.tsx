@@ -226,11 +226,15 @@ export default function DisplayPage() {
 			<div className="z-1 w-full h-full">{renderContent()}</div>
 			<Image
 				src={crystalStar}
+				width={963}
+				height={1069}
 				className="absolute bottom-1/12 left-1/12 pointer-events-none animate-float w-1/3"
 				alt=""
 			/>
 			<Image
 				src={crystalStar}
+				width={963}
+				height={1069}
 				className="absolute top-1/12 right-1/12 pointer-events-none animate-float-delayed w-1/4 -scale-x-100"
 				alt=""
 			/>

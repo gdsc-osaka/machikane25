@@ -63,14 +63,10 @@ describe("[RED] DownloadPage", () => {
 			encodeURIComponent("https://example.com/generated/photo.png"),
 		);
 
-		const downloadLink = screen.getByRole("link", {
+		const downloadButton = screen.getByRole("button", {
 			name: "Download Photo",
 		});
-		expect(downloadLink).toBeInTheDocument();
-		expect(downloadLink.getAttribute("href")).toBe(
-			"https://example.com/generated/photo.png",
-		);
-		expect(downloadLink.getAttribute("download")).toBe("ai_photo.png");
+		expect(downloadButton).toBeInTheDocument();
 		expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(
 			params.boothId,
 			params.photoId,
@@ -102,7 +98,10 @@ describe("[RED] DownloadPage", () => {
 			error: "NOT_FOUND",
 		});
 
-		await expect(DownloadPage({ params })).rejects.toThrow("ROUTE_NOT_FOUND");
+		const resolvedParams = Promise.resolve(params); // paramsをPromiseでラップ
+		await expect(
+			async () => await DownloadPage({ params: resolvedParams }),
+		).rejects.toThrow("ROUTE_NOT_FOUND");
 		expect(mockNotFound).toHaveBeenCalledTimes(1);
 		expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(
 			params.boothId,

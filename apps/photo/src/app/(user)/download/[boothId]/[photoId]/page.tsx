@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
 import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
+import clsx from "clsx";
 
 type DownloadPageProps = {
 	params: Promise<{
@@ -62,10 +63,10 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 									width={512}
 									height={512}
 									sizes="(max-width: 768px) 90vw, 400px"
-									className={[
+									className={clsx(
 										"max-h-[50vh] w-auto rounded-lg shadow-lg",
 										isPro ? "ring-4 ring-pro-badge/50" : "",
-									].join(" ")}
+									)}
 								/>
 							</div>
 							<a

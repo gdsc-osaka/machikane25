@@ -27,6 +27,7 @@ import { useBoothState } from "@/hooks/useBoothState";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
 import { playSound, preloadAllSounds } from "@/lib/sound";
+import clsx from "clsx";
 
 // key: type id
 // value: option id
@@ -455,12 +456,12 @@ export default function ControlPage() {
 							return (
 								<div
 									key={photo.url}
-									className={[
+									className={clsx(
 										"rounded-lg border-2 p-4 shadow-lg",
 										isPro
 											? "border-pro-badge bg-pro-badge/10 shadow-pro-badge/50 ring-4 ring-pro-badge/30"
 											: "border-[#4796E3] shadow-[#4796E3]/30",
-									].join(" ")}
+									)}
 								>
 									<div className="relative">
 										{isPro && (

@@ -8,7 +8,8 @@ import {
 
 type GeneratedPhotoData = {
 	imageUrl: string;
-	relatedPhotos?: { id: string; imageUrl: string }[];
+	modelId?: string;
+	relatedPhotos?: { id: string; imageUrl: string; modelId?: string }[];
 };
 
 type GeneratedPhotoActionError = "EXPIRED" | "NOT_FOUND";
@@ -32,6 +33,7 @@ export const getGeneratedPhotoAction = async (
 		return {
 			data: {
 				imageUrl: photo.imageUrl,
+				modelId: photo.modelId,
 				relatedPhotos: photo.relatedPhotos,
 			},
 			error: null,

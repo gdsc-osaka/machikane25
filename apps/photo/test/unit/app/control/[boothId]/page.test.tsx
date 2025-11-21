@@ -92,8 +92,7 @@ const createBooth = (
 const renderControlPage = (booth: MockBooth): void => {
 	mockUseBoothState.mockReturnValue({
 		booth,
-		latestGeneratedPhotoUrl: null,
-		latestGeneratedPhotoUrls: [],
+		latestGeneratedPhotos: [],
 		isLoading: false,
 		error: null,
 	});
@@ -159,8 +158,7 @@ describe("[RED] ControlPage", () => {
 
 		mockUseBoothState.mockReturnValue({
 			booth,
-			latestGeneratedPhotoUrl: null,
-			latestGeneratedPhotoUrls: [],
+			latestGeneratedPhotos: [],
 			isLoading: false,
 			error: null,
 		});
@@ -215,8 +213,9 @@ describe("[RED] ControlPage", () => {
 
 		mockUseBoothState.mockReturnValue({
 			booth,
-			latestGeneratedPhotoUrl: "https://example.com/generated.png",
-			latestGeneratedPhotoUrls: ["https://example.com/generated.png"],
+			latestGeneratedPhotos: [
+				{ url: "https://example.com/generated.png", modelId: undefined },
+			],
 			isLoading: false,
 			error: null,
 		});
@@ -265,8 +264,7 @@ describe("[RED] ControlPage", () => {
 
 			mockUseBoothState.mockReturnValue({
 				booth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -301,8 +299,7 @@ describe("[RED] ControlPage", () => {
 			const idleBooth = createBooth("idle");
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -320,8 +317,7 @@ describe("[RED] ControlPage", () => {
 			const menuBooth = createBooth("menu");
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -344,8 +340,9 @@ describe("[RED] ControlPage", () => {
 
 			mockUseBoothState.mockReturnValue({
 				booth: completedBooth,
-				latestGeneratedPhotoUrl: "https://example.com/generated.png",
-				latestGeneratedPhotoUrls: ["https://example.com/generated.png"],
+				latestGeneratedPhotos: [
+					{ url: "https://example.com/generated.png", modelId: undefined },
+				],
 				isLoading: false,
 				error: null,
 			});
@@ -372,8 +369,7 @@ describe("[RED] ControlPage", () => {
 			const idleBooth = createBooth("idle");
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -413,8 +409,7 @@ describe("[RED] ControlPage", () => {
 
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -444,8 +439,7 @@ describe("[RED] ControlPage", () => {
 
 			mockUseBoothState.mockReturnValue({
 				booth: generatingBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -470,8 +464,7 @@ describe("[RED] ControlPage", () => {
 			const idleBooth = createBooth("idle");
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -510,8 +503,7 @@ describe("[RED] ControlPage", () => {
 
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -554,8 +546,7 @@ describe("[RED] ControlPage", () => {
 			});
 			mockUseBoothState.mockReturnValue({
 				booth: capturingBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -569,8 +560,7 @@ describe("[RED] ControlPage", () => {
 			// menuに戻る
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -621,8 +611,7 @@ describe("[RED] ControlPage", () => {
 
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -657,8 +646,7 @@ describe("[RED] ControlPage", () => {
 			const idleBooth = createBooth("idle");
 			mockUseBoothState.mockReturnValue({
 				booth: idleBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});
@@ -668,8 +656,7 @@ describe("[RED] ControlPage", () => {
 			// menuに戻る
 			mockUseBoothState.mockReturnValue({
 				booth: menuBooth,
-				latestGeneratedPhotoUrl: null,
-				latestGeneratedPhotoUrls: [],
+				latestGeneratedPhotos: [],
 				isLoading: false,
 				error: null,
 			});

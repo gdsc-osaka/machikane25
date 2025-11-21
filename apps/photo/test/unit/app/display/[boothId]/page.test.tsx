@@ -61,8 +61,7 @@ const mockUseParams = hookMocks.useParams;
 const renderDisplayPage = (booth: MockBooth): void => {
 	mockUseBoothState.mockReturnValue({
 		booth,
-		latestGeneratedPhotoUrl: generatedImageUrl,
-		latestGeneratedPhotoUrls: [generatedImageUrl],
+		latestGeneratedPhotos: [{ url: generatedImageUrl, modelId: undefined }],
 		isLoading: false,
 		error: null,
 	});

@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
 
 const updateMock = vi.fn();
 const setMock = vi.fn();
@@ -41,7 +45,7 @@ vi.mock("firebase-admin/firestore", () => ({
 	},
 }));
 
-const generateImageMock = vi.fn(() => Promise.resolve());
+const generateImageMock = vi.fn(() => Promise.resolve("generated-photo-id"));
 const sendToAquariumMock = vi.fn(() => Promise.resolve());
 vi.mock("@/application/generationService", () => ({
 	generateImage: generateImageMock,
@@ -131,9 +135,28 @@ describe("BoothService", () => {
 			},
 			{ merge: true },
 		);
-		expect(generateImageMock).toHaveBeenCalledWith("booth-4", "uploaded-1", {
-			style: "style-1",
-		});
+		expect(generateImageMock).toHaveBeenCalledTimes(3);
+		expect(generateImageMock).toHaveBeenNthCalledWith(
+			1,
+			"booth-4",
+			"uploaded-1",
+			{ style: "style-1" },
+			GEMINI_PRO_IMAGE_MODEL_ID,
+		);
+		expect(generateImageMock).toHaveBeenNthCalledWith(
+			2,
+			"booth-4",
+			"uploaded-1",
+			{ style: "style-1" },
+			GEMINI_FLASH_IMAGE_MODEL_ID,
+		);
+		expect(generateImageMock).toHaveBeenNthCalledWith(
+			3,
+			"booth-4",
+			"uploaded-1",
+			{ style: "style-1" },
+			GEMINI_FLASH_IMAGE_MODEL_ID,
+		);
 	});
 
 	it("completeGeneration updates state and schedules cleanup", async () => {

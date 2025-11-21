@@ -20,9 +20,14 @@ type BoothSnapshot = {
 	lastTakePhotoAt: Date | null;
 };
 
+export type GeneratedPhotoData = {
+	url: string;
+	modelId?: string;
+};
+
 type BoothStateResult = {
 	booth: BoothSnapshot | null;
-	latestGeneratedPhotoUrls: string[];
+	latestGeneratedPhotos: GeneratedPhotoData[];
 	isLoading: boolean;
 	error: Error | null;
 };
@@ -48,11 +53,11 @@ const parseState = (value: unknown): BoothState => {
 	return parsed.success ? parsed.data : "idle";
 };
 
-const fetchGeneratedPhotoUrl = async (
+const fetchGeneratedPhotoData = async (
 	firestore: Firestore,
 	boothId: string,
 	photoId: string,
-): Promise<string | null> => {
+): Promise<GeneratedPhotoData | null> => {
 	const generatedRef = doc(
 		firestore,
 		"booths",
@@ -68,17 +73,21 @@ const fetchGeneratedPhotoUrl = async (
 
 	const data = snapshot.data();
 	const imageUrl = Reflect.get(data, "imageUrl");
+	const modelId = Reflect.get(data, "modelId");
 
 	if (typeof imageUrl !== "string") {
 		return null;
 	}
 
-	return imageUrl;
+	return {
+		url: imageUrl,
+		modelId: typeof modelId === "string" ? modelId : undefined,
+	};
 };
 
 export const useBoothState = (boothId: string): BoothStateResult => {
 	const [booth, setBooth] = useState<BoothSnapshot | null>(null);
-	const [latestUrls, setLatestUrls] = useState<string[]>([]);
+	const [latestPhotos, setLatestPhotos] = useState<GeneratedPhotoData[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	const isMountedRef = useRef(true);
@@ -116,7 +125,7 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 						if (!snapshot.exists()) {
 							setBooth(null);
-							setLatestUrls([]);
+							setLatestPhotos([]);
 							return;
 						}
 
@@ -139,27 +148,28 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 						// Clear the photo URL when generating to prevent flickering
 						if (boothSnapshot.state === "generating") {
-							setLatestUrls([]);
+							setLatestPhotos([]);
 						} else if (
 							boothSnapshot.latestPhotoIds &&
 							boothSnapshot.latestPhotoIds.length > 0
 						) {
-							const urls = await Promise.all(
+							const photos = await Promise.all(
 								boothSnapshot.latestPhotoIds.map((id) =>
-									fetchGeneratedPhotoUrl(firestore, boothSnapshot.id, id).catch(
-										() => "",
-									),
+									fetchGeneratedPhotoData(
+										firestore,
+										boothSnapshot.id,
+										id,
+									).catch(() => null),
 								),
 							);
 							if (isMountedRef.current) {
-								const validUrls = urls.filter(
-									(url): url is string =>
-										typeof url === "string" && url.length > 0,
+								const validPhotos = photos.filter(
+									(p): p is GeneratedPhotoData => p !== null,
 								);
-								setLatestUrls(validUrls);
+								setLatestPhotos(validPhotos);
 							}
 						} else {
-							setLatestUrls([]);
+							setLatestPhotos([]);
 						}
 					},
 					(snapshotError) => {
@@ -196,7 +206,7 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 	return {
 		booth,
-		latestGeneratedPhotoUrls: latestUrls,
+		latestGeneratedPhotos: latestPhotos,
 		isLoading,
 		error,
 	};

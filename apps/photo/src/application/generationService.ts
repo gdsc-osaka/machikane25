@@ -2,6 +2,7 @@ import { type Content, GoogleGenAI } from "@google/genai";
 import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
+import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 import type { GeneratedPhoto as GeneratedPhotoRecord } from "@/domain/photo";
 import {
 	fetchAllOptions,
@@ -17,8 +18,6 @@ import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
-const GEMINI_ENDPOINT =
-	"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
 
 type GeminiInlineData = {
 	mimeType: string;
@@ -28,7 +27,8 @@ type GeminiInlineData = {
 type GeneratedPhotoInfo = {
 	id: string;
 	imageUrl: string;
-	relatedPhotos?: { id: string; imageUrl: string }[];
+	modelId?: string;
+	relatedPhotos?: { id: string; imageUrl: string; modelId?: string }[];
 };
 
 const createNamedError = (name: string, message: string): Error => {
@@ -160,10 +160,9 @@ You may only change the background, location, clothing, and lighting. Everything
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
-					`${
-						personOption?.inlineData
-							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-							: `${personOption?.value} is next to them, also wearing the same outfit`
+					`${personOption?.inlineData
+						? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
+						: `${personOption?.value} is next to them, also wearing the same outfit`
 					}. ` +
 					`Keep every person's face, expression, and body type exactly as shown in the original photo.`,
 			},
@@ -258,6 +257,7 @@ export const generateImage = async (
 	boothId: string,
 	uploadedPhotoId: string,
 	options: Record<string, string>,
+	modelId = GEMINI_FLASH_IMAGE_MODEL_ID,
 ): Promise<string> => {
 	console.debug("generateImage");
 	const apiKey = ensureApiKey();
@@ -284,7 +284,7 @@ export const generateImage = async (
 	const ai = new GoogleGenAI({ apiKey: apiKey });
 	try {
 		const response = await ai.models.generateContent({
-			model: "gemini-3-pro-image-preview",
+			model: modelId,
 			contents: toContents(
 				{
 					mimeType: baseImage.mimeType,
@@ -320,6 +320,7 @@ export const generateImage = async (
 			photoId,
 			imagePath,
 			imageUrl,
+			modelId,
 		});
 		console.log("Generated photo metadata created with ID: ", photoId);
 
@@ -482,6 +483,7 @@ const getRelatedPhotos = async (
 			return photos.map((p) => ({
 				id: p.photoId,
 				imageUrl: p.imageUrl,
+				modelId: p.modelId,
 			}));
 		}
 	}
@@ -507,6 +509,7 @@ export const getGeneratedPhoto = async (
 	return {
 		id: photo.photoId,
 		imageUrl: photo.imageUrl,
+		modelId: photo.modelId,
 		relatedPhotos,
 	};
 };

@@ -147,7 +147,7 @@ describe("BoothService", () => {
 		expect(setMock).toHaveBeenCalledWith(
 			{
 				state: "completed",
-				latestPhotoId: "generated-1",
+				latestPhotoIds: ["generated-1"],
 				updatedAt: "server-timestamp",
 			},
 			{ merge: true },

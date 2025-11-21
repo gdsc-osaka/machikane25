@@ -4,6 +4,25 @@ const findGeneratedPhotoMock = vi.fn();
 
 vi.mock("@/infra/firebase/photoRepository", () => ({
 	findGeneratedPhoto: findGeneratedPhotoMock,
+	findGeneratedPhotos: vi.fn().mockResolvedValue([]),
+}));
+
+const getMock = vi.fn().mockResolvedValue({
+	exists: false,
+	data: () => ({}),
+});
+const docMock = vi.fn().mockReturnValue({
+	get: getMock,
+});
+const collectionMock = vi.fn().mockReturnValue({
+	doc: docMock,
+});
+const firestoreMock = {
+	collection: collectionMock,
+};
+
+vi.mock("@/lib/firebase/admin", () => ({
+	getAdminFirestore: vi.fn().mockReturnValue(firestoreMock),
 }));
 
 describe("GenerationService.getGeneratedPhoto", () => {
@@ -29,6 +48,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 		expect(result).toEqual({
 			id: "photo-1",
 			imageUrl: "https://example.com/generated/photo-1.png",
+			relatedPhotos: [],
 		});
 		expect(findGeneratedPhotoMock).toHaveBeenCalledWith("booth-1", "photo-1");
 	}, 30000);

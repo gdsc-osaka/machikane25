@@ -16,13 +16,13 @@ import {
 type BoothSnapshot = {
 	id: string;
 	state: BoothState;
-	latestPhotoId: string | null;
+	latestPhotoIds: string[] | null;
 	lastTakePhotoAt: Date | null;
 };
 
 type BoothStateResult = {
 	booth: BoothSnapshot | null;
-	latestGeneratedPhotoUrl: string | null;
+	latestGeneratedPhotoUrls: string[];
 	isLoading: boolean;
 	error: Error | null;
 };
@@ -78,7 +78,7 @@ const fetchGeneratedPhotoUrl = async (
 
 export const useBoothState = (boothId: string): BoothStateResult => {
 	const [booth, setBooth] = useState<BoothSnapshot | null>(null);
-	const [latestUrl, setLatestUrl] = useState<string | null>(null);
+	const [latestUrls, setLatestUrls] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	const isMountedRef = useRef(true);
@@ -105,7 +105,8 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 				unsubscribe = onSnapshot(
 					boothRef,
-					(snapshot) => {
+					// eslint-disable-next-line @typescript-eslint/no-misused-promises
+					async (snapshot) => {
 						if (!isMountedRef.current) {
 							return;
 						}
@@ -115,22 +116,21 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 						if (!snapshot.exists()) {
 							setBooth(null);
-							setLatestUrl(null);
+							setLatestUrls([]);
 							return;
 						}
 
 						const data = snapshot.data();
 						const stateValue = parseState(Reflect.get(data, "state"));
-						const latestPhotoIdValue = Reflect.get(data, "latestPhotoId");
+						const latestPhotoIdsValue = Reflect.get(data, "latestPhotoIds");
 						const lastTakePhotoAtValue = Reflect.get(data, "lastTakePhotoAt");
 
 						const boothSnapshot: BoothSnapshot = {
 							id: typeof snapshot.id === "string" ? snapshot.id : boothId,
 							state: stateValue,
-							latestPhotoId:
-								typeof latestPhotoIdValue === "string"
-									? latestPhotoIdValue
-									: null,
+							latestPhotoIds: Array.isArray(latestPhotoIdsValue)
+								? latestPhotoIdsValue
+								: null,
 							lastTakePhotoAt: toDate(lastTakePhotoAtValue),
 						};
 
@@ -139,29 +139,27 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 						// Clear the photo URL when generating to prevent flickering
 						if (boothSnapshot.state === "generating") {
-							setLatestUrl(null);
-						} else if (boothSnapshot.latestPhotoId) {
-							void fetchGeneratedPhotoUrl(
-								firestore,
-								boothSnapshot.id,
-								boothSnapshot.latestPhotoId,
-							)
-								.then((url) => {
-									if (isMountedRef.current) {
-										setLatestUrl(url);
-									}
-								})
-								.catch((fetchError) => {
-									if (isMountedRef.current) {
-										setError(
-											fetchError instanceof Error
-												? fetchError
-												: new Error("Failed to load generated photo"),
-										);
-									}
-								});
+							setLatestUrls([]);
+						} else if (
+							boothSnapshot.latestPhotoIds &&
+							boothSnapshot.latestPhotoIds.length > 0
+						) {
+							const urls = await Promise.all(
+								boothSnapshot.latestPhotoIds.map((id) =>
+									fetchGeneratedPhotoUrl(firestore, boothSnapshot.id, id).catch(
+										() => "",
+									),
+								),
+							);
+							if (isMountedRef.current) {
+								const validUrls = urls.filter(
+									(url): url is string =>
+										typeof url === "string" && url.length > 0,
+								);
+								setLatestUrls(validUrls);
+							}
 						} else {
-							setLatestUrl(null);
+							setLatestUrls([]);
 						}
 					},
 					(snapshotError) => {
@@ -198,7 +196,7 @@ export const useBoothState = (boothId: string): BoothStateResult => {
 
 	return {
 		booth,
-		latestGeneratedPhotoUrl: latestUrl,
+		latestGeneratedPhotoUrls: latestUrls,
 		isLoading,
 		error,
 	};

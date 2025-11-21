@@ -248,25 +248,6 @@ export default function ControlPage() {
 				</h2>
 				{photos.length > 0 ? (
 					<div className="flex flex-col gap-3">
-						{/* Action Buttons */}
-						<div className="relative flex h-60 items-center justify-center">
-							<Image
-								src={paint}
-								alt=""
-								width={1287}
-								height={667}
-								className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-96"
-							/>
-							<Button
-								onClick={handleStartCapture}
-								disabled={isPending}
-								size="lg"
-								className="relative z-10 flex h-16 w-60 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
-							>
-								<CameraIcon size="md" />
-								写真を撮る
-							</Button>
-						</div>
 						{photos.map((photo) => {
 							const isSelected = selectedPhotoId === photo.photoId;
 							const hasValidImageUrl =
@@ -363,16 +344,34 @@ export default function ControlPage() {
 				{/* {renderSelectedOptionsThumbnails()} */}
 
 				{/* Action Buttons */}
-				<div className="flex gap-3">
+				<div className="flex gap-3 p-12">
 					<Button
-						onClick={handleStartGeneration}
-						disabled={isGenerateDisabled}
+						onClick={handleStartCapture}
+						disabled={isPending}
 						size="lg"
-						className="flex-1 gap-2 bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] text-lg text-white hover:opacity-90 disabled:from-[#444746] disabled:to-[#444746] disabled:text-[#e3e3e3]/50"
+						className="flex-1 gap-2 h-12 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
 					>
-						<CheckIcon size="md" />
-						決定
+						<CameraIcon size="md" />
+						写真を撮る
 					</Button>
+					<div className="flex-2 relative flex h-12 items-center justify-center">
+						<Image
+							src={paint}
+							alt=""
+							width={1287}
+							height={667}
+							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72"
+						/>
+						<Button
+							onClick={handleStartGeneration}
+							disabled={isGenerateDisabled}
+							size="lg"
+							className="z-10 flex flex-1 gap-2 h-12 bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] text-lg text-white hover:opacity-90 disabled:from-[#444746] disabled:to-[#444746] disabled:text-[#e3e3e3]/50"
+						>
+							<CheckIcon size="md" />
+							決定
+						</Button>
+					</div>
 				</div>
 			</div>
 		</div>

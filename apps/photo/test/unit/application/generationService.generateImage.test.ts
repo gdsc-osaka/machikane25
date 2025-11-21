@@ -130,6 +130,7 @@ describe("GenerationService.generateImage", () => {
 				location: "location-id",
 				outfit: "outfit-id",
 			},
+			GEMINI_FLASH_IMAGE_MODEL_ID,
 			"photo-abc",
 		);
 
@@ -188,7 +189,7 @@ describe("GenerationService.generateImage", () => {
 		});
 
 		await expect(
-			generateImage("booth-x", "photo-y", {}, "photo-z"),
+			generateImage("booth-x", "photo-y", {}, "photo-z", GEMINI_FLASH_IMAGE_MODEL_ID),
 		).rejects.toThrowError("Gemini response missing image data");
 	}, 30000);
 });

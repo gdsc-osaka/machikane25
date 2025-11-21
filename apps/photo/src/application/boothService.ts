@@ -102,8 +102,8 @@ export const startGeneration = async (
 		GEMINI_FLASH_IMAGE_MODEL_ID,
 	];
 
-	const generatePromises = models.map((modelId) =>
-		generateImage(boothId, uploadedPhotoId, options, modelId),
+	const generatePromises = models.map((modelId, index) =>
+		generateImage(boothId, uploadedPhotoId, options, modelId, generatedPhotoIds[index]),
 	);
 
 	await Promise.all(generatePromises);

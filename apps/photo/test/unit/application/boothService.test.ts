@@ -163,6 +163,7 @@ describe("BoothService", () => {
 			"uploaded-1",
 			{ style: "style-1" },
 			GEMINI_PRO_IMAGE_MODEL_ID,
+			"mock-ulid",
 		);
 		expect(generateImageMock).toHaveBeenNthCalledWith(
 			2,
@@ -170,6 +171,7 @@ describe("BoothService", () => {
 			"uploaded-1",
 			{ style: "style-1" },
 			GEMINI_FLASH_IMAGE_MODEL_ID,
+			"mock-ulid",
 		);
 		expect(generateImageMock).toHaveBeenNthCalledWith(
 			3,
@@ -177,6 +179,7 @@ describe("BoothService", () => {
 			"uploaded-1",
 			{ style: "style-1" },
 			GEMINI_FLASH_IMAGE_MODEL_ID,
+			"mock-ulid",
 		);
 	});
 

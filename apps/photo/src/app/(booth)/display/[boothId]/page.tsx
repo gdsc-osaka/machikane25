@@ -195,13 +195,13 @@ export default function DisplayPage() {
 									className={[
 										"rounded-lg border-2 p-4 shadow-lg",
 										isPro
-											? "border-[#FFD700] bg-[#FFD700]/10 shadow-[#FFD700]/50 ring-4 ring-[#FFD700]/30"
+											? "border-pro-badge bg-pro-badge/10 shadow-pro-badge/50 ring-4 ring-pro-badge/30"
 											: "border-[#4796E3] shadow-[#4796E3]/30",
 									].join(" ")}
 								>
 									<div className="relative">
 										{isPro && (
-											<div className="absolute -right-4 -top-4 z-10 rounded-full bg-[#FFD700] px-3 py-1 text-sm font-bold text-black shadow-md">
+											<div className="absolute -right-4 -top-4 z-10 rounded-full bg-pro-badge px-3 py-1 text-sm font-bold text-black shadow-md">
 												PRO
 											</div>
 										)}

@@ -52,7 +52,7 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 						<div key={photo.id} className="flex flex-col items-center gap-4">
 							<div className="relative">
 								{isPro && (
-									<div className="absolute -right-4 -top-4 z-10 rounded-full bg-[#FFD700] px-3 py-1 text-sm font-bold text-black shadow-md">
+									<div className="absolute -right-4 -top-4 z-10 rounded-full bg-pro-badge px-3 py-1 text-sm font-bold text-black shadow-md">
 										PRO
 									</div>
 								)}
@@ -64,7 +64,7 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 									sizes="(max-width: 768px) 90vw, 400px"
 									className={[
 										"max-h-[50vh] w-auto rounded-lg shadow-lg",
-										isPro ? "ring-4 ring-[#FFD700]/50" : "",
+										isPro ? "ring-4 ring-pro-badge/50" : "",
 									].join(" ")}
 								/>
 							</div>

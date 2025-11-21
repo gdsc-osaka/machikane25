@@ -7,6 +7,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DownloadPage from "@/app/(user)/download/[boothId]/[photoId]/page";
+import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
 
 const params = {
 	boothId: "booth-123",
@@ -53,6 +57,7 @@ describe("[RED] DownloadPage", () => {
 					{
 						id: "photo-456",
 						imageUrl: "https://example.com/generated/photo.png",
+						modelId: GEMINI_FLASH_IMAGE_MODEL_ID,
 					},
 				],
 			},
@@ -99,6 +104,7 @@ describe("[RED] DownloadPage", () => {
 					{
 						id: "photo-3",
 						imageUrl: "https://example.com/generated/photo-3.png",
+						modelId: GEMINI_PRO_IMAGE_MODEL_ID,
 					},
 				],
 			},
@@ -118,6 +124,9 @@ describe("[RED] DownloadPage", () => {
 		expect(links[0]).toHaveAccessibleName("Download Photo 1");
 		expect(links[1]).toHaveAccessibleName("Download Photo 2");
 		expect(links[2]).toHaveAccessibleName("Download Photo 3");
+
+		// Verify Pro badge is displayed for the 3rd photo
+		expect(screen.getByText("PRO")).toBeInTheDocument();
 	});
 
 	it("shows expiry message when getGeneratedPhotoAction returns EXPIRED", async () => {

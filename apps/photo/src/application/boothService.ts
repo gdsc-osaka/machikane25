@@ -8,6 +8,10 @@ import { Buffer } from "node:buffer";
 import { FieldValue } from "firebase-admin/firestore";
 import { ulid } from "ulid";
 import { type BoothState, ensureValidBoothState } from "@/domain/booth";
+import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
 import { createGeneratedPhoto } from "@/infra/firebase/photoRepository";
 import { getAdminFirestore, getAdminStorage } from "@/lib/firebase/admin";
 import { generateImage, sendToAquarium } from "./generationService";
@@ -90,8 +94,16 @@ export const startGeneration = async (
 	);
 
 	// Generate 3 images in parallel
-	const generatePromises = generatedPhotoIds.map((photoId) =>
-		generateImage(boothId, uploadedPhotoId, options, photoId),
+	// 1x Nano Banana Pro (gemini-3-pro-image-preview)
+	// 2x Nano Banana (gemini-2.5-flash-image)
+	const models = [
+		GEMINI_PRO_IMAGE_MODEL_ID,
+		GEMINI_FLASH_IMAGE_MODEL_ID,
+		GEMINI_FLASH_IMAGE_MODEL_ID,
+	];
+
+	const generatePromises = models.map((modelId) =>
+		generateImage(boothId, uploadedPhotoId, options, modelId),
 	);
 
 	await Promise.all(generatePromises);

@@ -22,6 +22,7 @@ export const generatedPhotoSchema = z.discriminatedUnion("status", [
 		photoId: photoIdSchema,
 		imagePath: storagePathSchema,
 		imageUrl: urlSchema,
+		modelId: z.string().optional(),
 		createdAt: z.date(),
 	}),
 	z.object({
@@ -30,6 +31,7 @@ export const generatedPhotoSchema = z.discriminatedUnion("status", [
 		photoId: photoIdSchema,
 		imagePath: z.string(),
 		imageUrl: z.string(),
+		modelId: z.string().optional(),
 		createdAt: z.date(),
 	}),
 	z.object({
@@ -38,6 +40,7 @@ export const generatedPhotoSchema = z.discriminatedUnion("status", [
 		photoId: photoIdSchema,
 		imagePath: z.string(),
 		imageUrl: z.string(),
+		modelId: z.string().optional(),
 		createdAt: z.date(),
 	}),
 ]);

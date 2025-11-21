@@ -47,6 +47,7 @@ const parseSnapshot = <T extends UploadedPhoto | GeneratedPhoto>(
 	const photoId = typeof data.photoId === "string" ? data.photoId : snapshot.id;
 	const imagePath = typeof data.imagePath === "string" ? data.imagePath : "";
 	const imageUrl = typeof data.imageUrl === "string" ? data.imageUrl : "";
+	const modelId = typeof data.modelId === "string" ? data.modelId : undefined;
 	const createdAt = toDate(data.createdAt);
 
 	const status =
@@ -62,6 +63,7 @@ const parseSnapshot = <T extends UploadedPhoto | GeneratedPhoto>(
 		photoId,
 		imagePath,
 		imageUrl,
+		modelId,
 		status,
 		createdAt,
 	} as T;
@@ -69,14 +71,22 @@ const parseSnapshot = <T extends UploadedPhoto | GeneratedPhoto>(
 
 const toFirestoreData = <T extends UploadedPhoto | GeneratedPhoto>(
 	value: T,
-) => ({
-	boothId: value.boothId,
-	photoId: value.photoId,
-	imagePath: value.imagePath,
-	imageUrl: value.imageUrl,
-	status: (value as GeneratedPhoto).status,
-	createdAt: Timestamp.fromDate(value.createdAt),
-});
+) => {
+	const data: Record<string, unknown> = {
+		boothId: value.boothId,
+		photoId: value.photoId,
+		imagePath: value.imagePath,
+		imageUrl: value.imageUrl,
+		status: (value as GeneratedPhoto).status,
+		createdAt: Timestamp.fromDate(value.createdAt),
+	};
+
+	if ("modelId" in value && value.modelId) {
+		data.modelId = value.modelId;
+	}
+
+	return data;
+};
 
 export const uploadedPhotoConverter: FirestoreDataConverter<UploadedPhoto> = {
 	toFirestore: toFirestoreData,

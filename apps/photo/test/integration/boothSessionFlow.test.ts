@@ -31,6 +31,10 @@ import {
 } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
+import {
 	ensureAnonymousSignIn,
 	getFirebaseFirestore,
 	initializeFirebaseClient,
@@ -148,7 +152,9 @@ const storageObjects = new Set<string>();
 const geminiServer = setupServer(
 	// Mock Gemini API to prevent actual API calls and charges
 	http.post(
-		"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+		// FIXME: とりあえずすべての `models` リソースに反応するようにしているが、
+		// 今後画像生成モデル以外も扱うときは処理を変更しなければならない
+		"https://generativelanguage.googleapis.com/v1beta/models/:modelId",
 		async () => {
 			// Return mock generated image data
 			const mockGeneratedImageBase64 =
@@ -715,5 +721,25 @@ describe("boothSessionFlow integration", () => {
 			collection(firestore, `booths/${boothId}/uploadedPhotos`),
 		);
 		expect(remainingUploadsSnapshot.empty).toBe(true);
-	}, 15000); // 15 second timeout for integration test
+
+		// Verify generated photos count and models using Admin SDK (to rule out Client SDK issues)
+		const generatedPhotosRef = adminFirestore.collection(
+			`booths/${boothId}/generatedPhotos`,
+		);
+		const generatedPhotosSnapshotAdmin = await generatedPhotosRef.get();
+		expect(generatedPhotosSnapshotAdmin.size).toBe(3);
+
+		const generatedPhotos = generatedPhotosSnapshotAdmin.docs.map((doc) =>
+			doc.data(),
+		);
+		const proPhotos = generatedPhotos.filter(
+			(p) => p.modelId === GEMINI_PRO_IMAGE_MODEL_ID,
+		);
+		const standardPhotos = generatedPhotos.filter(
+			(p) => p.modelId === GEMINI_FLASH_IMAGE_MODEL_ID,
+		);
+
+		expect(proPhotos.length).toBe(1);
+		expect(standardPhotos.length).toBe(2);
+	}, 30000); // 30 second timeout for integration test
 });

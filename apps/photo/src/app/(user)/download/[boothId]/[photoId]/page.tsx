@@ -43,6 +43,15 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 			? relatedPhotos
 			: [{ id: photoId, imageUrl, modelId }];
 
+	const now = new Date();
+	const downloadFileName = (index: number) => {
+		const timestamp = now
+			.toISOString()
+			.replace(/[-:]|\..*$/g, "")
+			.replace("T", "_");
+		return `artifoto_${timestamp}_${index + 1}.png`;
+	};
+
 	return (
 		<main className="flex min-h-screen flex-col items-center justify-center gap-12 bg-background px-6 py-16 text-center">
 			<h1 className="text-3xl font-semibold">Your AI Photos</h1>
@@ -70,7 +79,10 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 									)}
 								/>
 							</div>
-							<DownloadButton imageUrl={photo.imageUrl} />
+							<DownloadButton
+								imageUrl={photo.imageUrl}
+								fileName={downloadFileName(index)}
+							/>
 						</div>
 					);
 				})}

@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 
 type DownloadButtonProps = {
 	imageUrl: string;
+	fileName: string;
 };
 
-export const DownloadButton = ({ imageUrl }: DownloadButtonProps) => {
+export const DownloadButton = ({ imageUrl, fileName }: DownloadButtonProps) => {
 	const handleDownload = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 		try {
@@ -16,12 +17,7 @@ export const DownloadButton = ({ imageUrl }: DownloadButtonProps) => {
 			const url = window.URL.createObjectURL(blob);
 			const link = document.createElement("a");
 			link.href = url;
-			const now = new Date();
-			const timestamp = now
-				.toISOString()
-				.replace(/[-:]|\..*$/g, "")
-				.replace("T", "_");
-			link.download = `artifoto_${timestamp}.png`;
+			link.download = fileName;
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);

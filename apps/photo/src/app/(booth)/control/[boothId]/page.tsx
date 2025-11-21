@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
 	useCallback,
@@ -401,14 +402,14 @@ export default function ControlPage() {
 			latestPhotoId.length > 0 &&
 			boothId.length > 0;
 		const downloadPath = canBuildDownloadPath
-			? `/download/${boothId}/${latestPhotoId}`
+			? buildDownloadPath(boothId, latestPhotoId)
 			: null;
 
 		// Resolve base URL
 		const baseUrl =
 			process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") ??
 			(typeof window !== "undefined" ? window.location.origin : "");
-		
+
 		const qrValue =
 			downloadPath && baseUrl.length > 0
 				? `${baseUrl}${downloadPath}`
@@ -430,15 +431,18 @@ export default function ControlPage() {
 					画像を生成中...
 				</p>
 				<Progress value={undefined} className="w-96 bg-[#444746]" />
-				
-				{qrValue ? (
+
+				{qrValue && downloadPath ? (
 					<div className="mt-4 flex flex-col items-center gap-4">
 						<p className="max-w-md text-center text-[#e3e3e3]/80">
-							こちらの QR コードからダウンロードページで待機できます。<br/>
+							こちらの QR コードからダウンロードページで待機できます。
+							<br />
 							「ホーム」ボタンを押して最初の画面に戻ることもできます。
 						</p>
 						<div className="rounded-2xl border-2 border-[#444746] bg-[#e3e3e3] p-4 shadow-2xl">
-							<QRCode value={qrValue} size={192} />
+							<Link href={downloadPath}>
+								<QRCode value={qrValue} size={192} />
+							</Link>
 						</div>
 					</div>
 				) : (
@@ -482,9 +486,11 @@ export default function ControlPage() {
 				<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
 					画像のダウンロードはこちらから
 				</p>
-				{qrValue ? (
+				{qrValue && downloadPath ? (
 					<div className="rounded-2xl border-2 border-[#444746] bg-[#444746] p-8 shadow-2xl">
-						<QRCode value={qrValue} size={256} />
+						<Link href={downloadPath}>
+							<QRCode value={qrValue} size={256} />
+						</Link>
 					</div>
 				) : null}
 				{latestGeneratedPhotoUrls.length > 0 ? (

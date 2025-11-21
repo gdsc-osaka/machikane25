@@ -38,7 +38,7 @@ export default function DisplayPage() {
 	useEffect(() => {
 		if (boothState === "capturing" && !isCapturing) {
 			setIsCapturing(true);
-			setCountdown(5);
+			setCountdown(8);
 		} else if (boothState !== "capturing") {
 			setIsCapturing(false);
 			setCountdown(null);

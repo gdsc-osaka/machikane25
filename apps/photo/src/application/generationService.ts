@@ -160,9 +160,10 @@ You may only change the background, location, clothing, and lighting. Everything
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
-					`${personOption?.inlineData
-						? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-						: `${personOption?.value} is next to them, also wearing the same outfit`
+					`${
+						personOption?.inlineData
+							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
+							: `${personOption?.value} is next to them, also wearing the same outfit`
 					}. ` +
 					`Keep every person's face, expression, and body type exactly as shown in the original photo.`,
 			},

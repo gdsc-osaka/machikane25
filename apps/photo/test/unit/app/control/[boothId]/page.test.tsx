@@ -71,6 +71,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const mockStartSession = boothActionMocks.startSession;
+const mockStartCapture = boothActionMocks.startCapture;
 const mockEnsureAnonymousSignIn = clientMocks.ensureAnonymousSignIn;
 
 const mockUseBoothState = hookMocks.useBoothState;
@@ -130,7 +131,7 @@ describe("[RED] ControlPage", () => {
 		const user = userEvent.setup();
 		await user.click(startButton);
 
-		expect(mockStartSession).toHaveBeenCalledWith({ boothId });
+		expect(mockStartCapture).toHaveBeenCalledWith({ boothId });
 	});
 
 	it("shows menu state with uploaded photos and generation options", () => {

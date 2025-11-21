@@ -153,9 +153,10 @@ export const toContents = (
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
-					`${personOption?.inlineData
-						? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-						: `${personOption?.value} is next to them, also wearing the same outfit`
+					`${
+						personOption?.inlineData
+							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
+							: `${personOption?.value} is next to them, also wearing the same outfit`
 					}.`,
 			},
 		],

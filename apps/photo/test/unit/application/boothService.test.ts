@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
 
 const updateMock = vi.fn();
 const setMock = vi.fn();
@@ -137,21 +141,21 @@ describe("BoothService", () => {
 			"booth-4",
 			"uploaded-1",
 			{ style: "style-1" },
-			"gemini-3-pro-image-preview",
+			GEMINI_PRO_IMAGE_MODEL_ID,
 		);
 		expect(generateImageMock).toHaveBeenNthCalledWith(
 			2,
 			"booth-4",
 			"uploaded-1",
 			{ style: "style-1" },
-			"gemini-2.5-flash-image",
+			GEMINI_FLASH_IMAGE_MODEL_ID,
 		);
 		expect(generateImageMock).toHaveBeenNthCalledWith(
 			3,
 			"booth-4",
 			"uploaded-1",
 			{ style: "style-1" },
-			"gemini-2.5-flash-image",
+			GEMINI_FLASH_IMAGE_MODEL_ID,
 		);
 	});
 

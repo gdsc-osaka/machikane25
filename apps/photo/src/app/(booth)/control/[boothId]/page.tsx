@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackIcon, CameraIcon, CheckIcon } from "@/components/ui/icons";
 import { Progress } from "@/components/ui/progress";
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { useBoothState } from "@/hooks/useBoothState";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
@@ -450,7 +451,7 @@ export default function ControlPage() {
 				{latestGeneratedPhotos.length > 0 ? (
 					<div className="flex flex-wrap justify-center gap-4">
 						{latestGeneratedPhotos.map((photo, index) => {
-							const isPro = photo.modelId === "gemini-3-pro-image-preview";
+							const isPro = photo.modelId === GEMINI_PRO_IMAGE_MODEL_ID;
 							return (
 								<div
 									key={photo.url}

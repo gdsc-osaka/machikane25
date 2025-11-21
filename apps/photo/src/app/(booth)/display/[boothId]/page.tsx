@@ -8,6 +8,7 @@ import Webcam from "react-webcam";
 import { completeCapture } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import { Progress } from "@/components/ui/progress";
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { useBoothState } from "@/hooks/useBoothState";
 import { playSound, preloadAllSounds } from "@/lib/sound";
 
@@ -187,7 +188,7 @@ export default function DisplayPage() {
 				{latestGeneratedPhotos.length > 0 ? (
 					<div className="flex flex-wrap justify-center gap-8">
 						{latestGeneratedPhotos.map((photo, index) => {
-							const isPro = photo.modelId === "gemini-3-pro-image-preview";
+							const isPro = photo.modelId === GEMINI_PRO_IMAGE_MODEL_ID;
 							return (
 								<div
 									key={photo.url}

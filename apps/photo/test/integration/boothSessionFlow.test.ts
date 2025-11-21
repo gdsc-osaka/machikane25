@@ -31,6 +31,10 @@ import {
 } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
+import {
 	ensureAnonymousSignIn,
 	getFirebaseFirestore,
 	initializeFirebaseClient,
@@ -691,10 +695,10 @@ describe("boothSessionFlow integration", () => {
 			doc.data(),
 		);
 		const proPhotos = generatedPhotos.filter(
-			(p) => p.modelId === "gemini-3-pro-image-preview",
+			(p) => p.modelId === GEMINI_PRO_IMAGE_MODEL_ID,
 		);
 		const standardPhotos = generatedPhotos.filter(
-			(p) => p.modelId === "gemini-2.5-flash-image",
+			(p) => p.modelId === GEMINI_FLASH_IMAGE_MODEL_ID,
 		);
 
 		expect(proPhotos.length).toBe(1);

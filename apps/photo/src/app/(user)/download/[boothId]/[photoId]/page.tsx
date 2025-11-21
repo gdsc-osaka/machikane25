@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 
 type DownloadPageProps = {
 	params: Promise<{
@@ -46,7 +47,7 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 
 			<div className="flex flex-wrap justify-center gap-8">
 				{photosToDisplay.map((photo, index) => {
-					const isPro = photo.modelId === "gemini-3-pro-image-preview";
+					const isPro = photo.modelId === GEMINI_PRO_IMAGE_MODEL_ID;
 					return (
 						<div key={photo.id} className="flex flex-col items-center gap-4">
 							<div className="relative">

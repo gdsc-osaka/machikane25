@@ -126,7 +126,7 @@ export default function ControlPage() {
 	useEffect(() => {
 		if (boothState === "capturing" && !isCapturing) {
 			setIsCapturing(true);
-			setCountdown(8);
+			setCountdown(10);
 		} else if (boothState !== "capturing") {
 			setIsCapturing(false);
 			setCountdown(null);

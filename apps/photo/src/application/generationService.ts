@@ -76,7 +76,13 @@ export const toContents = (
 		{
 			parts: [
 				{
-					text: "You are an expert image generation AI for photo booth applications. Keep the original person's face exactly the same, while changing their outfit, location. Avoid changing the facial expression.",
+					text: `You are an expert image generation AI for photo booth applications.
+
+ABSOLUTE PRIORITY: Preserve every person's face and body type exactly as shown in the original photo.
+
+For EACH person, you must keep their face features (eyes, nose, mouth, eyebrows, skin tone, hair), facial expression, body type, and height relative to others completely unchanged. If there are multiple people, count them carefully and generate the exact same number. Each person must be preserved individually - never merge, blend, or mix faces or bodies between people. Never change who is taller or shorter. Never modify any facial features or expressions.
+
+You may only change the background, location, clothing, and lighting. Everything else must remain exactly as shown.`,
 				},
 			],
 		},
@@ -155,7 +161,8 @@ export const toContents = (
 						personOption?.inlineData
 							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
 							: `${personOption?.value} is next to them, also wearing the same outfit`
-					}.`,
+					}. ` +
+					`Keep every person's face, expression, and body type exactly as shown in the original photo.`,
 			},
 		],
 	});
@@ -274,7 +281,7 @@ export const generateImage = async (
 	const ai = new GoogleGenAI({ apiKey: apiKey });
 	try {
 		const response = await ai.models.generateContent({
-			model: "gemini-2.5-flash-image",
+			model: "gemini-3-pro-image-preview",
 			contents: toContents(
 				{
 					mimeType: baseImage.mimeType,

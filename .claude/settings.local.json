@@ -25,7 +25,13 @@
       "Bash(/tmp/old_prompt.ts)",
       "Bash(/tmp/new_prompt.ts)",
       "Bash(node /tmp/count_tokens.js:*)",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(tree:*)",
+      "Bash(chmod:*)",
+      "Bash(./download-samples.sh)",
+      "Bash(GEMINI_API_KEY=AIzaSyBabJTbCIVFpRICIssqtyEqJw4T_GdB2zY npx tsx:*)",
+      "Bash(npx tsx:*)",
+      "Bash(powershell -Command \"$env:GEMINI_API_KEY=''AIzaSyBabJTbCIVFpRICIssqtyEqJw4T_GdB2zY''; npx tsx list-models.ts\")"
     ],
     "deny": [],
     "ask": []

@@ -699,5 +699,5 @@ describe("boothSessionFlow integration", () => {
 
 		expect(proPhotos.length).toBe(1);
 		expect(standardPhotos.length).toBe(2);
-	}, 60000); // 60 second timeout for integration test
+	}, 30000); // 30 second timeout for integration test
 });

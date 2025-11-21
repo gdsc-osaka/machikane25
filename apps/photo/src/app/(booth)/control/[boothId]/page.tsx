@@ -434,7 +434,7 @@ export default function ControlPage() {
 				{qrValue ? (
 					<div className="mt-4 flex flex-col items-center gap-4">
 						<p className="max-w-md text-center text-[#e3e3e3]/80">
-							こちらのQRコードからダウンロードページで待機できます。<br/>
+							こちらの QR コードからダウンロードページで待機できます。<br/>
 							「ホーム」ボタンを押して最初の画面に戻ることもできます。
 						</p>
 						<div className="rounded-2xl border-2 border-[#444746] bg-[#e3e3e3] p-4 shadow-2xl">

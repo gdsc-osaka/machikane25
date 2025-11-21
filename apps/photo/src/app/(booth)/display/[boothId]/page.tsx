@@ -169,6 +169,11 @@ export default function DisplayPage() {
 			<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-center text-5xl font-semibold text-transparent drop-shadow-lg md:text-6xl">
 				画像を生成中...
 			</p>
+			<p className="text-center text-3xl font-semibold leading-relaxed text-[#e3e3e3] md:text-4xl">
+				タブレットの QR コードから
+				<br />
+				ダウンロードページで待機できます。
+			</p>
 			<Progress value={undefined} className="w-3/4 max-w-2xl bg-[#444746]" />
 		</div>
 	);

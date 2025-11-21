@@ -6,6 +6,7 @@
 
 import { Buffer } from "node:buffer";
 import { FieldValue } from "firebase-admin/firestore";
+import { ulid } from "ulid";
 import { type BoothState, ensureValidBoothState } from "@/domain/booth";
 import { createGeneratedPhoto } from "@/infra/firebase/photoRepository";
 import { getAdminFirestore, getAdminStorage } from "@/lib/firebase/admin";
@@ -60,23 +61,53 @@ export const startGeneration = async (
 	uploadedPhotoId: string,
 	options: Record<string, string>,
 ): Promise<void> => {
-	await updateBoothState(boothId, { state: "generating" });
-	console.debug("Booth state updated to 'generating'");
+	// Generate 3 IDs and create records immediately
+	const generatedPhotoIds = [
+		ulid().toLowerCase(),
+		ulid().toLowerCase(),
+		ulid().toLowerCase(),
+	];
 
-	// Generate 3 images in parallel
-	const generatePromises = Array.from({ length: 3 }).map(() =>
-		generateImage(boothId, uploadedPhotoId, options),
+	await Promise.all(
+		generatedPhotoIds.map((photoId) =>
+			createGeneratedPhoto({
+				boothId,
+				photoId,
+				imagePath: "", // Will be updated later
+				imageUrl: "", // Will be updated later
+				status: "generating",
+			}),
+		),
 	);
 
-	const generatedPhotoIds = await Promise.all(generatePromises);
-	console.debug("Generated photo IDs:", generatedPhotoIds);
-
-	// Automatically transition to completed state
 	await updateBoothState(boothId, {
-		state: "completed",
+		state: "generating",
 		latestPhotoIds: generatedPhotoIds,
 	});
-	console.debug("Booth state updated to 'completed'");
+	console.debug(
+		"Booth state updated to 'generating' with IDs:",
+		generatedPhotoIds,
+	);
+
+	// Generate 3 images in parallel
+	const generatePromises = generatedPhotoIds.map((photoId) =>
+		generateImage(boothId, uploadedPhotoId, options, photoId),
+	);
+
+	await Promise.all(generatePromises);
+
+	// Check if we should still transition to completed (user might have started new session)
+	const currentBooth = await boothsCollection().doc(boothId).get();
+	const currentState = currentBooth.data()?.state;
+
+	if (currentState === "generating") {
+		// Automatically transition to completed state
+		await updateBoothState(boothId, {
+			state: "completed",
+			latestPhotoIds: generatedPhotoIds,
+		});
+		console.debug("Booth state updated to 'completed'");
+	}
 
 	// Cleanup uploaded photo in the background
 	// FIXME: cleanerあるからこれ要らん
@@ -132,6 +163,7 @@ export const completeGeneration = async (
 		photoId: generatedPhotoId,
 		imagePath,
 		imageUrl,
+		status: "completed",
 		createdAt: new Date(),
 	});
 

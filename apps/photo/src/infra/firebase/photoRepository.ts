@@ -62,17 +62,19 @@ export type CreateGeneratedPhotoInput = {
 	photoId: string;
 	imagePath: string;
 	imageUrl: string;
+	status?: GeneratedPhoto["status"];
 };
 
 export const createGeneratedPhoto = async (
 	input: CreateGeneratedPhotoInput,
 ): Promise<void> => {
-	const { boothId, photoId, imagePath, imageUrl } = input;
+	const { boothId, photoId, imagePath, imageUrl, status = "completed" } = input;
 	await generatedPhotosCollection(boothId).doc(photoId).set({
 		boothId,
 		photoId,
 		imagePath,
 		imageUrl,
+		status,
 		createdAt: FieldValue.serverTimestamp(),
 	});
 };
@@ -125,4 +127,23 @@ export const findGeneratedPhotoByPhotoId = async (
 
 	const document = snapshot.docs.at(0);
 	return document ? document.data() : null;
+};
+
+export type UpdateGeneratedPhotoInput = {
+	boothId: string;
+	photoId: string;
+	imagePath?: string;
+	imageUrl?: string;
+	status?: GeneratedPhoto["status"];
+};
+
+export const updateGeneratedPhoto = async (
+	input: UpdateGeneratedPhotoInput,
+): Promise<void> => {
+	const { boothId, photoId, ...update } = input;
+	// Remove undefined keys
+	const cleanUpdate = Object.fromEntries(
+		Object.entries(update).filter(([_, v]) => v !== undefined),
+	);
+	await generatedPhotosCollection(boothId).doc(photoId).update(cleanUpdate);
 };

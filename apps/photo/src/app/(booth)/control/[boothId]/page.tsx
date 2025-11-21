@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
 	useCallback,
 	useEffect,
@@ -13,6 +13,7 @@ import {
 } from "react";
 import QRCode from "react-qr-code";
 import {
+	completeCapture,
 	discardSession,
 	startCapture,
 	startGeneration,
@@ -391,24 +392,63 @@ export default function ControlPage() {
 		</div>
 	);
 
-	const renderGenerating = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
-			{/* Back Button */}
-			<button
-				type="button"
-				onClick={handleDiscardSession}
-				className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
-			>
-				<BackIcon size="sm" />
-				<span className="text-sm font-medium">ホーム</span>
-			</button>
+	const renderGenerating = () => {
+		const latestPhotoIds = booth?.latestPhotoIds;
+		const latestPhotoId =
+			latestPhotoIds && latestPhotoIds.length > 0 ? latestPhotoIds[0] : null;
+		const canBuildDownloadPath =
+			typeof latestPhotoId === "string" &&
+			latestPhotoId.length > 0 &&
+			boothId.length > 0;
+		const downloadPath = canBuildDownloadPath
+			? `/download/${boothId}/${latestPhotoId}`
+			: null;
 
-			<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
-				画像を生成中...
-			</p>
-			<Progress value={undefined} className="w-96 bg-[#444746]" />
-		</div>
-	);
+		// Resolve base URL
+		const baseUrl =
+			process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") ??
+			(typeof window !== "undefined" ? window.location.origin : "");
+		
+		const qrValue =
+			downloadPath && baseUrl.length > 0
+				? `${baseUrl}${downloadPath}`
+				: downloadPath;
+
+		return (
+			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+				{/* Back Button */}
+				<button
+					type="button"
+					onClick={handleDiscardSession}
+					className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#444746] bg-[#303030]/80 px-4 py-2 text-[#e3e3e3] backdrop-blur-sm transition-all hover:bg-[#444746]"
+				>
+					<BackIcon size="sm" />
+					<span className="text-sm font-medium">ホーム</span>
+				</button>
+
+				<p className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-4xl font-semibold text-transparent drop-shadow-lg">
+					画像を生成中...
+				</p>
+				<Progress value={undefined} className="w-96 bg-[#444746]" />
+				
+				{qrValue ? (
+					<div className="mt-4 flex flex-col items-center gap-4">
+						<p className="max-w-md text-center text-[#e3e3e3]/80">
+							こちらのQRコードからダウンロードページで待機できます。<br/>
+							「ホーム」ボタンを押して最初の画面に戻ることもできます。
+						</p>
+						<div className="rounded-2xl border-2 border-[#444746] bg-[#e3e3e3] p-4 shadow-2xl">
+							<QRCode value={qrValue} size={192} />
+						</div>
+					</div>
+				) : (
+					<p className="max-w-md text-center text-[#e3e3e3]/80">
+						「ホーム」ボタンを押して最初の画面に戻ることもできます。
+					</p>
+				)}
+			</div>
+		);
+	};
 
 	const renderCompleted = () => {
 		const latestPhotoIds = booth?.latestPhotoIds;

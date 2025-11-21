@@ -28,6 +28,7 @@ type GeminiInlineData = {
 type GeneratedPhotoInfo = {
 	id: string;
 	imageUrl: string;
+	status: GeneratedPhotoRecord["status"];
 	relatedPhotos?: { id: string; imageUrl: string }[];
 };
 
@@ -251,6 +252,7 @@ export const generateImage = async (
 	boothId: string,
 	uploadedPhotoId: string,
 	options: Record<string, string>,
+	photoId: string,
 ): Promise<string> => {
 	console.debug("generateImage");
 	const apiKey = ensureApiKey();
@@ -306,19 +308,28 @@ export const generateImage = async (
 		);
 		console.log("Generated image stored at: ", imagePath);
 
-		const photoId = derivePhotoId(imagePath);
-
 		await createGeneratedPhoto({
 			boothId,
 			photoId,
 			imagePath,
 			imageUrl,
+			status: "completed",
 		});
-		console.log("Generated photo metadata created with ID: ", photoId);
+		console.log("Generated photo metadata updated with ID: ", photoId);
 
 		return photoId;
 	} catch (error) {
 		console.error("Image generation failed: ", error);
+
+		// Mark as failed
+		await createGeneratedPhoto({
+			boothId,
+			photoId,
+			imagePath: "",
+			imageUrl: "",
+			status: "failed",
+		});
+
 		if (error instanceof Error) {
 			throw error;
 		}
@@ -500,6 +511,7 @@ export const getGeneratedPhoto = async (
 	return {
 		id: photo.photoId,
 		imageUrl: photo.imageUrl,
+		status: photo.status,
 		relatedPhotos,
 	};
 };

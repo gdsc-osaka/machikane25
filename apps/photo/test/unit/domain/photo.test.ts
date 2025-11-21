@@ -31,6 +31,7 @@ describe("photo domain schemas", () => {
 			photoId: "photo-9",
 			imagePath: "generated_photos/photo-9/photo.png",
 			imageUrl: "https://example.com/generated/photo-9.png",
+			status: "completed",
 			createdAt: new Date("2025-01-01T00:00:00Z"),
 		});
 
@@ -44,6 +45,7 @@ describe("photo domain schemas", () => {
 				photoId: "photo-10",
 				imagePath: "generated_photos/photo-10/photo.png",
 				imageUrl: "",
+				status: "completed",
 				createdAt: new Date(),
 			}),
 		).toThrowError();

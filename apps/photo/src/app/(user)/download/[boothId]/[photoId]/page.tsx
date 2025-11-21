@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
+import { DownloadStatusPoller } from "./download-status-poller";
 
 type DownloadPageProps = {
 	params: Promise<{
@@ -34,7 +35,25 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 		return null;
 	}
 
-	const { imageUrl, relatedPhotos } = result.data;
+	const { imageUrl, relatedPhotos, status } = result.data;
+
+	if (status === "generating") {
+		return <DownloadStatusPoller />;
+	}
+
+	if (status === "failed") {
+		return (
+			<main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 py-16 text-center">
+				<h1 className="text-3xl font-semibold text-destructive">
+					Generation Failed
+				</h1>
+				<p className="max-w-md text-muted-foreground">
+					Something went wrong while generating your photo. Please try again.
+				</p>
+			</main>
+		);
+	}
+
 	const photosToDisplay =
 		relatedPhotos && relatedPhotos.length > 0
 			? relatedPhotos

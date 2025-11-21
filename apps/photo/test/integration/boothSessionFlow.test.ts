@@ -639,11 +639,46 @@ describe("boothSessionFlow integration", () => {
 		};
 
 		// Start generation with mocked Gemini API (no actual API calls or charges)
-		await startGeneration({
+		// Start generation with mocked Gemini API (no actual API calls or charges)
+		const generationPromise = startGeneration({
 			boothId,
 			uploadedPhotoId: capturedResult.photoId,
 			options: generationSelection,
 		});
+
+		// Wait for state to become "generating"
+		// We need to poll or wait a bit because startGeneration updates state asynchronously
+		let boothGenerating = await boothRef.get();
+		let attempts = 0;
+		while (
+			boothGenerating.data()?.state !== "generating" &&
+			boothGenerating.data()?.state !== "completed" &&
+			attempts < 10
+		) {
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			boothGenerating = await boothRef.get();
+			attempts++;
+		}
+
+		// Verify intermediate state (generating)
+		// Note: It might have finished already if mock is too fast, so we check for either generating or completed
+		// but we definitely want to check that latestPhotoIds are present
+		expect(boothGenerating.data()?.latestPhotoIds).toBeTruthy();
+		expect(boothGenerating.data()?.latestPhotoIds.length).toBeGreaterThan(0);
+
+		const intermediatePhotoId = boothGenerating.data()?.latestPhotoIds[0];
+		const intermediateDocRef = adminFirestore.doc(
+			`booths/${boothId}/generatedPhotos/${intermediatePhotoId}`,
+		);
+		const intermediateDoc = await intermediateDocRef.get();
+		expect(intermediateDoc.exists).toBe(true);
+		// Status should be generating or completed
+		expect(["generating", "completed"]).toContain(
+			intermediateDoc.data()?.status,
+		);
+
+		// Wait for generation to complete
+		await generationPromise;
 
 		// Verify state automatically changed to completed
 		const boothAfterGeneration = await boothRef.get();
@@ -660,6 +695,7 @@ describe("boothSessionFlow integration", () => {
 		);
 		const generatedDoc = await generatedDocRef.get();
 		expect(generatedDoc.exists).toBe(true);
+		expect(generatedDoc.data()?.status).toBe("completed");
 
 		const generatedDocData = generatedDoc.data();
 		const generatedImagePath =

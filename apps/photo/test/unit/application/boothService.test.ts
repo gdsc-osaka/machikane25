@@ -11,9 +11,13 @@ const storageBucketMock = vi.fn(() => ({
 	name: "test-bucket",
 	file: storageFileMock,
 }));
+const getMock = vi.fn(() => ({
+	data: () => ({ state: "generating" }),
+}));
 const docMock = vi.fn(() => ({
 	update: updateMock,
 	set: setMock,
+	get: getMock,
 }));
 const collectionMock = vi.fn((collectionName: string) => {
 	if (collectionName === "booths") {
@@ -57,6 +61,11 @@ vi.mock("@/infra/firebase/photoRepository", () => ({
 	createGeneratedPhoto: createGeneratedPhotoMock,
 }));
 
+// Mock ulid
+vi.mock("ulid", () => ({
+	ulid: () => "mock-ulid",
+}));
+
 describe("BoothService", () => {
 	beforeEach(() => {
 		updateMock.mockReset();
@@ -71,6 +80,7 @@ describe("BoothService", () => {
 		generateImageMock.mockClear();
 		deleteUsedPhotoMock.mockClear();
 		sendToAquariumMock.mockClear();
+		getMock.mockClear();
 	});
 
 	it("startSession updates booth state to menu", async () => {
@@ -124,16 +134,30 @@ describe("BoothService", () => {
 
 		await startGeneration("booth-4", "uploaded-1", { style: "style-1" });
 
+		// Should create 3 generated photos with "generating" status
+		expect(createGeneratedPhotoMock).toHaveBeenCalledTimes(3);
+		expect(createGeneratedPhotoMock).toHaveBeenCalledWith({
+			boothId: "booth-4",
+			photoId: "mock-ulid",
+			imagePath: "",
+			imageUrl: "",
+			status: "generating",
+		});
+
 		expect(setMock).toHaveBeenCalledWith(
 			{
 				state: "generating",
+				latestPhotoIds: ["mock-ulid", "mock-ulid", "mock-ulid"],
 				updatedAt: "server-timestamp",
 			},
 			{ merge: true },
 		);
-		expect(generateImageMock).toHaveBeenCalledWith("booth-4", "uploaded-1", {
-			style: "style-1",
-		});
+		expect(generateImageMock).toHaveBeenCalledWith(
+			"booth-4",
+			"uploaded-1",
+			{ style: "style-1" },
+			"mock-ulid",
+		);
 	});
 
 	it("completeGeneration updates state and schedules cleanup", async () => {
@@ -182,6 +206,7 @@ describe("BoothService", () => {
 			imagePath: "generated_photos/generated-1/photo.png",
 			imageUrl:
 				"http://localhost:11004/v0/b/test-bucket/o/generated_photos%2Fgenerated-1%2Fphoto.png?alt=media",
+			status: "completed",
 			createdAt: expect.any(Date),
 		});
 

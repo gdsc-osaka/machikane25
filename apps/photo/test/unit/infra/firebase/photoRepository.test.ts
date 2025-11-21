@@ -107,6 +107,7 @@ describe("photoRepository", () => {
 			photoId: "photo-999",
 			imagePath: "generated_photos/photo-999/photo.png",
 			imageUrl: "https://example.com/generated/photo-999.png",
+			status: "completed",
 			createdAt: FieldValue.serverTimestamp(),
 		});
 	});

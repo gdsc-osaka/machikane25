@@ -8,6 +8,7 @@ import {
 
 type GeneratedPhotoData = {
 	imageUrl: string;
+	status: "generating" | "completed" | "failed";
 	relatedPhotos?: { id: string; imageUrl: string }[];
 };
 
@@ -32,6 +33,7 @@ export const getGeneratedPhotoAction = async (
 		return {
 			data: {
 				imageUrl: photo.imageUrl,
+				status: photo.status,
 				relatedPhotos: photo.relatedPhotos,
 			},
 			error: null,

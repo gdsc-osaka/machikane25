@@ -153,10 +153,9 @@ export const toContents = (
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
-					`${
-						personOption?.inlineData
-							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-							: `${personOption?.value} is next to them, also wearing the same outfit`
+					`${personOption?.inlineData
+						? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
+						: `${personOption?.value} is next to them, also wearing the same outfit`
 					}.`,
 			},
 		],
@@ -448,6 +447,41 @@ export const sendToAquarium = async (
 	}
 };
 
+const getRelatedPhotos = async (
+	photo: GeneratedPhotoRecord,
+	boothId: string,
+): Promise<GeneratedPhotoInfo["relatedPhotos"]> => {
+	const ageInMs = Date.now() - photo.createdAt.getTime();
+
+	if (ageInMs > ONE_DAY_IN_MS) {
+		throw createNamedError(
+			"PhotoExpiredError",
+			"Generated photo download expired",
+		);
+	}
+
+	const boothRef = getAdminFirestore().collection("booths").doc(boothId);
+	const boothSnapshot = await boothRef.get();
+
+	if (boothSnapshot.exists) {
+		const boothData = boothSnapshot.data();
+		const latestPhotoIds = boothData?.latestPhotoIds;
+
+		if (
+			Array.isArray(latestPhotoIds) &&
+			latestPhotoIds.includes(photo.photoId)
+		) {
+			const photos = await findGeneratedPhotos(boothId, latestPhotoIds);
+			return photos.map((p) => ({
+				id: p.photoId,
+				imageUrl: p.imageUrl,
+				modelId: p.modelId,
+			}));
+		}
+	}
+	return [];
+};
+
 /**
  * Retrieve generated photo metadata by id.
  * Throws PhotoNotFoundError when document is missing and PhotoExpiredError when older than 24 hours.
@@ -462,35 +496,7 @@ export const getGeneratedPhoto = async (
 		throw createNamedError("PhotoNotFoundError", "Generated photo not found");
 	}
 
-	const ageInMs = Date.now() - photo.createdAt.getTime();
-
-	if (ageInMs > ONE_DAY_IN_MS) {
-		throw createNamedError(
-			"PhotoExpiredError",
-			"Generated photo download expired",
-		);
-	}
-
-	const boothRef = getAdminFirestore().collection("booths").doc(boothId);
-	const boothSnapshot = await boothRef.get();
-	let relatedPhotos: { id: string; imageUrl: string }[] = [];
-
-	if (boothSnapshot.exists) {
-		const boothData = boothSnapshot.data();
-		const latestPhotoIds = Reflect.get(boothData || {}, "latestPhotoIds");
-
-		if (
-			Array.isArray(latestPhotoIds) &&
-			latestPhotoIds.includes(photo.photoId)
-		) {
-			const photos = await findGeneratedPhotos(boothId, latestPhotoIds);
-			relatedPhotos = photos.map((p) => ({
-				id: p.photoId,
-				imageUrl: p.imageUrl,
-				modelId: p.modelId,
-			}));
-		}
-	}
+	const relatedPhotos = await getRelatedPhotos(photo, boothId);
 
 	return {
 		id: photo.photoId,

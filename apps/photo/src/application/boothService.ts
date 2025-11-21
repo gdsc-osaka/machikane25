@@ -103,7 +103,13 @@ export const startGeneration = async (
 	];
 
 	const generatePromises = models.map((modelId, index) =>
-		generateImage(boothId, uploadedPhotoId, options, modelId, generatedPhotoIds[index]),
+		generateImage(
+			boothId,
+			uploadedPhotoId,
+			options,
+			modelId,
+			generatedPhotoIds[index],
+		),
 	);
 
 	await Promise.all(generatePromises);

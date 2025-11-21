@@ -189,7 +189,13 @@ describe("GenerationService.generateImage", () => {
 		});
 
 		await expect(
-			generateImage("booth-x", "photo-y", {}, "photo-z", GEMINI_FLASH_IMAGE_MODEL_ID),
+			generateImage(
+				"booth-x",
+				"photo-y",
+				{},
+				"photo-z",
+				GEMINI_FLASH_IMAGE_MODEL_ID,
+			),
 		).rejects.toThrowError("Gemini response missing image data");
 	}, 30000);
 });

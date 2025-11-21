@@ -152,7 +152,7 @@ const storageObjects = new Set<string>();
 const geminiServer = setupServer(
 	// Mock Gemini API to prevent actual API calls and charges
 	http.post(
-		"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+		"https://generativelanguage.googleapis.com/v1beta/models/:modelId:generateContent",
 		async () => {
 			// Return mock generated image data
 			const mockGeneratedImageBase64 =

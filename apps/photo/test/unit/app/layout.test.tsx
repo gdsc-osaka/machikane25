@@ -4,13 +4,20 @@ import RootLayout from "@/app/layout";
 
 // Mock Next.js font
 vi.mock("next/font/google", () => ({
-	Geist: () => ({
-		variable: "--font-geist-sans",
+	Google_Sans_Code: () => ({
+		variable: "--font-google-sans-code",
 		subsets: ["latin"],
 	}),
-	Geist_Mono: () => ({
-		variable: "--font-geist-mono",
+	Noto_Sans_JP: () => ({
+		variable: "--font-noto-sans-jp",
 		subsets: ["latin"],
+	}),
+}));
+
+vi.mock("next/font/local", () => ({
+	default: () => ({
+		variable: "--font-google-sans",
+		style: { fontFamily: "Google Sans" },
 	}),
 }));
 

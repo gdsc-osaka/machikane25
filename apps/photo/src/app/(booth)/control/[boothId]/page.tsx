@@ -79,10 +79,10 @@ export default function ControlPage() {
 
 	// Select the first photo by default
 	useEffect(() => {
-		if (photos.length > 0 && !selectedPhotoId) {
+		if (photos.length > 0) {
 			setSelectedPhotoId(photos[0].photoId);
 		}
-	}, [photos, selectedPhotoId]);
+	}, [photos]);
 
 	const boothState = getBoothState(booth?.state);
 	const prevBoothStateRef = useRef<string>(boothState);

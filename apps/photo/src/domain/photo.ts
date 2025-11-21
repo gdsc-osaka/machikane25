@@ -20,6 +20,7 @@ export const generatedPhotoSchema = z.object({
 	photoId: photoIdSchema,
 	imagePath: storagePathSchema,
 	imageUrl: urlSchema,
+	modelId: z.string().optional(),
 	createdAt: z.date(),
 });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackIcon, CameraIcon, CheckIcon } from "@/components/ui/icons";
 import { Progress } from "@/components/ui/progress";
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { useBoothState } from "@/hooks/useBoothState";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
@@ -70,7 +72,7 @@ export default function ControlPage() {
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [isCapturing, setIsCapturing] = useState(false);
 
-	const { booth, latestGeneratedPhotoUrls, isLoading, error } =
+	const { booth, latestGeneratedPhotos, isLoading, error } =
 		useBoothState(boothId);
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
@@ -447,23 +449,38 @@ export default function ControlPage() {
 						<QRCode value={qrValue} size={256} />
 					</div>
 				) : null}
-				{latestGeneratedPhotoUrls.length > 0 ? (
+				{latestGeneratedPhotos.length > 0 ? (
 					<div className="flex flex-wrap justify-center gap-4">
-						{latestGeneratedPhotoUrls.map((url, index) => (
-							<div
-								key={url}
-								className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30"
-							>
-								<Image
-									src={url}
-									alt={`生成された写真のプレビュー ${index + 1}`}
-									width={240}
-									height={240}
-									sizes="240px"
-									className="h-60 w-60 rounded object-cover"
-								/>
-							</div>
-						))}
+						{latestGeneratedPhotos.map((photo, index) => {
+							const isPro = photo.modelId === GEMINI_PRO_IMAGE_MODEL_ID;
+							return (
+								<div
+									key={photo.url}
+									className={clsx(
+										"rounded-lg border-2 p-4 shadow-lg",
+										isPro
+											? "border-pro-badge bg-pro-badge/10 shadow-pro-badge/50 ring-4 ring-pro-badge/30"
+											: "border-[#4796E3] shadow-[#4796E3]/30",
+									)}
+								>
+									<div className="relative">
+										{isPro && (
+											<div className="absolute -right-2 -top-2 z-10 rounded-full bg-pro-badge px-2 py-0.5 text-xs font-bold text-black shadow-md">
+												PRO
+											</div>
+										)}
+										<Image
+											src={photo.url}
+											alt={`生成された写真のプレビュー ${index + 1}`}
+											width={240}
+											height={240}
+											sizes="240px"
+											className="h-60 w-60 rounded object-cover"
+										/>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				) : null}
 			</div>

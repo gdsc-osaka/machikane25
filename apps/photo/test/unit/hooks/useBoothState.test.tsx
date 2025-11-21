@@ -152,8 +152,8 @@ describe("useBoothState", () => {
 			expect(currentState?.booth?.lastTakePhotoAt?.toISOString()).toBe(
 				"2025-01-01T00:00:00.000Z",
 			);
-			expect(currentState?.latestGeneratedPhotoUrls).toEqual([
-				"https://example.com/generated.png",
+			expect(currentState?.latestGeneratedPhotos).toEqual([
+				{ url: "https://example.com/generated.png", modelId: undefined },
 			]);
 		});
 

@@ -62,19 +62,23 @@ export type CreateGeneratedPhotoInput = {
 	photoId: string;
 	imagePath: string;
 	imageUrl: string;
+	modelId?: string;
 };
 
 export const createGeneratedPhoto = async (
 	input: CreateGeneratedPhotoInput,
 ): Promise<void> => {
-	const { boothId, photoId, imagePath, imageUrl } = input;
-	await generatedPhotosCollection(boothId).doc(photoId).set({
-		boothId,
-		photoId,
-		imagePath,
-		imageUrl,
-		createdAt: FieldValue.serverTimestamp(),
-	});
+	const { boothId, photoId, imagePath, imageUrl, modelId } = input;
+	await generatedPhotosCollection(boothId)
+		.doc(photoId)
+		.set({
+			boothId,
+			photoId,
+			imagePath,
+			imageUrl,
+			...(modelId !== undefined ? { modelId } : {}),
+			createdAt: FieldValue.serverTimestamp(),
+		});
 };
 
 export const findGeneratedPhoto = async (

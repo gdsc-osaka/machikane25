@@ -344,7 +344,7 @@ export default function ControlPage() {
 				{/* {renderSelectedOptionsThumbnails()} */}
 
 				{/* Action Buttons */}
-				<div className="flex gap-3 p-12">
+				<div className="flex gap-3">
 					<Button
 						onClick={handleStartCapture}
 						disabled={isPending}
@@ -355,13 +355,15 @@ export default function ControlPage() {
 						写真を撮る
 					</Button>
 					<div className="flex-2 relative flex h-12 items-center justify-center">
-						<Image
-							src={paint}
-							alt=""
-							width={1287}
-							height={667}
-							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72"
-						/>
+						<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-32 -mt-4 overflow-hidden">
+							<Image
+								src={paint}
+								alt=""
+								width={1287}
+								height={667}
+								className="absolute top-0 w-72"
+							/>
+						</div>
 						<Button
 							onClick={handleStartGeneration}
 							disabled={isGenerateDisabled}

@@ -36,7 +36,7 @@ const mockGetGeneratedPhotoAction =
 const mockNotFound = navigationMocks.notFound;
 
 const renderDownloadPage = async () => {
-	const page = await DownloadPage({ params });
+	const page = await DownloadPage({ params: Promise.resolve(params) });
 	render(page);
 };
 
@@ -49,6 +49,12 @@ describe("[RED] DownloadPage", () => {
 		mockGetGeneratedPhotoAction.mockResolvedValue({
 			data: {
 				imageUrl: "https://example.com/generated/photo.png",
+				relatedPhotos: [
+					{
+						id: "photo-456",
+						imageUrl: "https://example.com/generated/photo.png",
+					},
+				],
 			},
 			error: null,
 		});
@@ -56,7 +62,7 @@ describe("[RED] DownloadPage", () => {
 		await renderDownloadPage();
 
 		const generatedImage = screen.getByRole("img", {
-			name: "AI-generated result",
+			name: "AI-generated result 1",
 		});
 		expect(generatedImage).toBeInTheDocument();
 		expect(generatedImage.getAttribute("src")).toContain(
@@ -71,6 +77,42 @@ describe("[RED] DownloadPage", () => {
 			params.boothId,
 			params.photoId,
 		);
+	});
+
+	it("renders multiple images when related photos are available", async () => {
+		mockGetGeneratedPhotoAction.mockResolvedValue({
+			data: {
+				imageUrl: "https://example.com/generated/photo-1.png",
+				relatedPhotos: [
+					{
+						id: "photo-1",
+						imageUrl: "https://example.com/generated/photo-1.png",
+					},
+					{
+						id: "photo-2",
+						imageUrl: "https://example.com/generated/photo-2.png",
+					},
+					{
+						id: "photo-3",
+						imageUrl: "https://example.com/generated/photo-3.png",
+					},
+				],
+			},
+			error: null,
+		});
+
+		await renderDownloadPage();
+
+		const images = screen.getAllByRole("img");
+		expect(images).toHaveLength(3);
+		expect(images[0]).toHaveAccessibleName("AI-generated result 1");
+		expect(images[1]).toHaveAccessibleName("AI-generated result 2");
+		expect(images[2]).toHaveAccessibleName("AI-generated result 3");
+
+		const downloadButtons = screen.getAllByRole("button", {
+			name: "Download Photo",
+		});
+		expect(downloadButtons).toHaveLength(3);
 	});
 
 	it("shows expiry message when getGeneratedPhotoAction returns EXPIRED", async () => {
@@ -98,9 +140,8 @@ describe("[RED] DownloadPage", () => {
 			error: "NOT_FOUND",
 		});
 
-		const resolvedParams = Promise.resolve(params); // paramsをPromiseでラップ
 		await expect(
-			async () => await DownloadPage({ params: resolvedParams }),
+			DownloadPage({ params: Promise.resolve(params) }),
 		).rejects.toThrow("ROUTE_NOT_FOUND");
 		expect(mockNotFound).toHaveBeenCalledTimes(1);
 		expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(

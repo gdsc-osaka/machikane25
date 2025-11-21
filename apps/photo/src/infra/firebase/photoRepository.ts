@@ -93,6 +93,24 @@ export const findGeneratedPhoto = async (
 	return doc.data() ?? null;
 };
 
+export const findGeneratedPhotos = async (
+	boothId: string,
+	photoIds: string[],
+): Promise<GeneratedPhoto[]> => {
+	if (photoIds.length === 0) {
+		return [];
+	}
+
+	// Firestore 'in' query supports up to 10 values
+	// Since we only have 3, this is safe.
+	const snapshot = await generatedPhotosCollection(boothId)
+		.withConverter(generatedPhotoConverter)
+		.where("photoId", "in", photoIds)
+		.get();
+
+	return snapshot.docs.map((doc) => doc.data());
+};
+
 export const collectionGroupGeneratedPhotos = () =>
 	firestore().collectionGroup("generatedPhotos");
 

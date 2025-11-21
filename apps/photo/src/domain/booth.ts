@@ -19,7 +19,7 @@ export type BoothState = z.infer<typeof boothStateSchema>;
 export const boothSchema = z.object({
 	id: z.string(),
 	state: boothStateSchema,
-	latestPhotoId: z.string().nullable(),
+	latestPhotoIds: z.array(z.string()).nullable().optional(),
 	lastTakePhotoAt: z.date().nullable(),
 	createdAt: z.date(),
 	updatedAt: z.date(),

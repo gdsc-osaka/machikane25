@@ -145,13 +145,13 @@ describe("useBoothsWithLatestPhoto", () => {
 				{
 					id: "booth-1",
 					data: () => ({
-						latestPhotoId: "photo-1",
+						latestPhotoIds: ["photo-1"],
 					}),
 				},
 				{
 					id: "booth-2",
 					data: () => ({
-						latestPhotoId: null,
+						latestPhotoIds: null,
 					}),
 				},
 			],

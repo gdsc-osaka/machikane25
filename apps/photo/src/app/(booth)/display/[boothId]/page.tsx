@@ -21,7 +21,7 @@ const getBoothState = (state: string | undefined): string =>
 export default function DisplayPage() {
 	const params = useParams();
 	const boothId = ensureBoothId((params as Record<string, unknown>)?.boothId);
-	const { booth, latestGeneratedPhotoUrl, isLoading } = useBoothState(boothId);
+	const { booth, latestGeneratedPhotoUrls, isLoading } = useBoothState(boothId);
 
 	const webcamRef = useRef<Webcam>(null);
 	const [countdown, setCountdown] = useState<number | null>(null);
@@ -175,7 +175,7 @@ export default function DisplayPage() {
 	);
 
 	const renderCompleted = () => {
-		if (!latestGeneratedPhotoUrl) {
+		if (latestGeneratedPhotoUrls.length === 0) {
 			return (
 				<div className="flex h-full w-full items-center justify-center">
 					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
@@ -184,14 +184,26 @@ export default function DisplayPage() {
 		}
 
 		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Image
-					src={latestGeneratedPhotoUrl}
-					alt="生成された写真"
-					fill
-					className="object-contain"
-					priority
-				/>
+			<div className="flex h-full w-full items-center justify-center px-8">
+				{latestGeneratedPhotoUrls.length > 0 ? (
+					<div className="flex flex-wrap justify-center gap-8">
+						{latestGeneratedPhotoUrls.map((url, index) => (
+							<div
+								key={url}
+								className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30"
+							>
+								<Image
+									src={url}
+									alt={`生成された写真 ${index + 1}`}
+									width={320}
+									height={320}
+									sizes="320px"
+									className="h-80 w-80 rounded object-cover"
+								/>
+							</div>
+						))}
+					</div>
+				) : null}
 			</div>
 		);
 	};

@@ -216,7 +216,7 @@ export default function ControlPage() {
 	const renderIdle = () => (
 		<button
 			type="button"
-			onClick={handleStartSession}
+			onClick={handleStartCapture}
 			disabled={isPending}
 			className="flex h-full w-full flex-col items-center justify-center gap-8 transition-all active:scale-[0.99]"
 		>

@@ -74,7 +74,7 @@ export const createGeneratedPhoto = async (
 		photoId,
 		imagePath,
 		imageUrl,
-		modelId,
+		...(modelId !== undefined ? { modelId } : {}),
 		createdAt: FieldValue.serverTimestamp(),
 	});
 };

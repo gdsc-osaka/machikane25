@@ -1,8 +1,8 @@
+import clsx from "clsx";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
 import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
-import clsx from "clsx";
 
 type DownloadPageProps = {
 	params: Promise<{

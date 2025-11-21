@@ -69,14 +69,16 @@ export const createGeneratedPhoto = async (
 	input: CreateGeneratedPhotoInput,
 ): Promise<void> => {
 	const { boothId, photoId, imagePath, imageUrl, modelId } = input;
-	await generatedPhotosCollection(boothId).doc(photoId).set({
-		boothId,
-		photoId,
-		imagePath,
-		imageUrl,
-		...(modelId !== undefined ? { modelId } : {}),
-		createdAt: FieldValue.serverTimestamp(),
-	});
+	await generatedPhotosCollection(boothId)
+		.doc(photoId)
+		.set({
+			boothId,
+			photoId,
+			imagePath,
+			imageUrl,
+			...(modelId !== undefined ? { modelId } : {}),
+			createdAt: FieldValue.serverTimestamp(),
+		});
 };
 
 export const findGeneratedPhoto = async (

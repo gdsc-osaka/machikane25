@@ -1,5 +1,5 @@
-import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 
 const findGeneratedPhotoMock = vi.fn();
 

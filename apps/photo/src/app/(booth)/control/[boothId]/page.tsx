@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -27,7 +28,6 @@ import { useBoothState } from "@/hooks/useBoothState";
 import { useGenerationOptions } from "@/hooks/useGenerationOptions";
 import { useUploadedPhotos } from "@/hooks/useUploadedPhotos";
 import { playSound, preloadAllSounds } from "@/lib/sound";
-import clsx from "clsx";
 
 // key: type id
 // value: option id

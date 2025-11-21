@@ -7,7 +7,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DownloadPage from "@/app/(user)/download/[boothId]/[photoId]/page";
-import { GEMINI_FLASH_IMAGE_MODEL_ID, GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
+import {
+	GEMINI_FLASH_IMAGE_MODEL_ID,
+	GEMINI_PRO_IMAGE_MODEL_ID,
+} from "@/domain/models";
 
 const params = {
 	boothId: "booth-123",

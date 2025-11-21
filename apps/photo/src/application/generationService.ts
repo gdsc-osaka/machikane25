@@ -2,6 +2,7 @@ import { type Content, GoogleGenAI } from "@google/genai";
 import { captureException } from "@sentry/nextjs";
 import { ulid } from "ulid";
 import type { GroupedGenerationOptions } from "@/domain/generationOption";
+import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 import type { GeneratedPhoto as GeneratedPhotoRecord } from "@/domain/photo";
 import {
 	fetchAllOptions,
@@ -15,7 +16,6 @@ import {
 import { getImageDataFromId } from "@/infra/gemini/imageData";
 import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -154,9 +154,10 @@ export const toContents = (
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
-					`${personOption?.inlineData
-						? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-						: `${personOption?.value} is next to them, also wearing the same outfit`
+					`${
+						personOption?.inlineData
+							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
+							: `${personOption?.value} is next to them, also wearing the same outfit`
 					}.`,
 			},
 		],

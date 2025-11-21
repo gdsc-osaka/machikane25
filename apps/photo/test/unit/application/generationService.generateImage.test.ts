@@ -1,6 +1,6 @@
-import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 import { Buffer } from "node:buffer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 
 const createGeneratedPhotoMock = vi.fn();
 const getImageDataFromIdMock = vi.fn();

@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -11,7 +12,6 @@ import { Progress } from "@/components/ui/progress";
 import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { useBoothState } from "@/hooks/useBoothState";
 import { playSound, preloadAllSounds } from "@/lib/sound";
-import clsx from "clsx";
 
 const ensureBoothId = (value: unknown): string =>
 	typeof value === "string" ? value : "";

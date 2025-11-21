@@ -1,3 +1,4 @@
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const findGeneratedPhotoMock = vi.fn();
@@ -38,7 +39,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 			imagePath: "generated_photos/photo-1/photo.png",
 			imageUrl: "https://example.com/generated/photo-1.png",
 			createdAt: new Date(now - 60 * 60 * 1000),
-			modelId: "gemini-3-pro-image-preview",
+			modelId: GEMINI_PRO_IMAGE_MODEL_ID,
 		});
 
 		const { getGeneratedPhoto } = await import(
@@ -49,7 +50,7 @@ describe("GenerationService.getGeneratedPhoto", () => {
 		expect(result).toEqual({
 			id: "photo-1",
 			imageUrl: "https://example.com/generated/photo-1.png",
-			modelId: "gemini-3-pro-image-preview",
+			modelId: GEMINI_PRO_IMAGE_MODEL_ID,
 			relatedPhotos: [],
 		});
 		expect(findGeneratedPhotoMock).toHaveBeenCalledWith("booth-1", "photo-1");

@@ -15,6 +15,7 @@ import {
 import { getImageDataFromId } from "@/infra/gemini/imageData";
 import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -153,10 +154,9 @@ export const toContents = (
 					`The people from the [Original photo] are ${poseOption?.value}, ` +
 					`wearing ${outfitOption?.value}, ` +
 					`in ${locationOption?.value}. ` +
-					`${
-						personOption?.inlineData
-							? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
-							: `${personOption?.value} is next to them, also wearing the same outfit`
+					`${personOption?.inlineData
+						? "The partner from the [Partner photo] is next to them, also wearing the same outfit"
+						: `${personOption?.value} is next to them, also wearing the same outfit`
 					}.`,
 			},
 		],
@@ -250,7 +250,7 @@ export const generateImage = async (
 	boothId: string,
 	uploadedPhotoId: string,
 	options: Record<string, string>,
-	modelId = "gemini-2.5-flash-image",
+	modelId = GEMINI_FLASH_IMAGE_MODEL_ID,
 ): Promise<string> => {
 	console.debug("generateImage");
 	const apiKey = ensureApiKey();

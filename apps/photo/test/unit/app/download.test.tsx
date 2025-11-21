@@ -7,6 +7,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DownloadPage from "@/app/(user)/download/[boothId]/[photoId]/page";
+import { GEMINI_FLASH_IMAGE_MODEL_ID, GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 
 const params = {
 	boothId: "booth-123",
@@ -53,7 +54,7 @@ describe("[RED] DownloadPage", () => {
 					{
 						id: "photo-456",
 						imageUrl: "https://example.com/generated/photo.png",
-						modelId: "gemini-2.5-flash-image",
+						modelId: GEMINI_FLASH_IMAGE_MODEL_ID,
 					},
 				],
 			},
@@ -100,7 +101,7 @@ describe("[RED] DownloadPage", () => {
 					{
 						id: "photo-3",
 						imageUrl: "https://example.com/generated/photo-3.png",
-						modelId: "gemini-3-pro-image-preview",
+						modelId: GEMINI_PRO_IMAGE_MODEL_ID,
 					},
 				],
 			},

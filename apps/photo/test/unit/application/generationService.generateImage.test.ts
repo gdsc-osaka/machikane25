@@ -1,3 +1,4 @@
+import { GEMINI_FLASH_IMAGE_MODEL_ID } from "@/domain/models";
 import { Buffer } from "node:buffer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -130,7 +131,7 @@ describe("GenerationService.generateImage", () => {
 		expect(generateContentMock).toHaveBeenCalledOnce();
 		const callArgs = generateContentMock.mock.calls[0]?.[0];
 
-		expect(callArgs.model).toBe("gemini-2.5-flash-image");
+		expect(callArgs.model).toBe(GEMINI_FLASH_IMAGE_MODEL_ID);
 		expect(callArgs.config).toEqual({
 			imageConfig: {
 				aspectRatio: "3:4",
@@ -179,7 +180,7 @@ describe("GenerationService.generateImage", () => {
 			photoId: "photo-abc",
 			imagePath: "generated_photos/photo-abc/photo.png",
 			imageUrl: "https://example.com/generated/photo-abc.png",
-			modelId: "gemini-2.5-flash-image",
+			modelId: GEMINI_FLASH_IMAGE_MODEL_ID,
 		});
 
 		expect(result).toBe("photo-abc");

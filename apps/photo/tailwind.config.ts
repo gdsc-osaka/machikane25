@@ -8,7 +8,11 @@ const config: Config = {
 	],
 	darkMode: "class",
 	theme: {
-		extend: {},
+		extend: {
+			colors: {
+				"pro-badge": "#FFD700",
+			},
+		},
 	},
 	plugins: [],
 };

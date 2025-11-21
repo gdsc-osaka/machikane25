@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -9,6 +10,7 @@ import crystalStar from "@/../public/images/crystalStar.gif";
 import { completeCapture } from "@/app/actions/boothActions";
 import { uploadCapturedPhoto } from "@/app/actions/photoActions";
 import { Progress } from "@/components/ui/progress";
+import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
 import { useBoothState } from "@/hooks/useBoothState";
 import { playSound, preloadAllSounds } from "@/lib/sound";
 
@@ -21,7 +23,7 @@ const getBoothState = (state: string | undefined): string =>
 export default function DisplayPage() {
 	const params = useParams();
 	const boothId = ensureBoothId((params as Record<string, unknown>)?.boothId);
-	const { booth, latestGeneratedPhotoUrls, isLoading } = useBoothState(boothId);
+	const { booth, latestGeneratedPhotos, isLoading } = useBoothState(boothId);
 
 	const webcamRef = useRef<Webcam>(null);
 	const [countdown, setCountdown] = useState<number | null>(null);
@@ -175,7 +177,7 @@ export default function DisplayPage() {
 	);
 
 	const renderCompleted = () => {
-		if (latestGeneratedPhotoUrls.length === 0) {
+		if (latestGeneratedPhotos.length === 0) {
 			return (
 				<div className="flex h-full w-full items-center justify-center">
 					<p className="text-xl text-[#e3e3e3]">画像を読み込んでいます...</p>
@@ -185,23 +187,38 @@ export default function DisplayPage() {
 
 		return (
 			<div className="flex h-full w-full items-center justify-center px-8">
-				{latestGeneratedPhotoUrls.length > 0 ? (
+				{latestGeneratedPhotos.length > 0 ? (
 					<div className="flex flex-wrap justify-center gap-8">
-						{latestGeneratedPhotoUrls.map((url, index) => (
-							<div
-								key={url}
-								className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30"
-							>
-								<Image
-									src={url}
-									alt={`生成された写真 ${index + 1}`}
-									width={320}
-									height={320}
-									sizes="320px"
-									className="h-80 w-80 rounded object-cover"
-								/>
-							</div>
-						))}
+						{latestGeneratedPhotos.map((photo, index) => {
+							const isPro = photo.modelId === GEMINI_PRO_IMAGE_MODEL_ID;
+							return (
+								<div
+									key={photo.url}
+									className={clsx(
+										"rounded-lg border-2 p-4 shadow-lg",
+										isPro
+											? "border-pro-badge bg-pro-badge/10 shadow-pro-badge/50 ring-4 ring-pro-badge/30"
+											: "border-[#4796E3] shadow-[#4796E3]/30",
+									)}
+								>
+									<div className="relative">
+										{isPro && (
+											<div className="absolute -right-4 -top-4 z-10 rounded-full bg-pro-badge px-3 py-1 text-sm font-bold text-black shadow-md">
+												PRO
+											</div>
+										)}
+										<Image
+											src={photo.url}
+											alt={`生成された写真 ${index + 1}`}
+											width={320}
+											height={320}
+											sizes="320px"
+											className="h-80 w-80 rounded object-cover"
+										/>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				) : null}
 			</div>

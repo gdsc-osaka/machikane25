@@ -133,7 +133,7 @@ describe("useBoothState", () => {
 			data: () => ({
 				id: "booth-123",
 				state: "menu",
-				latestPhotoId: "photo-555",
+				latestPhotoIds: ["photo-555"],
 				lastTakePhotoAt: timestamp,
 			}),
 		};
@@ -152,9 +152,9 @@ describe("useBoothState", () => {
 			expect(currentState?.booth?.lastTakePhotoAt?.toISOString()).toBe(
 				"2025-01-01T00:00:00.000Z",
 			);
-			expect(currentState?.latestGeneratedPhotoUrl).toBe(
+			expect(currentState?.latestGeneratedPhotoUrls).toEqual([
 				"https://example.com/generated.png",
-			);
+			]);
 		});
 
 		expect(getDocMock).toHaveBeenCalledWith(generatedDocRef);

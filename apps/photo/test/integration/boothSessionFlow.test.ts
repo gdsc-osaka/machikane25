@@ -174,13 +174,7 @@ const geminiServer = setupServer(
 	// HTTP handlers
 	http.post(
 		"http://localhost:11004/upload/storage/v1/b/:bucket/o",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -195,13 +189,7 @@ const geminiServer = setupServer(
 	// HTTPS handler for Admin SDK (which uses HTTPS even for emulator)
 	http.post(
 		"https://localhost:11004/upload/storage/v1/b/:bucket/o",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -215,13 +203,7 @@ const geminiServer = setupServer(
 	),
 	http.post(
 		"http://localhost:11004/v0/b/:bucket/o",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const url = new URL(request.url);
 			const objectName = decodeURIComponent(url.searchParams.get("name") ?? "");
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
@@ -233,33 +215,24 @@ const geminiServer = setupServer(
 			});
 		},
 	),
-	http.put(
-		"http://localhost:11004/:bucket/:object*",
-		async ({ params }: { params: Record<string, string> }) => {
-			const objectName = String(params.object ?? "");
-			const bucket = String(params.bucket ?? "photo-test.appspot.com");
-			storageObjects.add(objectName);
-			return HttpResponse.json({
-				name: objectName,
-				bucket,
-				contentType: "image/png",
-			});
-		},
-	),
+	http.put("http://localhost:11004/:bucket/:object*", async ({ params }) => {
+		const objectName = String(params.object ?? "");
+		const bucket = String(params.bucket ?? "photo-test.appspot.com");
+		storageObjects.add(objectName);
+		return HttpResponse.json({
+			name: objectName,
+			bucket,
+			contentType: "image/png",
+		});
+	}),
 	http.get(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
-					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES.buffer, {
 						status: 200,
 						headers: {
 							"Content-Type": "image/png",
@@ -286,18 +259,12 @@ const geminiServer = setupServer(
 	),
 	http.get(
 		"http://localhost:11004/v0/b/:bucket/o/:object*",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
-					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES.buffer, {
 						status: 200,
 						headers: {
 							"Content-Type": "image/png",
@@ -324,25 +291,19 @@ const geminiServer = setupServer(
 	),
 	http.get(
 		"http://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
-					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES.buffer, {
 						status: 200,
 						headers: {
 							"Content-Type": "image/png",
 						},
 					});
 				}
-				return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+				return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES.buffer, {
 					status: 200,
 					headers: {
 						"Content-Type": "image/png",
@@ -363,25 +324,19 @@ const geminiServer = setupServer(
 	// HTTPS handler for Admin SDK download
 	http.get(
 		"https://localhost:11004/download/storage/v1/b/:bucket/o/:object*",
-		async ({
-			params,
-			request,
-		}: {
-			params: Record<string, string>;
-			request: Request;
-		}) => {
+		async ({ params, request }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			const bucket = String(params.bucket ?? "photo-test.appspot.com");
 			if (storageObjects.has(objectName)) {
 				if (request.url.includes("alt=media")) {
-					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+					return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES.buffer, {
 						status: 200,
 						headers: {
 							"Content-Type": "image/png",
 						},
 					});
 				}
-				return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES, {
+				return HttpResponse.arrayBuffer(SAMPLE_IMAGE_BYTES.buffer, {
 					status: 200,
 					headers: {
 						"Content-Type": "image/png",
@@ -401,7 +356,7 @@ const geminiServer = setupServer(
 	),
 	http.head(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
-		async ({ params }: { params: Record<string, string> }) => {
+		async ({ params }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			if (storageObjects.has(objectName)) {
 				return HttpResponse.text("", { status: 200 });
@@ -411,7 +366,7 @@ const geminiServer = setupServer(
 	),
 	http.head(
 		"http://localhost:11004/v0/b/:bucket/o/:object*",
-		async ({ params }: { params: Record<string, string> }) => {
+		async ({ params }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			if (storageObjects.has(objectName)) {
 				return HttpResponse.text("", { status: 200 });
@@ -421,7 +376,7 @@ const geminiServer = setupServer(
 	),
 	http.delete(
 		"http://localhost:11004/storage/v1/b/:bucket/o/:object*",
-		async ({ params }: { params: Record<string, string> }) => {
+		async ({ params }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			storageObjects.delete(objectName);
 			return HttpResponse.json({});
@@ -429,7 +384,7 @@ const geminiServer = setupServer(
 	),
 	http.delete(
 		"http://localhost:11004/v0/b/:bucket/o/:object*",
-		async ({ params }: { params: Record<string, string> }) => {
+		async ({ params }) => {
 			const objectName = decodeURIComponent(String(params.object ?? ""));
 			storageObjects.delete(objectName);
 			return HttpResponse.json({});
@@ -632,7 +587,7 @@ describe("boothSessionFlow integration", () => {
 		await boothRef.set({
 			id: boothId,
 			state: "idle",
-			latestPhotoId: null,
+			latestPhotoIds: null,
 			lastTakePhotoAt: null,
 			createdAt: new Date(),
 		});
@@ -695,9 +650,10 @@ describe("boothSessionFlow integration", () => {
 		const boothData = boothAfterGeneration.data();
 
 		expect(boothData?.state).toBe("completed");
-		expect(boothData?.latestPhotoId).toBeTruthy();
+		expect(boothData?.latestPhotoIds).toBeTruthy();
+		expect(boothData?.latestPhotoIds.length).toBeGreaterThan(0);
 
-		const generatedPhotoId = boothData?.latestPhotoId;
+		const generatedPhotoId = boothData?.latestPhotoIds[0];
 
 		const generatedDocRef = adminFirestore.doc(
 			`booths/${boothId}/generatedPhotos/${generatedPhotoId}`,

@@ -70,7 +70,7 @@ export default function ControlPage() {
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [isCapturing, setIsCapturing] = useState(false);
 
-	const { booth, latestGeneratedPhotoUrl, isLoading, error } =
+	const { booth, latestGeneratedPhotoUrls, isLoading, error } =
 		useBoothState(boothId);
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
@@ -411,7 +411,9 @@ export default function ControlPage() {
 	);
 
 	const renderCompleted = () => {
-		const latestPhotoId = booth?.latestPhotoId;
+		const latestPhotoIds = booth?.latestPhotoIds;
+		const latestPhotoId =
+			latestPhotoIds && latestPhotoIds.length > 0 ? latestPhotoIds[0] : null;
 		const canBuildDownloadPath =
 			typeof latestPhotoId === "string" &&
 			latestPhotoId.length > 0 &&
@@ -445,16 +447,23 @@ export default function ControlPage() {
 						<QRCode value={qrValue} size={256} />
 					</div>
 				) : null}
-				{latestGeneratedPhotoUrl ? (
-					<div className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30">
-						<Image
-							src={latestGeneratedPhotoUrl}
-							alt="生成された写真のプレビュー"
-							width={240}
-							height={240}
-							sizes="240px"
-							className="h-60 w-60 rounded object-cover"
-						/>
+				{latestGeneratedPhotoUrls.length > 0 ? (
+					<div className="flex flex-wrap justify-center gap-4">
+						{latestGeneratedPhotoUrls.map((url, index) => (
+							<div
+								key={url}
+								className="rounded-lg border-2 border-[#4796E3] p-4 shadow-lg shadow-[#4796E3]/30"
+							>
+								<Image
+									src={url}
+									alt={`生成された写真のプレビュー ${index + 1}`}
+									width={240}
+									height={240}
+									sizes="240px"
+									className="h-60 w-60 rounded object-cover"
+								/>
+							</div>
+						))}
 					</div>
 				) : null}
 			</div>

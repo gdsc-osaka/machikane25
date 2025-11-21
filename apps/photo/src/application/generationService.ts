@@ -10,9 +10,11 @@ import {
 import {
 	createGeneratedPhoto,
 	findGeneratedPhoto,
+	findGeneratedPhotos,
 } from "@/infra/firebase/photoRepository";
 import { getImageDataFromId } from "@/infra/gemini/imageData";
 import { handleGeminiResponse, storageBucket } from "@/infra/gemini/storage";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 const GEMINI_ENDPOINT =
@@ -26,6 +28,7 @@ type GeminiInlineData = {
 type GeneratedPhotoInfo = {
 	id: string;
 	imageUrl: string;
+	relatedPhotos?: { id: string; imageUrl: string }[];
 };
 
 const createNamedError = (name: string, message: string): Error => {
@@ -451,6 +454,40 @@ export const sendToAquarium = async (
 	}
 };
 
+const getRelatedPhotos = async (
+	photo: GeneratedPhotoRecord,
+	boothId: string,
+): Promise<GeneratedPhotoInfo["relatedPhotos"]> => {
+	const ageInMs = Date.now() - photo.createdAt.getTime();
+
+	if (ageInMs > ONE_DAY_IN_MS) {
+		throw createNamedError(
+			"PhotoExpiredError",
+			"Generated photo download expired",
+		);
+	}
+
+	const boothRef = getAdminFirestore().collection("booths").doc(boothId);
+	const boothSnapshot = await boothRef.get();
+
+	if (boothSnapshot.exists) {
+		const boothData = boothSnapshot.data();
+		const latestPhotoIds = boothData?.latestPhotoIds;
+
+		if (
+			Array.isArray(latestPhotoIds) &&
+			latestPhotoIds.includes(photo.photoId)
+		) {
+			const photos = await findGeneratedPhotos(boothId, latestPhotoIds);
+			return photos.map((p) => ({
+				id: p.photoId,
+				imageUrl: p.imageUrl,
+			}));
+		}
+	}
+	return [];
+};
+
 /**
  * Retrieve generated photo metadata by id.
  * Throws PhotoNotFoundError when document is missing and PhotoExpiredError when older than 24 hours.
@@ -465,17 +502,11 @@ export const getGeneratedPhoto = async (
 		throw createNamedError("PhotoNotFoundError", "Generated photo not found");
 	}
 
-	const ageInMs = Date.now() - photo.createdAt.getTime();
-
-	if (ageInMs > ONE_DAY_IN_MS) {
-		throw createNamedError(
-			"PhotoExpiredError",
-			"Generated photo download expired",
-		);
-	}
+	const relatedPhotos = await getRelatedPhotos(photo, boothId);
 
 	return {
 		id: photo.photoId,
 		imageUrl: photo.imageUrl,
+		relatedPhotos,
 	};
 };

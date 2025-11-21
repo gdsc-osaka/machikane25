@@ -84,7 +84,11 @@ const resolveLatestPhoto = async (
 };
 
 const parseBoothDocument = (docData: DocumentData, boothId: string) => {
-	const latestPhotoId = Reflect.get(docData, "latestPhotoId");
+	const latestPhotoIds = Reflect.get(docData, "latestPhotoIds");
+	const latestPhotoId =
+		Array.isArray(latestPhotoIds) && latestPhotoIds.length > 0
+			? latestPhotoIds[0]
+			: null;
 	return {
 		boothId,
 		latestPhotoId:

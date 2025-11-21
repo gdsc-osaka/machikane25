@@ -62,6 +62,7 @@ const renderDisplayPage = (booth: MockBooth): void => {
 	mockUseBoothState.mockReturnValue({
 		booth,
 		latestGeneratedPhotoUrl: generatedImageUrl,
+		latestGeneratedPhotoUrls: [generatedImageUrl],
 		isLoading: false,
 		error: null,
 	});
@@ -135,7 +136,7 @@ describe("[RED] DisplayPage", () => {
 		});
 
 		// Check for generated image by alt text
-		const generatedImage = screen.getByAltText("生成された写真");
+		const generatedImage = screen.getByAltText("生成された写真 1");
 		expect(generatedImage).toBeInTheDocument();
 		expect(generatedImage.getAttribute("src")).toContain(
 			encodeURIComponent(generatedImageUrl),

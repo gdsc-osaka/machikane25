@@ -71,6 +71,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const mockStartSession = boothActionMocks.startSession;
+const mockStartCapture = boothActionMocks.startCapture;
 const mockEnsureAnonymousSignIn = clientMocks.ensureAnonymousSignIn;
 
 const mockUseBoothState = hookMocks.useBoothState;
@@ -130,7 +131,7 @@ describe("[RED] ControlPage", () => {
 		const user = userEvent.setup();
 		await user.click(startButton);
 
-		expect(mockStartSession).toHaveBeenCalledWith({ boothId });
+		expect(mockStartCapture).toHaveBeenCalledWith({ boothId });
 	});
 
 	it("shows menu state with uploaded photos and generation options", () => {
@@ -679,6 +680,90 @@ describe("[RED] ControlPage", () => {
 				name: /check.*決定/i,
 			});
 			expect(generateButton).not.toBeDisabled();
+		});
+
+		it("updates selectedPhotoId when a new photo is added even if one is already selected", async () => {
+			// 初期状態: menu with one photo
+			const menuBooth = createBooth("menu");
+			const initialPhotos = [
+				{
+					photoId: "photo-1",
+					imageUrl: "https://example.com/photo-1.png",
+					imagePath: "photos/photo-1/photo.png",
+				},
+			];
+			const generationOptions = {
+				location: [
+					{
+						id: "location-1",
+						typeId: "location",
+						displayName: "ロケーションA",
+						imageUrl: null,
+						imagePath: null,
+					},
+				],
+			};
+
+			mockUseBoothState.mockReturnValue({
+				booth: menuBooth,
+				latestGeneratedPhotoUrl: null,
+				isLoading: false,
+				error: null,
+			});
+			mockUseUploadedPhotos.mockReturnValue({
+				photos: initialPhotos,
+				isLoading: false,
+				error: null,
+			});
+			mockUseGenerationOptions.mockReturnValue({
+				options: generationOptions,
+				isLoading: false,
+				error: null,
+			});
+			mockUseParams.mockReturnValue({ boothId });
+
+			const { rerender } = render(<ControlPage />);
+
+			// 最初の写真が選択されていることを確認 (useEffectによる自動選択)
+			// 選択状態はborderの色などで判定できるが、ここではmockの呼び出しやstateの反映を確認したい
+			// しかしstateは直接見れないので、UI上の変化で確認する
+			// 選択された写真は border-[#4796E3] (blue) になる
+			const photo1Button = screen.getAllByRole("button", {
+				name: "アップロード済みの写真",
+			})[0];
+			expect(photo1Button).toHaveClass("border-[#4796E3]");
+
+			// 新しい写真が追加された状態をシミュレート
+			const updatedPhotos = [
+				{
+					photoId: "photo-2", // New photo at the top (desc order)
+					imageUrl: "https://example.com/photo-2.png",
+					imagePath: "photos/photo-2/photo.png",
+				},
+				...initialPhotos,
+			];
+
+			mockUseUploadedPhotos.mockReturnValue({
+				photos: updatedPhotos,
+				isLoading: false,
+				error: null,
+			});
+
+			rerender(<ControlPage />);
+
+			// 新しい写真（photo-2）が選択されていることを確認
+			const photoButtons = screen.getAllByRole("button", {
+				name: "アップロード済みの写真",
+			});
+			expect(photoButtons).toHaveLength(2);
+
+			// photo-2 is the first one
+			const photo2Button = photoButtons[0];
+			expect(photo2Button).toHaveClass("border-[#4796E3]");
+
+			// photo-1 is the second one and should not be selected
+			const photo1ButtonAfter = photoButtons[1];
+			expect(photo1ButtonAfter).not.toHaveClass("border-[#4796E3]");
 		});
 	});
 });

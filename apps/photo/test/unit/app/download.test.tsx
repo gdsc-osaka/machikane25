@@ -74,14 +74,10 @@ describe("[RED] DownloadPage", () => {
 			encodeURIComponent("https://example.com/generated/photo.png"),
 		);
 
-		const downloadLink = screen.getByRole("link", {
+		const downloadButton = screen.getByRole("button", {
 			name: "Download Photo",
 		});
-		expect(downloadLink).toBeInTheDocument();
-		expect(downloadLink.getAttribute("href")).toBe(
-			"https://example.com/generated/photo.png",
-		);
-		expect(downloadLink.getAttribute("download")).toBe("ai_photo_1.png");
+		expect(downloadButton).toBeInTheDocument();
 		expect(mockGetGeneratedPhotoAction).toHaveBeenCalledWith(
 			params.boothId,
 			params.photoId,
@@ -119,11 +115,10 @@ describe("[RED] DownloadPage", () => {
 		expect(images[1]).toHaveAccessibleName("AI-generated result 2");
 		expect(images[2]).toHaveAccessibleName("AI-generated result 3");
 
-		const links = screen.getAllByRole("link");
-		expect(links).toHaveLength(3);
-		expect(links[0]).toHaveAccessibleName("Download Photo 1");
-		expect(links[1]).toHaveAccessibleName("Download Photo 2");
-		expect(links[2]).toHaveAccessibleName("Download Photo 3");
+		const downloadButtons = screen.getAllByRole("button", {
+			name: "Download Photo",
+		});
+		expect(downloadButtons).toHaveLength(3);
 
 		// Verify Pro badge is displayed for the 3rd photo
 		expect(screen.getByText("PRO")).toBeInTheDocument();

@@ -13,6 +13,8 @@ import {
 	useTransition,
 } from "react";
 import QRCode from "react-qr-code";
+import crystalStar from "@/../public/images/crystalStar.gif";
+import paint from "@/../public/images/paint.gif";
 import {
 	discardSession,
 	startCapture,
@@ -77,6 +79,13 @@ export default function ControlPage() {
 	const { photos } = useUploadedPhotos(boothId);
 	const { options } = useGenerationOptions();
 
+	// Select the first photo by default
+	useEffect(() => {
+		if (photos.length > 0) {
+			setSelectedPhotoId(photos[0].photoId);
+		}
+	}, [photos]);
+
 	const boothState = getBoothState(booth?.state);
 	const prevBoothStateRef = useRef<string>(boothState);
 
@@ -119,7 +128,7 @@ export default function ControlPage() {
 	useEffect(() => {
 		if (boothState === "capturing" && !isCapturing) {
 			setIsCapturing(true);
-			setCountdown(5);
+			setCountdown(10);
 		} else if (boothState !== "capturing") {
 			setIsCapturing(false);
 			setCountdown(null);
@@ -209,9 +218,9 @@ export default function ControlPage() {
 	const renderIdle = () => (
 		<button
 			type="button"
-			onClick={handleStartSession}
+			onClick={handleStartCapture}
 			disabled={isPending}
-			className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030] transition-all active:scale-[0.99]"
+			className="flex h-full w-full flex-col items-center justify-center gap-8 transition-all active:scale-[0.99]"
 		>
 			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-6xl font-bold text-transparent drop-shadow-lg md:text-7xl">
 				Gemini AI フォトブース
@@ -223,7 +232,7 @@ export default function ControlPage() {
 	);
 
 	const renderMenu = () => (
-		<div className="flex h-full w-full bg-[#303030]">
+		<div className="flex h-full w-full">
 			{/* Back Button */}
 			<button
 				type="button"
@@ -235,8 +244,8 @@ export default function ControlPage() {
 			</button>
 
 			{/* Left Side - Uploaded Images */}
-			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto border-r border-[#444746] bg-[#303030] p-6">
-				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
+			<div className="flex flex-1 flex-col gap-4 overflow-y-auto border-r border-[#444746] p-6">
+				<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent pl-26">
 					画像を選ぶ
 				</h2>
 				{photos.length > 0 ? (
@@ -255,7 +264,7 @@ export default function ControlPage() {
 										setSelectedPhotoId(photo.photoId);
 									}}
 									className={[
-										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all",
+										"aspect-[4/5] overflow-hidden rounded-lg border-4 transition-all relative",
 										isSelected
 											? "border-[#4796E3] shadow-lg shadow-[#4796E3]/50"
 											: "border-[#444746] hover:border-[#9177C7]",
@@ -265,9 +274,7 @@ export default function ControlPage() {
 										<Image
 											src={photo.imageUrl}
 											alt="アップロード済みの写真"
-											width={400}
-											height={500}
-											sizes="(max-width: 768px) 50vw, 300px"
+											fill={true}
 											className="h-full w-full object-cover"
 										/>
 									) : (
@@ -287,7 +294,7 @@ export default function ControlPage() {
 			</div>
 
 			{/* Right Side - Options and Actions */}
-			<div className="flex w-1/2 flex-col gap-4 overflow-y-auto bg-[#303030] p-6">
+			<div className="flex flex-2 flex-col gap-4 overflow-y-auto p-6">
 				{/* Generation Options */}
 				<div className="flex-1 space-y-4">
 					<h2 className="bg-gradient-to-r from-[#4796E3] to-[#9177C7] bg-clip-text text-xl font-bold text-transparent">
@@ -295,7 +302,7 @@ export default function ControlPage() {
 					</h2>
 					{generationSections.length > 0 ? (
 						generationSections.map(([typeId, items]) => (
-							<Card key={typeId} className="border-[#444746] bg-[#303030]">
+							<Card key={typeId} className="border-[#444746] bg-[#303030]/80">
 								<CardHeader>
 									<CardTitle className="text-base font-semibold text-[#e3e3e3]">
 										{typeId.toUpperCase()}
@@ -320,7 +327,7 @@ export default function ControlPage() {
 												className={
 													isSelected
 														? "bg-[#4796E3] text-white hover:bg-[#9177C7]"
-														: "border-[#444746] bg-[#303030] text-[#e3e3e3] hover:border-[#4796E3] hover:bg-[#444746]"
+														: "border-[#444746] bg-[#303030]/80 text-[#e3e3e3] hover:border-[#4796E3] hover:bg-[#444746]"
 												}
 											>
 												{option.displayName}
@@ -344,27 +351,38 @@ export default function ControlPage() {
 						onClick={handleStartCapture}
 						disabled={isPending}
 						size="lg"
-						className="flex-1 gap-2 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
+						className="flex-1 gap-2 h-12 bg-[#4796E3] text-lg text-white hover:bg-[#9177C7] disabled:bg-[#444746] disabled:text-[#e3e3e3]/50"
 					>
 						<CameraIcon size="md" />
 						写真を撮る
 					</Button>
-					<Button
-						onClick={handleStartGeneration}
-						disabled={isGenerateDisabled}
-						size="lg"
-						className="flex-1 gap-2 bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] text-lg text-white hover:opacity-90 disabled:from-[#444746] disabled:to-[#444746] disabled:text-[#e3e3e3]/50"
-					>
-						<CheckIcon size="md" />
-						決定
-					</Button>
+					<div className="flex-2 relative flex h-12 items-center justify-center">
+						<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-32 -mt-4 overflow-hidden">
+							<Image
+								src={paint}
+								alt=""
+								width={1287}
+								height={667}
+								className="absolute top-0 w-72"
+							/>
+						</div>
+						<Button
+							onClick={handleStartGeneration}
+							disabled={isGenerateDisabled}
+							size="lg"
+							className="z-10 flex flex-1 gap-2 h-12 bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] text-lg text-white hover:opacity-90 disabled:from-[#444746] disabled:to-[#444746] disabled:text-[#e3e3e3]/50"
+						>
+							<CheckIcon size="md" />
+							決定
+						</Button>
+					</div>
 				</div>
 			</div>
 		</div>
 	);
 
 	const renderCapturing = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center bg-[#303030]">
+		<div className="flex h-full w-full flex-col items-center justify-center">
 			{/* Back Button */}
 			<button
 				type="button"
@@ -394,7 +412,7 @@ export default function ControlPage() {
 	);
 
 	const renderGenerating = () => (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-8">
 			{/* Back Button */}
 			<button
 				type="button"
@@ -430,7 +448,7 @@ export default function ControlPage() {
 				: downloadPath;
 
 		return (
-			<div className="flex h-full w-full flex-col items-center justify-center gap-8 bg-[#303030]">
+			<div className="flex h-full w-full flex-col items-center justify-center gap-8">
 				{/* Back Button */}
 				<button
 					type="button"
@@ -490,7 +508,7 @@ export default function ControlPage() {
 	const renderContent = () => {
 		if (isLoading) {
 			return (
-				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+				<div className="flex h-full w-full items-center justify-center">
 					<p className="text-xl text-[#e3e3e3]">読み込み中...</p>
 				</div>
 			);
@@ -501,7 +519,7 @@ export default function ControlPage() {
 		if (detectedError) {
 			console.error(detectedError);
 			return (
-				<div className="flex h-full w-full items-center justify-center bg-[#303030]">
+				<div className="flex h-full w-full items-center justify-center">
 					<div className="flex flex-col gap-4">
 						<p className="text-sm text-[#CA6673]">
 							エラーが発生しました: {detectedError.message}
@@ -541,8 +559,22 @@ export default function ControlPage() {
 	};
 
 	return (
-		<main className="relative flex h-screen w-full overflow-hidden">
-			{renderContent()}
+		<main className="relative flex h-screen w-full overflow-hidden bg-[#303030]">
+			<div className="z-1 w-full h-full">{renderContent()}</div>
+			<Image
+				src={crystalStar}
+				width={963}
+				height={1069}
+				className="absolute bottom-1/12 left-1/12 pointer-events-none animate-float w-1/5"
+				alt=""
+			/>
+			<Image
+				src={crystalStar}
+				width={963}
+				height={1069}
+				className="absolute top-1/12 right-1/12 pointer-events-none animate-float-delayed w-1/6 -scale-x-100"
+				alt=""
+			/>
 		</main>
 	);
 }

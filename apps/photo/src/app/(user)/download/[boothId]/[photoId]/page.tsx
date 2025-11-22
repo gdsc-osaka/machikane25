@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getGeneratedPhotoAction } from "@/app/actions/generationActions";
 import { GEMINI_PRO_IMAGE_MODEL_ID } from "@/domain/models";
+import { DownloadButton } from "./download-button";
 
 type DownloadPageProps = {
 	params: Promise<{
@@ -42,6 +43,15 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 			? relatedPhotos
 			: [{ id: photoId, imageUrl, modelId }];
 
+	const now = new Date();
+	const downloadFileName = (index: number) => {
+		const timestamp = now
+			.toISOString()
+			.replace(/[-:]|\..*$/g, "")
+			.replace("T", "_");
+		return `artifoto_${timestamp}_${index + 1}.png`;
+	};
+
 	return (
 		<main className="flex min-h-screen flex-col items-center justify-center gap-12 bg-background px-6 py-16 text-center">
 			<h1 className="text-3xl font-semibold">Your AI Photos</h1>
@@ -69,13 +79,10 @@ const DownloadPage = async ({ params }: DownloadPageProps) => {
 									)}
 								/>
 							</div>
-							<a
-								href={photo.imageUrl}
-								download={`ai_photo_${index + 1}.png`}
-								className="rounded-md bg-primary px-6 py-3 text-lg font-medium text-primary-foreground shadow transition hover:bg-primary/90"
-							>
-								Download Photo {photosToDisplay.length > 1 ? index + 1 : ""}
-							</a>
+							<DownloadButton
+								imageUrl={photo.imageUrl}
+								fileName={downloadFileName(index)}
+							/>
 						</div>
 					);
 				})}

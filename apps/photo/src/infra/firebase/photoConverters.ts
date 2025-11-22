@@ -50,12 +50,21 @@ const parseSnapshot = <T extends UploadedPhoto | GeneratedPhoto>(
 	const modelId = typeof data.modelId === "string" ? data.modelId : undefined;
 	const createdAt = toDate(data.createdAt);
 
+	const status =
+		typeof data.status === "string" &&
+		(data.status === "generating" ||
+			data.status === "completed" ||
+			data.status === "failed")
+			? (data.status as GeneratedPhoto["status"])
+			: "completed";
+
 	return {
 		boothId,
 		photoId,
 		imagePath,
 		imageUrl,
 		modelId,
+		status,
 		createdAt,
 	} as T;
 };
@@ -68,6 +77,7 @@ const toFirestoreData = <T extends UploadedPhoto | GeneratedPhoto>(
 		photoId: value.photoId,
 		imagePath: value.imagePath,
 		imageUrl: value.imageUrl,
+		status: (value as GeneratedPhoto).status,
 		createdAt: Timestamp.fromDate(value.createdAt),
 	};
 

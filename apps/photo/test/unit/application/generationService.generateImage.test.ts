@@ -123,10 +123,16 @@ describe("GenerationService.generateImage", () => {
 			imageUrl: "https://example.com/generated/photo-abc.png",
 		});
 
-		const result = await generateImage("booth-123", "uploaded-photo", {
-			location: "location-id",
-			outfit: "outfit-id",
-		});
+		const result = await generateImage(
+			"booth-123",
+			"uploaded-photo",
+			{
+				location: "location-id",
+				outfit: "outfit-id",
+			},
+			GEMINI_FLASH_IMAGE_MODEL_ID,
+			"photo-abc",
+		);
 
 		expect(generateContentMock).toHaveBeenCalledOnce();
 		const callArgs = generateContentMock.mock.calls[0]?.[0];
@@ -137,35 +143,6 @@ describe("GenerationService.generateImage", () => {
 				aspectRatio: "3:4",
 			},
 		});
-		// We don't want to test the entire prompt text here.
-		// expect(callArgs.contents?.[0]?.parts).toEqual([
-		// 	{
-		// 		text: " It is 'main_person' in this base image. Please include this person in the generated image as well.:",
-		// 	},
-		// 	{
-		// 		inlineData: {
-		// 			mimeType: "image/jpeg",
-		// 			data: "base-image-base64",
-		// 		},
-		// 	},
-		// 	{ text: "This image is for the 'location':" },
-		// 	{
-		// 		inlineData: {
-		// 			mimeType: "image/png",
-		// 			data: "location-image-base64",
-		// 		},
-		// 	},
-		// 	{ text: "This image is for the 'outfit':" },
-		// 	{
-		// 		inlineData: {
-		// 			mimeType: "image/png",
-		// 			data: "outfit-image-base64",
-		// 		},
-		// 	},
-		// 	{
-		// 		text: "Generate an image using the 'main_person' person. Beside the 'main_person' person, add the 'person' to create a two-shot scene. The 'main_person' should be wearing the 'outfit'. Both persons should be in the 'pose', at the 'location'. The overall image style should be the 'style'.",
-		// 	},
-		// ]);
 
 		const expectedBuffer = Buffer.from(generatedBase64, "base64");
 
@@ -181,6 +158,7 @@ describe("GenerationService.generateImage", () => {
 			imagePath: "generated_photos/photo-abc/photo.png",
 			imageUrl: "https://example.com/generated/photo-abc.png",
 			modelId: GEMINI_FLASH_IMAGE_MODEL_ID,
+			status: "completed",
 		});
 
 		expect(result).toBe("photo-abc");
@@ -210,8 +188,14 @@ describe("GenerationService.generateImage", () => {
 			],
 		});
 
-		await expect(generateImage("booth-x", "photo-y", {})).rejects.toThrowError(
-			"Gemini response missing image data",
-		);
+		await expect(
+			generateImage(
+				"booth-x",
+				"photo-y",
+				{},
+				"photo-z",
+				GEMINI_FLASH_IMAGE_MODEL_ID,
+			),
+		).rejects.toThrowError("Gemini response missing image data");
 	}, 30000);
 });

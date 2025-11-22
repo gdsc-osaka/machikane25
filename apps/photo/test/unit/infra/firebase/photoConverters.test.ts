@@ -28,10 +28,7 @@ describe("photoConverters", () => {
 			"photo-1",
 		);
 
-		const result = uploadedPhotoConverter.fromFirestore(
-			snapshot as never,
-			undefined,
-		);
+		const result = uploadedPhotoConverter.fromFirestore(snapshot as never);
 
 		expect(result).toEqual({
 			boothId: "booth-1",
@@ -55,16 +52,14 @@ describe("photoConverters", () => {
 			"photo-2",
 		);
 
-		const result = generatedPhotoConverter.fromFirestore(
-			snapshot as never,
-			undefined,
-		);
+		const result = generatedPhotoConverter.fromFirestore(snapshot as never);
 
 		expect(result).toEqual({
 			boothId: "booth-1",
 			photoId: "photo-2",
 			imagePath: "generated_photos/photo-2/photo.png",
 			imageUrl: "https://example.com/generated/photo-2.png",
+			status: "completed",
 			createdAt: createdAt.toDate(),
 		});
 	});
@@ -92,6 +87,7 @@ describe("photoConverters", () => {
 			photoId: "photo-10",
 			imagePath: "generated_photos/photo-10/photo.png",
 			imageUrl: "https://example.com/generated/photo-10.png",
+			status: "completed" as const,
 			createdAt: new Date("2025-01-10T00:00:00Z"),
 		};
 
@@ -102,6 +98,7 @@ describe("photoConverters", () => {
 		expect(firestoreData.imageUrl).toBe(
 			"https://example.com/generated/photo-10.png",
 		);
+		expect(firestoreData.status).toBe("completed");
 		expect(firestoreData.createdAt).toBeInstanceOf(Timestamp);
 	});
 });

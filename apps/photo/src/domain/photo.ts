@@ -15,14 +15,35 @@ export const uploadedPhotoSchema = z.object({
 
 export type UploadedPhoto = z.infer<typeof uploadedPhotoSchema>;
 
-export const generatedPhotoSchema = z.object({
-	boothId: boothIdSchema,
-	photoId: photoIdSchema,
-	imagePath: storagePathSchema,
-	imageUrl: urlSchema,
-	modelId: z.string().optional(),
-	createdAt: z.date(),
-});
+export const generatedPhotoSchema = z.discriminatedUnion("status", [
+	z.object({
+		status: z.literal("completed"),
+		boothId: boothIdSchema,
+		photoId: photoIdSchema,
+		imagePath: storagePathSchema,
+		imageUrl: urlSchema,
+		modelId: z.string().optional(),
+		createdAt: z.date(),
+	}),
+	z.object({
+		status: z.literal("generating"),
+		boothId: boothIdSchema,
+		photoId: photoIdSchema,
+		imagePath: z.string(),
+		imageUrl: z.string(),
+		modelId: z.string().optional(),
+		createdAt: z.date(),
+	}),
+	z.object({
+		status: z.literal("failed"),
+		boothId: boothIdSchema,
+		photoId: photoIdSchema,
+		imagePath: z.string(),
+		imageUrl: z.string(),
+		modelId: z.string().optional(),
+		createdAt: z.date(),
+	}),
+]);
 
 export type GeneratedPhoto = z.infer<typeof generatedPhotoSchema>;
 

@@ -112,19 +112,37 @@ export const startGeneration = async (
 		),
 	);
 
-	await Promise.all(generatePromises);
+	const results = await Promise.allSettled(generatePromises);
 
 	// Check if we should still transition to completed (user might have started new session)
 	const currentBooth = await boothsCollection().doc(boothId).get();
 	const currentState = currentBooth.data()?.state;
 
 	if (currentState === "generating") {
-		// Automatically transition to completed state
-		await updateBoothState(boothId, {
-			state: "completed",
-			latestPhotoIds: generatedPhotoIds,
-		});
-		console.debug("Booth state updated to 'completed'");
+		const successfulPhotoIds = results
+			.map((result, index) =>
+				result.status === "fulfilled" ? generatedPhotoIds[index] : null,
+			)
+			.filter((id): id is string => id !== null);
+
+		if (successfulPhotoIds.length > 0) {
+			// Automatically transition to completed state with only successful photos
+			await updateBoothState(boothId, {
+				state: "completed",
+				latestPhotoIds: successfulPhotoIds,
+			});
+			console.debug(
+				"Booth state updated to 'completed' with IDs:",
+				successfulPhotoIds,
+			);
+		} else {
+			console.error("All photo generations failed");
+			// Optionally transition to a failed state or keep it in generating/menu
+			// For now, we'll leave it as is or maybe reset to menu?
+			// If we leave it in generating, the user is stuck.
+			// Let's reset to menu so they can try again.
+			await updateBoothState(boothId, { state: "menu" });
+		}
 	}
 
 	// Cleanup uploaded photo in the background

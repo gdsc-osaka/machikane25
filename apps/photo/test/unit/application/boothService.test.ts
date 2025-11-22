@@ -236,4 +236,49 @@ describe("BoothService", () => {
 		// Verify cleanup
 		expect(deleteUsedPhotoMock).toHaveBeenCalledWith("booth-5", "uploaded-2");
 	});
+
+	it("startGeneration handles partial failures and updates state with successful photos", async () => {
+		const { startGeneration } = await import("@/application/boothService");
+
+		// Mock generateImage to fail for the second call
+		generateImageMock.mockResolvedValueOnce("photo-1");
+		generateImageMock.mockRejectedValueOnce(new Error("Generation failed"));
+		generateImageMock.mockResolvedValueOnce("photo-3");
+
+		await startGeneration("booth-partial", "uploaded-1", { style: "style-1" });
+
+		// Should still create 3 generated photos initially
+		expect(createGeneratedPhotoMock).toHaveBeenCalledTimes(3);
+
+		// Should update state with only successful photo IDs
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "completed",
+				latestPhotoIds: ["mock-ulid", "mock-ulid"], // 1st and 3rd IDs
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
+
+		// Verify that generateImage was called 3 times
+		expect(generateImageMock).toHaveBeenCalledTimes(3);
+	});
+
+	it("startGeneration handles all failures by resetting to menu", async () => {
+		const { startGeneration } = await import("@/application/boothService");
+
+		// Mock generateImage to fail for all calls
+		generateImageMock.mockRejectedValue(new Error("Generation failed"));
+
+		await startGeneration("booth-fail", "uploaded-1", { style: "style-1" });
+
+		// Should update state to menu
+		expect(setMock).toHaveBeenCalledWith(
+			{
+				state: "menu",
+				updatedAt: "server-timestamp",
+			},
+			{ merge: true },
+		);
+	});
 });

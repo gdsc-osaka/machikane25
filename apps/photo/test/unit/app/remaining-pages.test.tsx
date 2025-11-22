@@ -139,7 +139,7 @@ describe("Remaining Page Components", () => {
 			render(<ControlPage />);
 
 			// The page shows "Gemini AI フォトブース" as the main heading
-			const heading = screen.getByRole("heading", { name: /gemini/i });
+			const heading = screen.getByRole("heading", { name: /Artifoto/i });
 			expect(heading).toBeInTheDocument();
 			expectHeadingStyles(heading);
 		});

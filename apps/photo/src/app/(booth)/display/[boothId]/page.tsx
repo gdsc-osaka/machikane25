@@ -145,7 +145,7 @@ export default function DisplayPage() {
 						height: 1920,
 						facingMode: "user",
 					}}
-					className="h-full w-full object-cover"
+					className="h-full w-full object-cover -scale-x-100"
 				/>
 				<AnimatePresence>
 					{countdown !== null && countdown > 0 && (

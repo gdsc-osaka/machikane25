@@ -225,7 +225,9 @@ export default function ControlPage() {
 			className="flex h-full w-full flex-col items-center justify-center gap-8 transition-all active:scale-[0.99]"
 		>
 			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-6xl font-bold text-transparent drop-shadow-lg md:text-7xl">
-				Gemini AI フォトブース
+				Artifoto
+				<br />
+				～AI フォトブース～
 			</h1>
 			<p className="animate-pulse text-3xl font-semibold text-[#e3e3e3] drop-shadow-md md:text-4xl">
 				画面をタップしてスタート

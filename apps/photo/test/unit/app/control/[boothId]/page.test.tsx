@@ -124,7 +124,7 @@ describe("[RED] ControlPage", () => {
 
 		// The button contains both heading and paragraph text
 		const startButton = screen.getByRole("button", {
-			name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+			name: /Artifoto.*画面をタップしてスタート/i,
 		});
 		expect(startButton).toBeInTheDocument();
 
@@ -310,7 +310,7 @@ describe("[RED] ControlPage", () => {
 			// idle状態の画面が表示されることを確認
 			expect(
 				screen.getByRole("button", {
-					name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+					name: /Artifoto.*画面をタップしてスタート/i,
 				}),
 			).toBeInTheDocument();
 
@@ -380,7 +380,7 @@ describe("[RED] ControlPage", () => {
 			// idle状態の画面が表示されることを確認
 			expect(
 				screen.getByRole("button", {
-					name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+					name: /Artifoto.*画面をタップしてスタート/i,
 				}),
 			).toBeInTheDocument();
 			expect(
@@ -475,7 +475,7 @@ describe("[RED] ControlPage", () => {
 			// idle状態の画面が表示されることを確認
 			expect(
 				screen.getByRole("button", {
-					name: /gemini ai フォトブース.*画面をタップしてスタート/i,
+					name: /Artifoto.*画面をタップしてスタート/i,
 				}),
 			).toBeInTheDocument();
 		});

@@ -49,7 +49,6 @@
 	--animate-float-delayed: floatDelayed 5s ease-in-out infinite 0.5s;
 
 	@keyframes float {
-
 		0%,
 		100% {
 			transform: translateY(0px) rotate(0deg);
@@ -61,7 +60,6 @@
 	}
 
 	@keyframes floatDelayed {
-
 		0%,
 		100% {
 			transform: translateY(0px) rotate(0deg);

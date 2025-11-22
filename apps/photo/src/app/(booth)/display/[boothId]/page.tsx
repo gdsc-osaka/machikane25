@@ -109,9 +109,9 @@ export default function DisplayPage() {
 	const renderIdle = () => (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-12 px-8">
 			<h1 className="bg-gradient-to-r from-[#4796E3] via-[#9177C7] to-[#CA6673] bg-clip-text text-center text-6xl font-bold leading-tight text-transparent drop-shadow-lg md:text-7xl">
-				Gemini AI
+				Artifoto
 				<br />
-				フォトブース
+				～AI フォトブース～
 			</h1>
 			<p className="animate-pulse text-center text-3xl font-semibold text-[#e3e3e3] drop-shadow-md md:text-4xl">
 				タブレットの画面を
